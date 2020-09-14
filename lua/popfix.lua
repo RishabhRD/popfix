@@ -8,7 +8,7 @@ end
 
 local function close_event(buf,selected)
 	local callback = bufferCallbacks[buf]
-	callback(vim.api.nvim_win_get_cursor(0)[1],selected)
+	callback(buf,vim.api.nvim_win_get_cursor(0)[1],selected)
 	bufferCallbacks[buf] = nil
 	vim.api.nvim_win_close(0,true)
 end
