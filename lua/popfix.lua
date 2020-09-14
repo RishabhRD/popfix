@@ -19,14 +19,14 @@ local function getPopupWindowDimensions(data)
 	local maxHeight = 10
 	local maxWidth = 100
 
-	local winHeight = #data + 1
+	local winHeight = #data
 	if winHeight > maxHeight then
 		winHeight = maxHeight
 	end
 
-	local winWidth = minWidth
+	local winWidth = minWidth + 5
 	for _,cur in pairs(data) do
-		local curWidth = string.len(cur)
+		local curWidth = string.len(cur) + 5
 		if curWidth > winWidth then
 			winWidth = curWidth
 		end
