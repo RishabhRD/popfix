@@ -8,15 +8,16 @@ end
 
 local function close_event(buf,selected)
 	local callback = bufferCallbacks[buf]
-	callback(buf,vim.api.nvim_win_get_cursor(0)[1],selected)
+	local line = vim.api.nvim_win_get_cursor(0)[1]
 	bufferCallbacks[buf] = nil
 	vim.api.nvim_win_close(0,true)
+	callback(buf,line,selected)
 end
 
 local function getPopupWindowDimensions(data)
 	local minWidth = 30
 	local maxHeight = 10
-	local maxWidth = 60
+	local maxWidth = 100
 
 	local winHeight = #data + 1
 	if winHeight > maxHeight then
@@ -53,7 +54,7 @@ local function open_window(data)
 		relative = "cursor",
 		width = dimensions[1],
 		height = dimensions[2],
-		row = 0,
+		row = 1,
 		col = 0
 	}
 
