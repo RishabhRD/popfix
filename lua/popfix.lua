@@ -1,35 +1,35 @@
 local api = vim.api
 
-local function open_window(data,maxWidth,maxHeight)
+local bufferCallbacks = {}
+
+local map = function(buf,type, key, value)
+	vim.fn.nvim_buf_set_keymap(buf,type,key,value,{noremap = true, silent = true});
+end
+
+local function close_event(buf)
+	local callback = bufferCallbacks[buf]
+	callback(vim.api.nvim_win_get_cursor(0)[1])
+	bufferCallbacks[buf] = nil
+	vim.api.nvim_win_close(0,true)
+end
+
+local function my_callback(line)
+	print("You just called on ",line)
+end
+
+local function getPopupWindowDimensions(data)
 	local minWidth = 30
-	local minHeight = 5
-	if #data == 0 then
-		return nil
-	end
-	if maxHeight < minHeight then
-		return nil
-	end
-	if maxWidth < minWidth then
-		return nil
-	end
-	local buf = api.nvim_create_buf(false, true)
-	api.nvim_buf_set_option(buf, 'bufhidden', 'wipe')
-	api.nvim_buf_set_lines(buf,0,-1,false,data)
-	api.nvim_buf_set_option(buf, 'modifiable',false)
-	-- local width = api.nvim_get_option("columns")
-	-- local height = api.nvim_get_option("lines")
+	local maxHeight = 10
+	local maxWidth = 60
 
 	local winHeight = #data + 1
-	if winHeight < minHeight then
-		winHeight = minHeight
-	end
 	if winHeight > maxHeight then
 		winHeight = maxHeight
 	end
 
 	local winWidth = minWidth
 	for _,cur in pairs(data) do
-		local curWidth =  string.len(cur)
+		local curWidth = string.len(cur)
 		if curWidth > winWidth then
 			winWidth = curWidth
 		end
@@ -38,13 +38,27 @@ local function open_window(data,maxWidth,maxHeight)
 		winWidth = maxWidth
 	end
 
+	local cursorPos = vim.api.nvim_win_get_cursor(0)
+	local returnValue = {}
+	returnValue[1] = winWidth
+	returnValue[2] = winHeight
+	-- TODO position should take care of window height and width
+	returnValue[3] = cursorPos[1]
+	returnValue[4] = cursorPos[2]
+	return returnValue
+end
+
+local function open_window(data)
+	local buf = api.nvim_create_buf(false, true)
+	local dimensions = getPopupWindowDimensions(data)
+
 	local opts = {
 		style = "minimal",
 		relative = "cursor",
-		width = winWidth,
-		height = winHeight,
+		width = dimensions[1],
+		height = dimensions[2],
 		row = 0,
-		col = 1
+		col = 0
 	}
 
 	local win = api.nvim_open_win(buf, true, opts)
@@ -54,11 +68,27 @@ local function open_window(data,maxWidth,maxHeight)
 	return ret
 end
 
-local function popup_window(data,maxWidth,maxHeight)
-	local newWindow = open_window(data,maxWidth,maxHeight)
-	print(newWindow[2])
+local function setBufferProperties(buf,data)
+	api.nvim_buf_set_option(buf, 'bufhidden', 'wipe')
+	map(buf,'n','<CR>','<cmd>lua require\'popfix\'.close_event(' .. buf ..')<CR>')
+	api.nvim_buf_set_lines(buf,0,-1,false,data)
+	api.nvim_buf_set_option(buf, 'modifiable',false)
+end
+
+local function setWindowProperties(win)
+	vim.api.nvim_win_set_option(win,'number',true)
+	vim.api.nvim_win_set_option(win, 'wrap', false)
+	vim.api.nvim_win_set_option(win, 'cursorline', true)
+end
+
+local function popup_window(data,callback)
+	local newWindow = open_window(data)
+	setBufferProperties(newWindow[1],data)
+	setWindowProperties(newWindow[2])
+	bufferCallbacks[newWindow[1]] = callback
 end
 
 return{
-	popup_window = popup_window
+	popup_window = popup_window,
+	close_event = close_event
 }
