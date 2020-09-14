@@ -7,10 +7,8 @@ local map = function(buf,type, key, value)
 end
 
 local function close_event(buf,selected)
-	if selected then
-		local callback = bufferCallbacks[buf]
-		callback(vim.api.nvim_win_get_cursor(0)[1])
-	end
+	local callback = bufferCallbacks[buf]
+	callback(vim.api.nvim_win_get_cursor(0)[1],selected)
 	bufferCallbacks[buf] = nil
 	vim.api.nvim_win_close(0,true)
 end
@@ -89,6 +87,7 @@ local function popup_window(data,callback)
 	setBufferProperties(newWindow[1],data)
 	setWindowProperties(newWindow[2])
 	bufferCallbacks[newWindow[1]] = callback
+	return newWindow[1]
 end
 
 return{
