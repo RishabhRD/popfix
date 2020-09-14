@@ -15,10 +15,6 @@ local function close_event(buf,selected)
 	vim.api.nvim_win_close(0,true)
 end
 
-local function my_callback(line)
-	print("You just called on ",line)
-end
-
 local function getPopupWindowDimensions(data)
 	local minWidth = 30
 	local maxHeight = 10

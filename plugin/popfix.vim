@@ -1,8 +1,9 @@
-fun! PopFix()
-    lua for k in pairs(package.loaded) do if k:match("^popfix") then package.loaded[k] = nil end end
-	lua require'popfix'.popup_window()
-endfun
+if exists('g:loaded_popfix') | finish | endif
 
-augroup PopFix
-    autocmd!
-augroup END
+let s:save_cpo = &cpo
+set cpo&vim
+
+let &cpo = s:save_cpo
+unlet s:save_cpo
+
+let g:loaded_popfix = 1
