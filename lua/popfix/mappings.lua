@@ -13,6 +13,9 @@ end
 
 local assign_function = function(buf,func)
 	local key = get_next_id()
+	if function_store[buf] == nil then
+		function_store[buf] = {}
+	end
 	function_store[buf][key] = func
 	return key
 end
@@ -53,13 +56,13 @@ end
 function mappings.add_keymap(buf,mapping_table)
 	local normalMappings = mapping_table.n
 	if normalMappings ~= nil then
-		for key,value in normalMappings do
+		for key,value in pairs(normalMappings) do
 			bufferKeyMap(buf,'n',key,value)
 		end
 	end
 	local insertMappings = mapping_table.i
 	if insertMappings ~= nil then
-		for key, value in insertMappings do
+		for key, value in pairs(insertMappings) do
 			bufferKeyMap(buf,'n',key,value)
 		end
 	end
@@ -68,6 +71,10 @@ end
 mappings.execute_keymap = function(buf, key)
 	local func = function_store[buf][key]
 	func(buf)
+end
+
+mappings.free = function(buf)
+	function_store[buf] = nil
 end
 
 return mappings

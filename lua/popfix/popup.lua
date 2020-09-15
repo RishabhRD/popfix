@@ -1,18 +1,6 @@
 local api = vim.api
-
-local bufferCallbacks = {}
-
-local map = function(buf,type, key, value)
-	vim.fn.nvim_buf_set_keymap(buf,type,key,value,{noremap = true, silent = true});
-end
-
-local function close_event(buf,selected)
-	local callback = bufferCallbacks[buf]
-	local line = vim.api.nvim_win_get_cursor(0)[1]
-	bufferCallbacks[buf] = nil
-	vim.api.nvim_win_close(0,true)
-	callback(buf,line,selected)
-end
+local action = require'popfix.action'
+local mappings = require'popfix.mappings'
 
 local function getPopupWindowDimensions(data)
 	local minWidth = 30
@@ -35,13 +23,9 @@ local function getPopupWindowDimensions(data)
 		winWidth = maxWidth
 	end
 
-	local cursorPos = vim.api.nvim_win_get_cursor(0)
 	local returnValue = {}
 	returnValue[1] = winWidth
 	returnValue[2] = winHeight
-	-- TODO position should take care of window height and width
-	returnValue[3] = cursorPos[1]
-	returnValue[4] = cursorPos[2]
 	return returnValue
 end
 
@@ -67,12 +51,21 @@ end
 
 local function setBufferProperties(buf,data)
 	api.nvim_buf_set_option(buf, 'bufhidden', 'wipe')
-	map(buf,'n','<CR>','<cmd>lua require\'popfix.popup\'.close_event(' .. buf ..',true)<CR>')
-	map(buf,'n','<ESC>','<cmd>lua require\'popfix.popup\'.close_event(' .. buf ..',false)<CR>')
-	map(buf,'n','<C-n>','j')
-	map(buf,'n','<C-p>','k')
-	map(buf,'n','<C-j>','j')
-	map(buf,'n','<C-k>','k')
+	local key_maps = {
+		n = {
+			['<CR>'] = action.close_selected,
+			['<ESC>'] = action.close_cancelled,
+			['<C-n>'] = action.next_select,
+			['<C-p>'] = action.prev_select,
+			['<C-j>'] = action.next_select,
+			['<C-k>'] = action.prev_select,
+			['<DOWN>'] = action.next_select,
+			['<UP>'] = action.prev_select,
+			['j'] = action.next_select,
+			['k'] = action.prev_select
+		}
+	}
+	mappings.add_keymap(buf,key_maps)
 	api.nvim_buf_set_lines(buf,0,-1,false,data)
 	api.nvim_buf_set_option(buf, 'modifiable',false)
 end
@@ -85,13 +78,14 @@ end
 
 local function popup_window(data,callback)
 	local newWindow = open_window(data)
+	action.init(newWindow[1],newWindow[2])
 	setBufferProperties(newWindow[1],data)
 	setWindowProperties(newWindow[2])
-	bufferCallbacks[newWindow[1]] = callback
+	action.register(newWindow[1],'close_selected' ,callback)
+	action.register(newWindow[1],'close_cancelled' ,callback)
 	return newWindow[1]
 end
 
 return{
-	popup_window = popup_window,
-	close_event = close_event
+	popup_window = popup_window
 }
