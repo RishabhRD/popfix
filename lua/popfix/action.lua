@@ -1,7 +1,7 @@
 local selection = {}
 local action = {}
 
-action.next_select = function(buf,callback)
+action.next_select = function(buf)
 	if selection[buf] == nil then
 		return
 	end
@@ -14,11 +14,10 @@ action.next_select = function(buf,callback)
 		pos[2] = 0
 		vim.api.nvim_win_set_cursor(selection[buf].win,pos)
 		selection[buf].index = curLine
-		callback(buf,curLine)
 	end
 end
 
-action.prev_select = function(buf,callback)
+action.prev_select = function(buf)
 	if selection[buf] == nil then
 		return
 	end
@@ -30,11 +29,10 @@ action.prev_select = function(buf,callback)
 		pos[2] = 0
 		vim.api.nvim_win_set_cursor(selection[buf].win,pos)
 		selection[buf].index = curLine
-		callback(buf,curLine)
 	end
 end
 
-action.index_select = function(buf,index,callback)
+action.index_select = function(buf,index)
 	if selection[buf] == nil then
 		return
 	end
@@ -45,7 +43,6 @@ action.index_select = function(buf,index,callback)
 		pos[2] = 0
 		vim.api.nvim_win_set_cursor(selection[buf].win,pos)
 		selection[buf].index = index
-		callback(buf,index)
 	end
 end
 
@@ -62,8 +59,11 @@ action.close = function(buf,selected,index,callback)
 	if selection[buf] == nil then
 		return
 	end
+	vim.api.nvim_win_close(selection[buf].win)
 	selection[buf] = nil
 	if selected then
-		callback(buf,index)
+		callback(buf,index,selected)
 	end
 end
+
+return action

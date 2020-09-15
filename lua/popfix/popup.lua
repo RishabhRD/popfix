@@ -67,8 +67,8 @@ end
 
 local function setBufferProperties(buf,data)
 	api.nvim_buf_set_option(buf, 'bufhidden', 'wipe')
-	map(buf,'n','<CR>','<cmd>lua require\'popfix\'.close_event(' .. buf ..',true)<CR>')
-	map(buf,'n','<ESC>','<cmd>lua require\'popfix\'.close_event(' .. buf ..',false)<CR>')
+	map(buf,'n','<CR>','<cmd>lua require\'popfix.popup\'.close_event(' .. buf ..',true)<CR>')
+	map(buf,'n','<ESC>','<cmd>lua require\'popfix.popup\'.close_event(' .. buf ..',false)<CR>')
 	map(buf,'n','<C-n>','j')
 	map(buf,'n','<C-p>','k')
 	map(buf,'n','<C-j>','j')

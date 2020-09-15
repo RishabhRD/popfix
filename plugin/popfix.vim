@@ -10,7 +10,7 @@
 "
  
 fun! PopFix()
-    lua for k in pairs(package.loaded) do if k:match("^popfix_preview") then package.loaded[k] = nil end end
+    lua for k in pairs(package.loaded) do if k:match(".*") then package.loaded[k] = nil end end
     lua require'popfix_preview'.popup_preview()
 endfun
 
