@@ -58,15 +58,14 @@ end
 -- end
 
 action.init = function(buf,win)
-	if selection[buf] ~= nil then
-		return
+	if selection[buf] == nil then
+		selection[buf] ={}
 	end
-	selection[buf] = {}
 	selection[buf].win = win
-	selection[buf].index = 0
+	selection[buf].index = 1
 	local func = selection[buf]['init']
 	if func ~= nil then
-		func(buf,0)
+		func(buf)
 	end
 end
 
@@ -100,7 +99,7 @@ end
 
 action.register = function(buf,func_key,func)
 	if selection[buf] == nil then
-		return
+		selection[buf] = {}
 	end
 	selection[buf][func_key] = func
 end
