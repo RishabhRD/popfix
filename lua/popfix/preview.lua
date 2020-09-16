@@ -6,8 +6,8 @@ local preview_map = {}
 
 local function preview(buf, filepath, range)
 	local raw_command = "cat -n %s | sed -n '%s,%sp'"
-	local line = range.start.line
-	local startLine = range.start.line
+	local line = range.start.line + 1
+	local startLine = range.start.line + 1
 	local endLine
 	if startLine <= 3 then
 		endLine  = 11 - startLine
@@ -142,7 +142,7 @@ local function init(buf)
 		--TODO path shortening
 		local curData = filePath .. ': '
 		local command = "sed '%sq;d' %s"
-		command = string.format(command,range.start.line,filePath)
+		command = string.format(command, range.start.line + 1, filePath)
 		local appendedList = vim.fn.systemlist(command)
 		local appendedData = appendedList[1]
 		curData = curData .. appendedData
