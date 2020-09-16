@@ -11,7 +11,7 @@
  
 fun! PopFix()
     lua for k in pairs(package.loaded) do if k:match(".*") then package.loaded[k] = nil end end
-    lua require'popfix.popup'.popup_window()
+    lua require'popfix.preview'.popup_preview()
 endfun
 
 augroup PopFix

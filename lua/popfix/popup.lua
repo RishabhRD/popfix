@@ -1,4 +1,3 @@
-local api = vim.api
 local action = require'popfix.action'
 local mappings = require'popfix.mappings'
 
@@ -30,7 +29,7 @@ local function getPopupWindowDimensions(data)
 end
 
 local function open_window(data)
-	local buf = api.nvim_create_buf(false, true)
+	local buf = vim.api.nvim_create_buf(false, true)
 	local dimensions = getPopupWindowDimensions(data)
 
 	local opts = {
@@ -42,7 +41,7 @@ local function open_window(data)
 		col = 0
 	}
 
-	local win = api.nvim_open_win(buf, true, opts)
+	local win = vim.api.nvim_open_win(buf, true, opts)
 	local ret = {}
 	ret[1] = buf;
 	ret[2] = win;
@@ -50,7 +49,7 @@ local function open_window(data)
 end
 
 local function setBufferProperties(buf,data)
-	api.nvim_buf_set_option(buf, 'bufhidden', 'wipe')
+	vim.api.nvim_buf_set_option(buf, 'bufhidden', 'wipe')
 	local key_maps = {
 		n = {
 			['<CR>'] = action.close_selected,
@@ -66,8 +65,8 @@ local function setBufferProperties(buf,data)
 		}
 	}
 	mappings.add_keymap(buf,key_maps)
-	api.nvim_buf_set_lines(buf,0,-1,false,data)
-	api.nvim_buf_set_option(buf, 'modifiable',false)
+	vim.api.nvim_buf_set_lines(buf,0,-1,false,data)
+	vim.api.nvim_buf_set_option(buf, 'modifiable',false)
 end
 
 local function setWindowProperties(win)

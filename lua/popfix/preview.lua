@@ -1,6 +1,7 @@
-local map = function(buf,type,key,value)
-	vim.fn.nvim_buf_set_keymap(buf,type,key,value,{noremap = true,silent = true});
-end
+local action = require'popfix.action'
+local mappings = require'popfix.mappings'
+
+local preview_map = {}
 
 local function getWindow()
 	local buf, win
@@ -55,7 +56,7 @@ local function getPreview(win)
 	}
 
 	local buf = vim.api.nvim_create_buf(false,true)
-	local win_newWin = vim.api.nvim_open_win(buf,true,opts)
+	local win_newWin = vim.api.nvim_open_win(buf,false,opts)
 	return { buf = buf, win = win_newWin}
 end
 
@@ -63,6 +64,21 @@ local function setBufferProperty(buf)
 	vim.api.nvim_buf_set_option(buf, 'buftype', 'nofile')
 	vim.api.nvim_buf_set_option(buf, 'swapfile', false)
 	vim.api.nvim_buf_set_option(buf, 'bufhidden', 'wipe')
+	local keymaps = {
+		n = {
+			['<CR>'] = action.close_selected,
+			['<ESC>'] = action.close_cancelled,
+			['<C-n>'] = action.next_select,
+			['<C-p>'] = action.prev_select,
+			['<C-j>'] = action.next_select,
+			['<C-k>'] = action.prev_select,
+			['<DOWN>'] = action.next_select,
+			['<UP>'] = action.prev_select,
+			['j'] = action.next_select,
+			['k'] = action.prev_select
+		}
+	}
+	mappings.add_keymap(buf,keymaps)
 end
 
 local function setWindowProperty(win)
@@ -70,13 +86,35 @@ local function setWindowProperty(win)
 	vim.api.nvim_win_set_option(win, 'cursorline', true)
 end
 
+local function close(buf, selected, line)
+	local preview_win = preview_map[buf].win
+	if preview_win == nil then
+		return
+	end
+	vim.api.nvim_win_close(preview_win,true)
+	if(selected) then
+		print("selected close: ",line)
+	else
+		print("cancelled close: ")
+	end
+	preview_map[buf] = nil
+end
+
 local function popup_preview()
 	local newWindow = getWindow()
-	local buf = newWindow.buf
-	local win = newWindow.win
-	setBufferProperty(buf)
-	setWindowProperty(win)
-	local previewWindow = getPreview(win)
+	local popup_buf = newWindow.buf
+	local popup_win = newWindow.win
+	local previewWindow = getPreview(popup_win)
+	local preview_win = previewWindow.win
+	local preview_buf = previewWindow.buf
+	preview_map[popup_buf] = {}
+	preview_map[popup_buf].win = preview_win
+	preview_map[popup_buf].buf = preview_buf
+	action.init(popup_buf,popup_win)
+	action.register(popup_buf,'close_selected',close)
+	action.register(popup_buf,'close_cancelled',close)
+	setBufferProperty(popup_buf)
+	setWindowProperty(popup_win)
 end
 
 return{
