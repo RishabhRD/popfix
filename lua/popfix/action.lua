@@ -71,7 +71,7 @@ end
 -- 	end
 -- end
 
-action.init = function(buf,win)
+action.init = function(buf,win,data)
 	if selection[buf] == nil then
 		selection[buf] ={}
 	end
@@ -81,6 +81,8 @@ action.init = function(buf,win)
 	if func ~= nil then
 		func(buf)
 	end
+	vim.api.nvim_buf_set_lines(data)
+	vim.api.nvim_buf_set_option(buf, 'modifiable',false)
 end
 
 action.close_selected = function(buf)

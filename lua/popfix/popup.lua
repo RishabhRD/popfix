@@ -48,25 +48,23 @@ local function open_window(data)
 	return ret
 end
 
-local function setBufferProperties(buf,data)
+local function setBufferProperties(buf, key_maps)
 	vim.api.nvim_buf_set_option(buf, 'bufhidden', 'wipe')
-	local key_maps = {
-		n = {
-			['<CR>'] = action.close_selected,
-			['<ESC>'] = action.close_cancelled,
-			['<C-n>'] = action.next_select,
-			['<C-p>'] = action.prev_select,
-			['<C-j>'] = action.next_select,
-			['<C-k>'] = action.prev_select,
-			['<DOWN>'] = action.next_select,
-			['<UP>'] = action.prev_select,
-		}
-	}
+	-- local key_maps = {
+	-- 	n = {
+	-- 		['<CR>'] = action.close_selected,
+	-- 		['<ESC>'] = action.close_cancelled,
+	-- 		['<C-n>'] = action.next_select,
+	-- 		['<C-p>'] = action.prev_select,
+	-- 		['<C-j>'] = action.next_select,
+	-- 		['<C-k>'] = action.prev_select,
+	-- 		['<DOWN>'] = action.next_select,
+	-- 		['<UP>'] = action.prev_select,
+	-- 	}
+	-- }
 	local autocmds = {}
 	autocmds['CursorMoved'] = action.update_selection
 	mappings.add_keymap(buf,key_maps)
-	vim.api.nvim_buf_set_lines(buf,0,-1,false,data)
-	vim.api.nvim_buf_set_option(buf, 'modifiable',false)
 end
 
 local function setWindowProperties(win)
@@ -75,13 +73,22 @@ local function setWindowProperties(win)
 	vim.api.nvim_win_set_option(win, 'cursorline', true)
 end
 
-local function popup_window(data,callback)
+local function popup_window(data, key_maps, init_callback, select_callback,
+		close_callback)
 	local newWindow = open_window(data)
-	action.init(newWindow[1],newWindow[2])
-	setBufferProperties(newWindow[1],data)
+	setBufferProperties(newWindow[1], key_maps)
 	setWindowProperties(newWindow[2])
-	action.register(newWindow[1],'close_selected' ,callback)
-	action.register(newWindow[1],'close_cancelled' ,callback)
+	if init_callback ~= nil then
+		action.register(newWindow[1], 'init', init_callback)
+	end
+	if select_callback ~= nil then
+		action.register(newWindow[1], 'update_selection', select_callback)
+	end
+	if close_callback ~= nil then
+		action.register(newWindow[1],'close_selected' , close_callback)
+		action.register(newWindow[1],'close_cancelled' , close_callback)
+	end
+	action.init(newWindow[1],newWindow[2])
 	return newWindow[1]
 end
 
