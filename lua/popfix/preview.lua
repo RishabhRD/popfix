@@ -94,16 +94,11 @@ local function setBufferProperty(buf)
 		n = {
 			['<CR>'] = action.close_selected,
 			['<ESC>'] = action.close_cancelled,
-			['<C-n>'] = action.next_select,
-			['<C-p>'] = action.prev_select,
-			['<C-j>'] = action.next_select,
-			['<C-k>'] = action.prev_select,
-			['<DOWN>'] = action.next_select,
-			['<UP>'] = action.prev_select,
 		}
 	}
 	local autocmds = {}
 	autocmds['CursorMoved'] = action.update_selection
+	autocmds['BufWipeout'] = action.close_cancelled
 	mappings.add_keymap(buf,keymaps)
 	autocmd.addCommand(buf,autocmds)
 end
@@ -125,6 +120,9 @@ local function setPreviewWindowProperty(win)
 end
 
 local function close(buf, selected, line)
+	if preview_map[buf] == nil then
+		return
+	end
 	local preview_win = preview_map[buf].win
 	if preview_win == nil then
 		return
@@ -182,8 +180,6 @@ local function popup_preview(locations)
 	action.register(popup_buf,'close_selected',close)
 	action.register(popup_buf,'close_cancelled',close)
 	action.register(popup_buf,'init',init)
-	action.register(popup_buf,'prev_select',selectIndex)
-	action.register(popup_buf,'next_select',selectIndex)
 	action.register(popup_buf,'update_selection',selectIndex)
 	action.init(popup_buf,popup_win)
 	setBufferProperty(popup_buf)
