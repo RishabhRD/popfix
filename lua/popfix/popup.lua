@@ -1,5 +1,6 @@
 local action = require'popfix.action'
 local mappings = require'popfix.mappings'
+local autocmd = require'popfix.autocmd'
 
 local function getPopupWindowDimensions(data)
 	local minWidth = 30
@@ -50,21 +51,11 @@ end
 
 local function setBufferProperties(buf, key_maps)
 	vim.api.nvim_buf_set_option(buf, 'bufhidden', 'wipe')
-	-- local key_maps = {
-	-- 	n = {
-	-- 		['<CR>'] = action.close_selected,
-	-- 		['<ESC>'] = action.close_cancelled,
-	-- 		['<C-n>'] = action.next_select,
-	-- 		['<C-p>'] = action.prev_select,
-	-- 		['<C-j>'] = action.next_select,
-	-- 		['<C-k>'] = action.prev_select,
-	-- 		['<DOWN>'] = action.next_select,
-	-- 		['<UP>'] = action.prev_select,
-	-- 	}
-	-- }
 	local autocmds = {}
 	autocmds['CursorMoved'] = action.update_selection
+	autocmds['BufWipeout'] = action.close_cancelled
 	mappings.add_keymap(buf,key_maps)
+	autocmd.addCommand(buf,autocmds)
 end
 
 local function setWindowProperties(win)
@@ -75,6 +66,10 @@ end
 
 local function popup_window(data, key_maps, init_callback, select_callback,
 		close_callback)
+	if data == nil then
+		print "nil data"
+		return
+	end
 	local newWindow = open_window(data)
 	setBufferProperties(newWindow[1], key_maps)
 	setWindowProperties(newWindow[2])
@@ -82,13 +77,12 @@ local function popup_window(data, key_maps, init_callback, select_callback,
 		action.register(newWindow[1], 'init', init_callback)
 	end
 	if select_callback ~= nil then
-		action.register(newWindow[1], 'update_selection', select_callback)
+		action.register(newWindow[1], 'selection', select_callback)
 	end
 	if close_callback ~= nil then
-		action.register(newWindow[1],'close_selected' , close_callback)
-		action.register(newWindow[1],'close_cancelled' , close_callback)
+		action.register(newWindow[1],'close' , close_callback)
 	end
-	action.init(newWindow[1],newWindow[2])
+	action.init(newWindow[1],newWindow[2],data)
 	return newWindow[1]
 end
 

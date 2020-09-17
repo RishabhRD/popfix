@@ -14,7 +14,7 @@ action.next_select = function(buf)
 		pos[2] = 0
 		vim.api.nvim_win_set_cursor(selection[buf].win,pos)
 		selection[buf].index = curLine
-		local func = selection[buf]['next_select']
+		local func = selection[buf]['selection']
 		if func ~= nil then
 			func(buf,curLine)
 		end
@@ -33,7 +33,7 @@ action.prev_select = function(buf)
 		pos[2] = 0
 		vim.api.nvim_win_set_cursor(selection[buf].win,pos)
 		selection[buf].index = curLine
-		local func = selection[buf]['prev_select']
+		local func = selection[buf]['selection']
 		if func ~= nil then
 			func(buf,curLine)
 		end
@@ -47,7 +47,7 @@ action.update_selection = function(buf)
 	local cursor = vim.api.nvim_win_get_cursor(selection[buf].win)
 	if selection[buf].index ~= cursor[1] then
 		selection[buf].index = cursor[1]
-		local func = selection[buf]['update_selection']
+		local func = selection[buf]['selection']
 		if func ~= nil then
 			func(buf,cursor[1])
 		end
@@ -81,7 +81,7 @@ action.init = function(buf,win,data)
 	if func ~= nil then
 		func(buf)
 	end
-	vim.api.nvim_buf_set_lines(data)
+	vim.api.nvim_buf_set_lines(buf,0,-1,false,data)
 	vim.api.nvim_buf_set_option(buf, 'modifiable',false)
 end
 
@@ -93,7 +93,7 @@ action.close_selected = function(buf)
 	require'popfix.autocmd'.free(buf)
 	local line = vim.api.nvim_win_get_cursor(selection[buf].win)[1]
 	vim.api.nvim_win_close(selection[buf].win,true)
-	local func = selection[buf]['close_selected']
+	local func = selection[buf]['close']
 	selection[buf] = nil
 	if func ~= nil then
 		func(buf,true,line)
@@ -108,7 +108,7 @@ action.close_cancelled = function(buf)
 	require'popfix.autocmd'.free(buf)
 	local line = vim.api.nvim_win_get_cursor(selection[buf].win)[1]
 	vim.api.nvim_win_close(selection[buf].win,true)
-	local func = selection[buf]['close_cancelled']
+	local func = selection[buf]['close']
 	selection[buf] = nil
 	if func ~= nil then
 		func(buf,false,line)
