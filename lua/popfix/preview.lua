@@ -1,5 +1,6 @@
 local action = require'popfix.action'
 local mappings = require'popfix.mappings'
+local autocmd = require'popfix.autocmd'
 
 local preview_map = {}
 
@@ -16,14 +17,16 @@ local function preview(buf, filepath, range)
 		endLine = startLine + 7
 		startLine = startLine - 2
 	end
-	local cur_window = vim.api.nvim_get_current_win()
+	-- TODO highlighting of code
+	-- local cur_window = vim.api.nvim_get_current_win()
 	local command = string.format(raw_command,filepath,startLine,endLine)
 	local data = vim.fn.systemlist(command)
 	vim.api.nvim_buf_set_lines(preview_map[buf].buf,0,-1,false,data)
 	-- vim.api.nvim_set_current_win(preview_map[buf].win)
 	-- vim.api.nvim_command('doautocmd filetypedetect BufRead ' .. vim.fn.fnameescape(filepath))
 	-- vim.api.nvim_set_current_win(cur_window)
-	-- vim.api.nvim_buf_add_highlight(preview_map[buf].buf, -1, "Visual", line, 0, -1)
+	vim.api.nvim_buf_set_option(preview_map[buf].buf, "filetype", "text")
+	vim.api.nvim_buf_add_highlight(preview_map[buf].buf, -1, "Visual", line - startLine , 0, -1)
 end
 
 local function getWindow()
@@ -97,11 +100,12 @@ local function setBufferProperty(buf)
 			['<C-k>'] = action.prev_select,
 			['<DOWN>'] = action.next_select,
 			['<UP>'] = action.prev_select,
-			['j'] = action.next_select,
-			['k'] = action.prev_select
 		}
 	}
+	local autocmds = {}
+	autocmds['CursorMoved'] = action.update_selection
 	mappings.add_keymap(buf,keymaps)
+	autocmd.addCommand(buf,autocmds)
 end
 
 local function setWindowProperty(win)
@@ -180,6 +184,7 @@ local function popup_preview(locations)
 	action.register(popup_buf,'init',init)
 	action.register(popup_buf,'prev_select',selectIndex)
 	action.register(popup_buf,'next_select',selectIndex)
+	action.register(popup_buf,'update_selection',selectIndex)
 	action.init(popup_buf,popup_win)
 	setBufferProperty(popup_buf)
 	setWindowProperty(popup_win)

@@ -40,6 +40,20 @@ action.prev_select = function(buf)
 	end
 end
 
+action.update_selection = function(buf)
+	if selection[buf] == nil then
+		return
+	end
+	local cursor = vim.api.nvim_win_get_cursor(selection[buf].win)
+	if selection[buf].index ~= cursor[1] then
+		selection[buf].index = cursor[1]
+		local func = selection[buf]['update_selection']
+		if func ~= nil then
+			func(buf,cursor[1])
+		end
+	end
+end
+
 -- action.index_select = function(buf,index)
 -- 	if selection[buf] == nil then
 -- 		return
@@ -74,6 +88,7 @@ action.close_selected = function(buf)
 		return
 	end
 	require'popfix.mappings'.free(buf)
+	require'popfix.autocmd'.free(buf)
 	local line = vim.api.nvim_win_get_cursor(selection[buf].win)[1]
 	vim.api.nvim_win_close(selection[buf].win,true)
 	local func = selection[buf]['close_selected']
@@ -88,6 +103,7 @@ action.close_cancelled = function(buf)
 		return
 	end
 	require'popfix.mappings'.free(buf)
+	require'popfix.autocmd'.free(buf)
 	local line = vim.api.nvim_win_get_cursor(selection[buf].win)[1]
 	vim.api.nvim_win_close(selection[buf].win,true)
 	local func = selection[buf]['close_cancelled']

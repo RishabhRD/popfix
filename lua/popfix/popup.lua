@@ -60,10 +60,10 @@ local function setBufferProperties(buf,data)
 			['<C-k>'] = action.prev_select,
 			['<DOWN>'] = action.next_select,
 			['<UP>'] = action.prev_select,
-			['j'] = action.next_select,
-			['k'] = action.prev_select
 		}
 	}
+	local autocmds = {}
+	autocmds['CursorMoved'] = action.update_selection
 	mappings.add_keymap(buf,key_maps)
 	vim.api.nvim_buf_set_lines(buf,0,-1,false,data)
 	vim.api.nvim_buf_set_option(buf, 'modifiable',false)
