@@ -36,6 +36,9 @@ function autocmd.addCommand(buf, mapping_table)
 end
 
 function autocmd.execute(buf,key)
+	if callback[buf] == nil then
+		return
+	end
 	local func = callback[buf][key]
 	func(buf)
 end
