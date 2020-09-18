@@ -1,45 +1,6 @@
 local selection = {}
 local action = {}
 
-action.next_select = function(buf)
-	if selection[buf] == nil then
-		return
-	end
-	local curLine = selection[buf].index
-	curLine = curLine + 1
-	local total_lines = vim.api.nvim_buf_line_count(buf)
-	if curLine <= total_lines then
-		local pos = {}
-		pos[1] = curLine
-		pos[2] = 0
-		vim.api.nvim_win_set_cursor(selection[buf].win,pos)
-		selection[buf].index = curLine
-		local func = selection[buf]['selection']
-		if func ~= nil then
-			func(buf,curLine)
-		end
-	end
-end
-
-action.prev_select = function(buf)
-	if selection[buf] == nil then
-		return
-	end
-	local curLine = selection[buf].index
-	curLine = curLine - 1
-	if curLine >= 1 then
-		local pos = {}
-		pos[1] = curLine
-		pos[2] = 0
-		vim.api.nvim_win_set_cursor(selection[buf].win,pos)
-		selection[buf].index = curLine
-		local func = selection[buf]['selection']
-		if func ~= nil then
-			func(buf,curLine)
-		end
-	end
-end
-
 action.update_selection = function(buf)
 	if selection[buf] == nil then
 		return
@@ -53,23 +14,6 @@ action.update_selection = function(buf)
 		end
 	end
 end
-
--- action.index_select = function(buf,index)
--- 	if selection[buf] == nil then
--- 		return
--- 	end
--- 	local total_lines = vim.api.nvim_buf_line_count(buf)
--- 	if index <= total_lines and index >= 1 then
--- 		local pos = {}
--- 		pos[1] = index
--- 		pos[2] = 0
--- 		vim.api.nvim_win_set_cursor(selection[buf].win,pos)
--- 		selection[buf].index = index
--- 		if selection[buf].index_select ~= nil then
--- 			selection[buf].index_select(buf,index)
--- 		end
--- 	end
--- end
 
 action.init = function(buf,win,data)
 	if selection[buf] == nil then
