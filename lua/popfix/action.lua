@@ -1,6 +1,9 @@
 local selection = {}
 local action = {}
 
+-- action to update current line to some other line(i.e., update data structure)
+--
+-- param(buf): popup buffer id
 action.update_selection = function(buf)
 	if selection[buf] == nil then
 		return
@@ -15,6 +18,11 @@ action.update_selection = function(buf)
 	end
 end
 
+-- action to initialize popup buffer inside window win, and place data in buffer
+--
+-- param(buf): popup buffer id
+-- param(win): popup window id
+-- param(data): string list to be displayed in popup window
 action.init = function(buf,win,data)
 	if selection[buf] == nil then
 		selection[buf] ={}
@@ -29,6 +37,9 @@ action.init = function(buf,win,data)
 	vim.api.nvim_buf_set_option(buf, 'modifiable',false)
 end
 
+-- action to denote current line notation was selected as window was closed
+--
+-- param(buf): popup buffer id
 action.close_selected = function(buf)
 	if selection[buf] == nil then
 		return
@@ -44,6 +55,9 @@ action.close_selected = function(buf)
 	end
 end
 
+-- action to denote current line notation was not selected as window was closed
+--
+-- param(buf): popup buffer id
 action.close_cancelled = function(buf)
 	if selection[buf] == nil then
 		return
@@ -59,6 +73,13 @@ action.close_cancelled = function(buf)
 	end
 end
 
+-- register a new handler for buf
+--
+-- param(buf): popup buffer id
+-- param(func_key): string denoting to which callback func wants to attach
+-- param(func): actual callback function
+--
+-- func_key can be: 'init', 'close', 'selection'
 action.register = function(buf,func_key,func)
 	if selection[buf] == nil then
 		selection[buf] = {}

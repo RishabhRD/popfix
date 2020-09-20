@@ -16,6 +16,8 @@ local function assign_function(buf,func)
 	return key
 end
 
+-- utility function for converting lua functions to appropriate string
+-- and then add autocmd
 local function buffer_autocmd(buf,property,action)
 	if type(action) == "string" then
 		local command = "autocmd %s <buffer> %s"
@@ -29,6 +31,16 @@ local function buffer_autocmd(buf,property,action)
 	end
 end
 
+-- add an autocmd to buf
+--
+-- param(buf): buffer to which autocmd is to be added
+-- param(mapping_table): mappings for autocmd
+--
+-- mapping_table = {
+--		string : string
+--			or
+--		string : lua_functions
+-- }
 function autocmd.addCommand(buf, mapping_table)
 	for property,action in pairs(mapping_table) do
 		buffer_autocmd(buf,property,action)
@@ -43,6 +55,8 @@ function autocmd.execute(buf,key)
 	func(buf)
 end
 
+-- remove autocmd with buffer
+-- i.e., free the data structure to free memory
 function autocmd.free(buf)
 	callback[buf] = nil
 end

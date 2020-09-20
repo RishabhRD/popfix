@@ -2,8 +2,17 @@ local action = require'popfix.action'
 local mappings = require'popfix.mappings'
 local autocmd = require'popfix.autocmd'
 
+-- table to store information about currently displaying preview windows
 local preview_map = {}
 
+-- preview the given preview_data to preview buffer associated with buf
+--
+-- param(buf) - popup menu buffer
+-- param(preview_data) - { data, line}
+--
+-- 	data - list of string
+-- 	line - line number to highlight
+-- 	(no highlight if line = nil)
 
 local function preview(buf, preview_data)
 	vim.api.nvim_buf_set_lines(preview_map[buf].buf, 0, -1, false,
@@ -15,6 +24,12 @@ local function preview(buf, preview_data)
 	end
 end
 
+
+-- creates a new window in down split
+--
+-- returns a (buf,win) pair
+-- buf: buffer id of new window's buffer
+-- win: window id of new window
 local function getWindow()
 	local buf, win
 	vim.api.nvim_command('bot new')
@@ -25,6 +40,13 @@ local function getWindow()
 	return { buf = buf, win = win}
 end
 
+-- creates a new floating preview window
+--
+-- param(win): window id of popup window
+--
+-- returns (buf,win) pair
+-- buf: buffer id of new preview window's buffer
+-- win: window if of new preview window
 local function getPreview(win)
 	local width = vim.api.nvim_win_get_width(win)
 	local height = vim.api.nvim_win_get_height(win)
@@ -49,6 +71,11 @@ local function getPreview(win)
 	return { buf = buf, win = win_newWin}
 end
 
+-- sets some default property for popup buffer
+-- and associate given keymap provided to buffer
+--
+-- param(buf): popup buffer id
+-- param(key_maps): keymaps provided
 local function setBufferProperty(buf, key_maps)
 	vim.api.nvim_buf_set_option(buf, 'buftype', 'nofile')
 	vim.api.nvim_buf_set_option(buf, 'swapfile', false)
@@ -61,6 +88,9 @@ local function setBufferProperty(buf, key_maps)
 	autocmd.addCommand(buf,autocmds)
 end
 
+-- sets some default property for popup window
+--
+-- param(win): popup window id
 local function setWindowProperty(win)
 	vim.api.nvim_win_set_option(win, 'wrap', true)
 	vim.api.nvim_win_set_option(win, 'cursorline', true)
@@ -68,10 +98,16 @@ local function setWindowProperty(win)
 	vim.api.nvim_win_set_option(win, 'relativenumber', false)
 end
 
+-- sets some default property for preview buffer
+--
+-- param(buf): preview buffer id
 local function setPreviewBufferProperty(buf)
 	vim.api.nvim_buf_set_option(buf, 'bufhidden', 'wipe')
 end
 
+-- sets some default property for preview window
+--
+-- param(win): preview window id
 local function setPreviewWindowProperty(win)
 	vim.api.nvim_win_set_option(win, 'wrap', false)
 	vim.api.nvim_win_set_option(win, 'winhl', 'Normal:Normal')
@@ -79,6 +115,9 @@ local function setPreviewWindowProperty(win)
 	vim.api.nvim_win_set_option(win, 'foldlevel', 100)
 end
 
+-- init callback for popup buffer
+--
+-- param(buf): buffer id of popup buffer
 local function init(buf)
 	local func = preview_map[buf].init_handler
 	if func == nil then
@@ -93,6 +132,10 @@ local function init(buf)
 	end
 end
 
+-- select callback for popup buffer
+--
+-- param(buf): buffer id of popup window
+-- param(index): line number on which currently cursor is
 local function select(buf, index)
 	local func = preview_map[buf].selection_handler
 	if func == nil then
@@ -107,6 +150,11 @@ local function select(buf, index)
 	end
 end
 
+-- close callback for popup buffer
+--
+-- param(buf): buffer id of popup window
+-- param(selected): window was closed as selected or cancelled
+-- param(line): line number on which cursor was
 local function close(buf, selected, line)
 	if preview_map[buf] == nil then
 		return
@@ -125,6 +173,35 @@ local function close(buf, selected, line)
 end
 
 
+-- function that has public access to open preview window
+--
+-- param(data): string list, to be displayed in popup window
+--
+-- param(key_maps): key_maps to map with popup buffer
+--
+-- param(init_handler): handler to be called when popup window initializes
+--		prototype for init_handler:
+--		init_handler = func(buf)
+--		param(buf): popup_window buffer id
+--
+-- param(selection_handler): handler to be called when selection(current line)
+--	changes
+--		prototype for selection_handler:
+--		selection_handler = func(buf, line)
+--		param(buf): popup buffer id
+--		param(line): current selected line
+--
+-- param(close_handler): handler to be called when popup window is destroyed
+--		prototype for close_handler:
+--		close_handler = func(buf, selected, line)
+--		param(buf): pouup buffer id
+--		param(selected): flag that last selection was accepted or cancelled
+--
+--	Every handler should return a (data, line) pair
+--	data: data to be shown in preview window (no preview if nil)
+--	line: line number to be highlighted (no highlight if nil)
+--
+--	returns the buffer id of popup window
 local function popup_preview(data, key_maps, init_handler, selection_handler,
 		close_handler)
 	local newWindow = getWindow()

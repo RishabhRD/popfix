@@ -20,6 +20,7 @@ local assign_function = function(buf,func)
 	return key
 end
 
+-- utility functionf to map keys and convert lua function to string internally
 local bufferKeyMap = function(buf, mode, key_bind, key_func, opts)
 	opts = opts or {
 		silent = true
@@ -53,6 +54,22 @@ local bufferKeyMap = function(buf, mode, key_bind, key_func, opts)
 	end
 end
 
+-- add keymap to buffer buf
+--
+-- param(buf): buffer to which mapping was to be added
+-- param(mapping_table): actual mappings
+-- mapping table{
+--		n{
+--			'string' : 'string'
+--			or
+--			'string' : lua functions
+--		},
+--		i{
+--			'string' : 'string'
+--			or
+--			'string' : lua functions
+--		}
+-- }
 function mappings.add_keymap(buf,mapping_table)
 	local normalMappings = mapping_table.n
 	if normalMappings ~= nil then
@@ -73,6 +90,8 @@ mappings.execute_keymap = function(buf, key)
 	func(buf)
 end
 
+-- free keymaps from buffer buf
+-- i.e., free the data structure
 mappings.free = function(buf)
 	function_store[buf] = nil
 end
