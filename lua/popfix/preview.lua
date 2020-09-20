@@ -201,6 +201,9 @@ end
 --	data: data to be shown in preview window (no preview if nil)
 --	line: line number to be highlighted (no highlight if nil)
 --
+-- if any handler is passed null, it would be just simply ignored. So,
+-- if you don't want to handle a specific event just pass null to it
+--
 --	returns the buffer id of popup window
 local function popup_preview(data, key_maps, init_handler, selection_handler,
 		close_handler)
