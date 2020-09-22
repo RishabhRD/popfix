@@ -21,12 +21,12 @@ architecture.
 
 ## Screenshots
 ![](https://user-images.githubusercontent.com/26287448/93617774-076ad600-f9f4-11ea-9c4e-d37019241320.gif)
-![](https://user-images.githubusercontent.com/26287448/93617977-4e58cb80-f9f4-11ea-9406-6e0ff0f2ec93.gif)
+![](https://user-images.githubusercontent.com/26287448/93930985-d3691b00-fd3b-11ea-9053-b699e4d36558.gif)
 
 ## Features
 
 - Floating popup
-- Navigable preview window
+- Navigable preview window (syntax coloring possible)
 
 ## Future goals
 
@@ -125,7 +125,8 @@ expected to return a lua table. Lua table format is:
 
 	{
 		data,
-		line
+		line,
+		filetype
 	}
 
 data is list of string and can be represented as:
@@ -139,16 +140,21 @@ line_num is an integer and can be represented as:
 
 	local line_num = 4
 
+filetype is a string that should be a valid filetype.
+This filetype parameter is used to do syntax coloring of preview data.
+If filetype parameter is nil then no syntax coloring is done.
+
 So, return data can be represented as:
 
 	local return_data = {
 		data = data,
-		line = line_num
+		line = line_num,
+		filetype = filetype
 	}
 
 This return_data is used for content of preview window after callback.
 
-- ``return_data.data`` is filled in preview window.
+- ``return_data.data`` is filled in preview window and have syntax highlighting according to ``return_data.filetype``
 - ``return_data.line`` is highlighted in preview window.
 
 ### Initializing popup
