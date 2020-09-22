@@ -8,11 +8,13 @@ local preview_map = {}
 -- preview the given preview_data to preview buffer associated with buf
 --
 -- param(buf) - popup menu buffer
--- param(preview_data) - { data, line}
+-- param(preview_data) - { data, line, filetype}
 --
 -- 	data - list of string
 -- 	line - line number to highlight
 -- 	(no highlight if line = nil)
+-- 	filetype - to determine syntax coloring of preview
+-- 	(no coloring if nil)
 
 local function preview(buf, preview_data)
 	vim.api.nvim_buf_set_lines(preview_map[buf].buf, 0, -1, false,
