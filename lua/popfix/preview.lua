@@ -18,9 +18,12 @@ local function preview(buf, preview_data)
 	vim.api.nvim_buf_set_lines(preview_map[buf].buf, 0, -1, false,
 		preview_data.data)
 	if preview_data.line ~= nil then
-		-- TODO highlighting
 		vim.api.nvim_buf_add_highlight(preview_map[buf].buf, -1, "Visual",
 			preview_data.line, 0, -1)
+	end
+	if preview_data.filetype ~= nil then
+		vim.api.nvim_buf_set_option(preview_map[buf].buf,
+			'filetype', preview_data.filetype)
 	end
 end
 
