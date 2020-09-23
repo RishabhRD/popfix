@@ -43,7 +43,7 @@ local bufferKeyMap = function(buf, mode, key_bind, key_func, opts)
 			end
 
 			map_string = string.format(
-				"%s:lua require('popfix.mappings').execute_keymap(%s, %s)<CR>",
+				"%s<cmd>lua require('popfix.mappings').execute_keymap(%s, %s)<CR>",
 				prefix,
 				buf,
 				func_id
