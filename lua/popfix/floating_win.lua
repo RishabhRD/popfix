@@ -64,17 +64,18 @@ function M.create_win(opts)
 	end
 
 	local win_buf_pair = create_win(opts.row, opts.col, opts.width, opts.height, opts.relative)
-	local buf = win_buf_pair.buf
-	local win = win_buf_pair.win
 
 	if border_buf then
 		api.nvim_command('au Bufwipeout <buffer> exe "silent bwipeout! "'..border_buf)
 	end
-	return {
-		buf = buf,
-		win = win
-	}
+	return win_buf_pair
 end
+
+-- function M.create_term(opts)
+-- 	local win_buf = M.create_win(opts)
+-- 	local buf = win_buf.buf
+-- 	local win = win_buf.win
+-- end
 
 
 function M.default_win()
