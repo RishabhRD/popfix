@@ -1,90 +1,65 @@
-local selection = {}
+local api = vim.api
 local action = {}
+local selection = {}
+local callbackList = {}
+local bufferProperty = {}
 
--- action to update current line to some other line(i.e., update data structure)
---
--- param(buf): popup buffer id
-action.update_selection = function(buf)
-	if selection[buf] == nil then
-		return
-	end
-	local cursor = vim.api.nvim_win_get_cursor(selection[buf].win)
-	if selection[buf].index ~= cursor[1] then
-		selection[buf].index = cursor[1]
-		local func = selection[buf]['selection']
-		if func ~= nil then
-			func(buf,cursor[1])
-		end
-	end
+function action.registerCallbacks(buf, callbacks, info, metadata)
+	callbackList[buf] = callbacks
+	bufferProperty[buf] = {
+		['info'] = info,
+		['metadata'] = metadata,
+	}
+	selection[buf] = 0
 end
 
--- action to initialize popup buffer inside window win, and place data in buffer
---
--- param(buf): popup buffer id
--- param(win): popup window id
--- param(data): string list to be displayed in popup window
-action.init = function(buf,win,data)
-	if selection[buf] == nil then
-		selection[buf] ={}
-	end
-	selection[buf].win = win
-	selection[buf].index = 1
-	local func = selection[buf]['init']
-	if func ~= nil then
-		func(buf)
-	end
-	vim.api.nvim_buf_set_lines(buf,0,-1,false,data)
-	vim.api.nvim_buf_set_option(buf, 'modifiable',false)
+function action.registerBuffer(buf, win)
+	bufferProperty[buf]['win'] = win
 end
 
--- action to denote current line notation was selected as window was closed
---
--- param(buf): popup buffer id
-action.close_selected = function(buf)
-	if selection[buf] == nil then
-		return
-	end
-	require'popfix.mappings'.free(buf)
-	require'popfix.autocmd'.free(buf)
-	local line = vim.api.nvim_win_get_cursor(selection[buf].win)[1]
-	vim.api.nvim_win_close(selection[buf].win,true)
-	local func = selection[buf]['close']
+local function unregisterBuffer(buf)
+	bufferProperty[buf] = nil
+	callbackList[buf] = nil
 	selection[buf] = nil
-	if func ~= nil then
-		func(buf,true,line)
-	end
 end
 
--- action to denote current line notation was not selected as window was closed
---
--- param(buf): popup buffer id
-action.close_cancelled = function(buf)
-	if selection[buf] == nil then
+function action.select(buf, index, line)
+	selection[buf] = index
+	if callbackList[buf] == nil then
 		return
 	end
-	require'popfix.mappings'.free(buf)
-	require'popfix.autocmd'.free(buf)
-	local line = vim.api.nvim_win_get_cursor(selection[buf].win)[1]
-	vim.api.nvim_win_close(selection[buf].win,true)
-	local func = selection[buf]['close']
-	selection[buf] = nil
-	if func ~= nil then
-		func(buf,false,line)
+	if callbackList[buf]['select'] == nil then
+		return
+	end
+	if bufferProperty[buf]['method'] == 'line' then
+		local data = api.nvim_buf_get_lines(buf, line - 1, line, false)
+		callbackList['select'](buf, data)
+	elseif bufferProperty[buf]['method'] == 'index' then
+		callbackList['select'](buf, index)
+	elseif bufferProperty['method'] == 'metadata' then
+		callbackList['select'](buf, bufferProperty['metadata'][index])
 	end
 end
 
--- register a new handler for buf
---
--- param(buf): popup buffer id
--- param(func_key): string denoting to which callback func wants to attach
--- param(func): actual callback function
---
--- func_key can be: 'init', 'close', 'selection'
-action.register = function(buf,func_key,func)
-	if selection[buf] == nil then
-		selection[buf] = {}
+function action.close(buf, index, line, selected)
+	if callbackList[buf] == nil then
+		unregisterBuffer(buf)
+		return
 	end
-	selection[buf][func_key] = func
+	if callbackList[buf]['close'] == nil then
+		unregisterBuffer(buf)
+		return
+	end
+	if bufferProperty[buf]['method'] == 'line' then
+		local data = api.nvim_buf_get_lines(buf, line - 1, line, false)
+		callbackList['close'](buf, data, selected)
+	elseif bufferProperty[buf]['method'] == 'index' then
+		callbackList['close'](buf, index, selected)
+	elseif bufferProperty['method'] == 'metadata' then
+		callbackList['close'](buf, bufferProperty['metadata'][index], selected)
+	end
+	unregisterBuffer(buf)
 end
+
 
 return action

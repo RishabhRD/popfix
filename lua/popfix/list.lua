@@ -1,4 +1,5 @@
 local floating_win = require'popfix.floating_win'
+local action = require'popfix.action'
 local api = vim.api
 local M = {}
 
@@ -13,23 +14,22 @@ local function popup_split(height, title)
 	return {buf = buf, win = win}
 end
 
-local function popup_cursor(height, width, title, border, data)
+local function popup_cursor(height, title, border, data)
 	border = border or false
+	local width = 40
 	title = title or ''
 	if not data then
 		width = width or 40
 		height = height or data
 	else
-		if width == nil then
-			local maxWidth = 0
-			for _,cur in pairs(data) do
-				local curWidth = string.len(cur) + 5
-				if curWidth > maxWidth then
-					maxWidth = curWidth
-				end
+		local maxWidth = 0
+		for _,cur in pairs(data) do
+			local curWidth = string.len(cur) + 5
+			if curWidth > maxWidth then
+				maxWidth = curWidth
 			end
-			width = maxWidth
 		end
+		width = maxWidth
 		if height == nil then
 			height = height or #data
 		end
@@ -71,7 +71,17 @@ local function popup_win(title, border)
 	floating_win.open_win(opts)
 end
 
-function M.popup_list(mode, data, height, width, title, border)
+local function setWindowProperty(win)
+	vim.api.nvim_win_set_option(win,'number',true)
+	vim.api.nvim_win_set_option(win, 'wrap', true)
+	vim.api.nvim_win_set_option(win, 'cursorline', true)
+end
+
+local function setBufferProperty(buf)
+	vim.api.nvim_buf_set_option(buf, 'modifiable', false)
+end
+
+function M.popupList(mode, height, title, border, data)
 	if data == nil then
 		print "nil data"
 		return
@@ -80,15 +90,25 @@ function M.popup_list(mode, data, height, width, title, border)
 	if mode == 'split' then
 		win_buf = popup_split(height)
 	elseif mode == 'cursor' then
-		win_buf = popup_cursor(height, width, title, border, data)
+		win_buf = popup_cursor(height, title, border, data)
 	elseif mode == 'win' then
 		win_buf = popup_win(title, border)
 	else
 		print 'Unknown mode'
 		return
 	end
-	local win = win_buf.buf
-	local buf = win_buf.win
+	local buf = win_buf.buf
+	local win = win_buf.win
+	setWindowProperty(win)
+	setBufferProperty(buf)
+	action.registerBuffer(buf, win)
+	return buf
+end
+
+function M.transferControl(buf, callbacks, info, metadata)
+	if callbacks == nil then return end
+	action.registerCallbacks(buf, callbacks, info, metadata)
+	action.select(buf, 1, 1)
 end
 
 return M
