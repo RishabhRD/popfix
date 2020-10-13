@@ -10,7 +10,6 @@ function action.registerCallbacks(buf, callbacks, info, metadata)
 		['info'] = info,
 		['metadata'] = metadata,
 	}
-	selection[buf] = 0
 end
 
 function action.registerBuffer(buf, win)
@@ -24,7 +23,8 @@ local function unregisterBuffer(buf)
 end
 
 function action.select(buf, index, line)
-	selection[buf] = index
+	selection[buf]['index'] = index
+	selection[buf]['line'] = line
 	if callbackList[buf] == nil then
 		return
 	end
@@ -61,5 +61,19 @@ function action.close(buf, index, line, selected)
 	unregisterBuffer(buf)
 end
 
+function action.getCurrentLine(buf)
+	if bufferProperty[buf] == nil then return nil end
+	return selection[buf]['line']
+end
+
+function action.getCurrentIndex(buf)
+	if bufferProperty[buf] == nil then return nil end
+	return selection[buf]['index']
+end
+
+function action.getAssociatedWindow(buf)
+	if bufferProperty[buf] == nil then return nil end
+	return bufferProperty[buf]['win']
+end
 
 return action

@@ -1,7 +1,41 @@
 local floating_win = require'popfix.floating_win'
+local autocmd = require'popfix.autocmd'
+local mappings = require'popfix.mappings'
 local action = require'popfix.action'
 local api = vim.api
 local M = {}
+
+local function close_selected(buf)
+	local win = action.getAssociatedWindow(buf)
+	api.nvim_win_close(win, true)
+	local line = action.getCurrentLine(buf)
+	local index = action.getCurrentIndex(buf)
+	action.close(buf, index, line, true)
+end
+
+local function close_cancelled(buf)
+	local win = action.getAssociatedWindow(buf)
+	if win == nil then return end
+	api.nvim_win_close(win, true)
+	local line = action.getCurrentLine(buf)
+	local index = action.getCurrentIndex(buf)
+	action.close(buf, index, line, false)
+end
+
+local function selectionHandler(buf)
+	local win = action.getAssociatedWindow(buf)
+	local oldLine = action.getCurrentLine(buf)
+	local line = api.nvim_win_get_cursor(win)[1]
+	if oldLine ~= line then
+		action.select(buf, line, line)
+	end
+end
+
+local default_keymaps = {
+	['q'] = close_cancelled,
+	['<Esc>'] = close_cancelled,
+	['<CR>'] = close_selected
+}
 
 local function popup_split(height, title)
 	height = height or 12
@@ -79,6 +113,11 @@ end
 
 local function setBufferProperty(buf)
 	vim.api.nvim_buf_set_option(buf, 'modifiable', false)
+	local autocmds = {
+		['CursorMoved'] = selectionHandler,
+		['BufWipeout'] = close_cancelled,
+	}
+	autocmd.addCommand(buf, autocmds)
 end
 
 function M.popupList(mode, height, title, border, data)
@@ -101,12 +140,18 @@ function M.popupList(mode, height, title, border, data)
 	local win = win_buf.win
 	setWindowProperty(win)
 	setBufferProperty(buf)
+	mappings.addDefaultFunction(buf, 'close_selected', close_selected)
+	mappings.addDefaultFunction(buf, 'close_cancelled', close_cancelled)
 	action.registerBuffer(buf, win)
 	return buf
 end
 
-function M.transferControl(buf, callbacks, info, metadata)
+function M.transferControl(buf, callbacks, info, metadata, keymaps)
 	if callbacks == nil then return end
+	if keymaps == nil then
+		keymaps = default_keymaps
+	end
+	mappings.add_keymap(buf, keymaps)
 	action.registerCallbacks(buf, callbacks, info, metadata)
 	action.select(buf, 1, 1)
 end

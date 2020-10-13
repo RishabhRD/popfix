@@ -96,4 +96,18 @@ mappings.free = function(buf)
 	function_store[buf] = nil
 end
 
+function mappings.addDefaultFunction(buf, action, func)
+	if mappings[buf] == nil then
+		mappings[buf] = {}
+	end
+	mappings[buf][action] = func
+end
+
+function mappings.getMapping(buf, action)
+	if mappings[buf] == nil then
+		return nil
+	end
+	return mappings[buf][action]
+end
+
 return mappings
