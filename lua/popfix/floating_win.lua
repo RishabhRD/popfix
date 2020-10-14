@@ -11,13 +11,12 @@ local default_opts = {
 	title = "",
 	options = {},
 	border = false
-	-- keymaps = {},
-	-- autocmds = {}
 }
 
 local function create_win(row, col, width, height, relative)
 	local buf = api.nvim_create_buf(false, true)
 	api.nvim_buf_set_option(buf, 'bufhidden', 'wipe')
+	print(relative)
 	local options = {
 		style = "minimal",
 		relative = relative,
@@ -26,7 +25,7 @@ local function create_win(row, col, width, height, relative)
 		row = row,
 		col = col
 	}
-	local win = api.nvim_open_win(buf, true, options)
+	local win = api.nvim_open_win(buf, false, options)
 	return {
 		buf = buf,
 		win = win
@@ -64,31 +63,12 @@ function M.create_win(opts)
 	end
 
 	local win_buf_pair = create_win(opts.row, opts.col, opts.width, opts.height, opts.relative)
+	api.nvim_set_current_win(win_buf_pair.win)
 
 	if border_buf then
 		api.nvim_command('au Bufwipeout <buffer> exe "silent bwipeout! "'..border_buf)
 	end
 	return win_buf_pair
-end
-
--- function M.create_term(opts)
--- 	local win_buf = M.create_win(opts)
--- 	local buf = win_buf.buf
--- 	local win = win_buf.win
--- end
-
-
-function M.default_win()
-	local opts = {
-		relative = "editor",
-		width = 20,
-		height = 20,
-		row = 5,
-		col = 5,
-		title = "Testing",
-		border = true
-	}
-	M.create_win(opts)
 end
 
 return M

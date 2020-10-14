@@ -72,6 +72,9 @@ local function popup_cursor(height, title, border, data)
 		title = title,
 		border = border
 	}
+	if border then
+		opts.row = 2
+	end
 	local buf_win = floating_win.create_win(opts)
 	return buf_win
 end
@@ -103,7 +106,6 @@ local function popup_win(title, border, height_hint)
 end
 
 local function setWindowProperty(win)
-	api.nvim_win_set_option(win,'number',true)
 	api.nvim_win_set_option(win, 'wrap', true)
 	api.nvim_win_set_option(win, 'cursorline', true)
 end
@@ -125,10 +127,13 @@ local function putData(buf, data, starting, ending)
 	api.nvim_buf_set_option(buf, 'modifiable', false)
 end
 
-function M.popupList(mode, height, title, border, data)
+function M.popupList(mode, height, title, border, numbering, data)
 	if data == nil then
 		print "nil data"
 		return
+	end
+	if numbering == nil then
+		numbering = true
 	end
 	local win_buf
 	if mode == 'split' then
@@ -143,6 +148,9 @@ function M.popupList(mode, height, title, border, data)
 	end
 	local buf = win_buf.buf
 	local win = win_buf.win
+	if numbering then
+		api.nvim_win_set_option(win,'number',true)
+	end
 	setWindowProperty(win)
 	setBufferProperty(buf)
 	putData(buf, data, 0, -1)
