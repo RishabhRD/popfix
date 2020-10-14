@@ -4,15 +4,15 @@ local selection = {}
 local callbackList = {}
 local bufferProperty = {}
 
-function action.registerCallbacks(buf, callbacks, info, metadata)
+function action.registerCallbacks(buf, callbacks, info)
 	callbackList[buf] = callbacks
-	bufferProperty[buf] = {
-		['info'] = info,
-		['metadata'] = metadata,
-	}
+	bufferProperty[buf]['method'] = info.method
 end
 
 function action.registerBuffer(buf, win)
+	bufferProperty[buf] = {}
+	selection[buf] = {}
+	callbackList[buf] = {}
 	bufferProperty[buf]['win'] = win
 end
 
@@ -32,12 +32,10 @@ function action.select(buf, index, line)
 		return
 	end
 	if bufferProperty[buf]['method'] == 'line' then
-		local data = api.nvim_buf_get_lines(buf, line - 1, line, false)
-		callbackList['select'](buf, data)
+		local data = api.nvim_buf_get_lines(buf, line - 1, line , false)
+		callbackList[buf]['select'](buf, data[1])
 	elseif bufferProperty[buf]['method'] == 'index' then
-		callbackList['select'](buf, index)
-	elseif bufferProperty['method'] == 'metadata' then
-		callbackList['select'](buf, bufferProperty['metadata'][index])
+		callbackList[buf]['select'](buf, index)
 	end
 end
 
@@ -52,11 +50,9 @@ function action.close(buf, index, line, selected)
 	end
 	if bufferProperty[buf]['method'] == 'line' then
 		local data = api.nvim_buf_get_lines(buf, line - 1, line, false)
-		callbackList['close'](buf, data, selected)
+		callbackList[buf]['close'](buf, data[1], selected)
 	elseif bufferProperty[buf]['method'] == 'index' then
-		callbackList['close'](buf, index, selected)
-	elseif bufferProperty['method'] == 'metadata' then
-		callbackList['close'](buf, bufferProperty['metadata'][index], selected)
+		callbackList[buf]['close'](buf, index, selected)
 	end
 	unregisterBuffer(buf)
 end

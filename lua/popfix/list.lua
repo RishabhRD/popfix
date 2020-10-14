@@ -31,12 +31,6 @@ local function selectionHandler(buf)
 	end
 end
 
-local default_keymaps = {
-	['q'] = close_cancelled,
-	['<Esc>'] = close_cancelled,
-	['<CR>'] = close_selected
-}
-
 local function popup_split(height, title)
 	height = height or 12
 	api.nvim_command('bot new')
@@ -106,18 +100,26 @@ local function popup_win(title, border)
 end
 
 local function setWindowProperty(win)
-	vim.api.nvim_win_set_option(win,'number',true)
-	vim.api.nvim_win_set_option(win, 'wrap', true)
-	vim.api.nvim_win_set_option(win, 'cursorline', true)
+	api.nvim_win_set_option(win,'number',true)
+	api.nvim_win_set_option(win, 'wrap', true)
+	api.nvim_win_set_option(win, 'cursorline', true)
 end
 
 local function setBufferProperty(buf)
-	vim.api.nvim_buf_set_option(buf, 'modifiable', false)
+	api.nvim_buf_set_option(buf, 'modifiable', false)
+	api.nvim_buf_set_option(buf, 'bufhidden', 'wipe')
+	api.nvim_buf_set_option(buf, 'modifiable', false)
 	local autocmds = {
 		['CursorMoved'] = selectionHandler,
 		['BufWipeout'] = close_cancelled,
 	}
 	autocmd.addCommand(buf, autocmds)
+end
+
+local function putData(buf, data, starting, ending)
+	api.nvim_buf_set_option(buf, 'modifiable', true)
+	api.nvim_buf_set_lines(buf, starting, ending, false, data)
+	api.nvim_buf_set_option(buf, 'modifiable', false)
 end
 
 function M.popupList(mode, height, title, border, data)
@@ -140,19 +142,25 @@ function M.popupList(mode, height, title, border, data)
 	local win = win_buf.win
 	setWindowProperty(win)
 	setBufferProperty(buf)
+	putData(buf, data, 0, -1)
 	mappings.addDefaultFunction(buf, 'close_selected', close_selected)
 	mappings.addDefaultFunction(buf, 'close_cancelled', close_cancelled)
 	action.registerBuffer(buf, win)
 	return buf
 end
 
-function M.transferControl(buf, callbacks, info, metadata, keymaps)
+function M.transferControl(buf, callbacks, info, keymaps)
 	if callbacks == nil then return end
-	if keymaps == nil then
-		keymaps = default_keymaps
-	end
+	local default_keymaps = {
+		n = {
+			['q'] = close_cancelled,
+			['<Esc>'] = close_cancelled,
+			['<CR>'] = close_selected
+		}
+	}
+	keymaps = keymaps or default_keymaps
 	mappings.add_keymap(buf, keymaps)
-	action.registerCallbacks(buf, callbacks, info, metadata)
+	action.registerCallbacks(buf, callbacks, info)
 	action.select(buf, 1, 1)
 end
 
