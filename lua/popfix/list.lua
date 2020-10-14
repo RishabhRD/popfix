@@ -7,19 +7,20 @@ local M = {}
 
 local function close_selected(buf)
 	local win = action.getAssociatedWindow(buf)
-	api.nvim_win_close(win, true)
+	if win == nil then return end
 	local line = action.getCurrentLine(buf)
 	local index = action.getCurrentIndex(buf)
 	action.close(buf, index, line, true)
+	api.nvim_win_close(win, true)
 end
 
 local function close_cancelled(buf)
 	local win = action.getAssociatedWindow(buf)
 	if win == nil then return end
-	api.nvim_win_close(win, true)
 	local line = action.getCurrentLine(buf)
 	local index = action.getCurrentIndex(buf)
 	action.close(buf, index, line, false)
+	api.nvim_win_close(win, true)
 end
 
 local function selectionHandler(buf)
@@ -71,17 +72,19 @@ local function popup_cursor(height, title, border, data)
 		title = title,
 		border = border
 	}
-	local buf_win = floating_win.open_win(opts)
+	local buf_win = floating_win.create_win(opts)
 	return buf_win
 end
 
-local function popup_win(title, border)
+local function popup_win(title, border, height_hint)
 	title = title or ''
-	border = border or ''
+	if border == nil then
+		border = false
+	end
 	local width = api.nvim_get_option("columns")
 	local height = api.nvim_get_option("lines")
 
-	local win_height = math.ceil(height * 0.8 - 4)
+	local win_height = height_hint or math.ceil(height * 0.8 - 4)
 	local win_width = math.ceil(width * 0.8)
 
 	local row = math.ceil((height - win_height) / 2 - 1)
@@ -96,7 +99,7 @@ local function popup_win(title, border)
 		title = title,
 		border = border
 	}
-	floating_win.open_win(opts)
+	return floating_win.create_win(opts)
 end
 
 local function setWindowProperty(win)
@@ -132,8 +135,8 @@ function M.popupList(mode, height, title, border, data)
 		win_buf = popup_split(height)
 	elseif mode == 'cursor' then
 		win_buf = popup_cursor(height, title, border, data)
-	elseif mode == 'win' then
-		win_buf = popup_win(title, border)
+	elseif mode == 'editor' then
+		win_buf = popup_win(title, border, height)
 	else
 		print 'Unknown mode'
 		return
@@ -165,3 +168,5 @@ function M.transferControl(buf, callbacks, info, keymaps)
 end
 
 return M
+
+

@@ -94,6 +94,7 @@ end
 -- i.e., free the data structure
 mappings.free = function(buf)
 	function_store[buf] = nil
+	mappings[buf] = nil
 end
 
 function mappings.addDefaultFunction(buf, action, func)
