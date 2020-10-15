@@ -33,8 +33,10 @@ local function close_cancelled(buf)
 	local line = action.getCurrentLine(buf)
 	local index = action.getCurrentIndex(buf)
 	action.close(buf, index, line, false)
+	mappings.free(buf)
+	autocmd.free(buf)
 	local preview = previewBuffer[buf]
-	api.nvim_win_close(preview.win, true)
+	vim.cmd('bwipeout! '..preview.buf)
 	api.nvim_win_close(win, true)
 end
 
@@ -59,6 +61,9 @@ local function popup_split(title, border, height, type)
 	local width = math.floor(api.nvim_win_get_width(win) / 2)
 	local pos = api.nvim_win_get_position(win)
 	local x = pos[1]
+	vim.cmd('vsplit')
+	local tmpBuffer = api.nvim_create_buf(false, true)
+	api.nvim_win_set_buf(api.nvim_get_current_win(), tmpBuffer)
 	-- local y = pos[2]
 	local opts = {
 		relative = "editor",
@@ -82,7 +87,7 @@ local function popup_editor(title, border, height_hint, type)
 	local height = api.nvim_get_option("lines")
 
 	local win_height = height_hint or math.ceil(height * 0.8 - 4)
-	local win_width = math.ceil(width * 0.8) / 2
+	local win_width = math.ceil(width * 0.8 / 2)
 
 	local row = math.ceil((height - win_height) / 2 - 1)
 	local col = math.ceil((width - 2 * win_width) / 2)
@@ -102,16 +107,24 @@ local function popup_editor(title, border, height_hint, type)
 		relative = "editor",
 		width = win_width,
 		height = win_height,
-		row = row + win_width,
-		col = col,
+		row = row ,
+		col = col + win_width,
 		title = title.previewer,
 		border = border.previewer
 	}
 	if border.list then
-		preview_opts.col = preview_opts.col + 2
+		preview_opts.col = preview_opts.col + 1
+		if not border.previewer then
+			preview_opts.height = preview_opts.height + 2
+			preview_opts.row = preview_opts.row - 1
+		end
 	end
 	if border.previewer then
-		preview_opts.col = preview_opts.col + 2
+		preview_opts.col = preview_opts.col + 1
+		if not border.list then
+			preview_opts.height = preview_opts.height - 2
+			preview_opts.row = preview_opts.row + 1
+		end
 	end
 	local preview = Previewer.getPreviewer(preview_opts, type)
 	return {
@@ -130,12 +143,23 @@ end
 local function setBufferProperty(buf)
 	api.nvim_buf_set_option(buf, 'modifiable', false)
 	api.nvim_buf_set_option(buf, 'bufhidden', 'wipe')
-	api.nvim_buf_set_option(buf, 'modifiable', false)
-	local autocmds = {
-		['CursorMoved'] = selectionHandler,
+	local nested_autocmds = {
 		['BufWipeout'] = close_cancelled,
+		['BufDelete'] = close_cancelled,
 	}
-	autocmd.addCommand(buf, autocmds)
+	local non_nested_autocmds = {
+		['CursorMoved'] = selectionHandler,
+	}
+	autocmd.addCommand(buf, nested_autocmds, true)
+	autocmd.addCommand(buf, non_nested_autocmds, false)
+end
+
+local function setPreviewBufferProperty(buf)
+	api.nvim_buf_set_option(buf, 'bufhidden', 'wipe')
+end
+
+local function setPreviewWindowProperty(win)
+	api.nvim_win_set_option(win, 'wrap', false)
 end
 
 function M.popupListPreview(mode, height, title, border, numbering, data, type)
@@ -194,10 +218,11 @@ function M.popupListPreview(mode, height, title, border, numbering, data, type)
 	local preview_win = win_buf.preview.win
 	api.nvim_win_set_option(preview_win, 'number', numbering.previewer)
 	api.nvim_win_set_option(win, 'number', numbering.list)
-	api.nvim_buf_set_option(win_buf.preview.buf, 'bufhidden', 'wipe')
 	api.nvim_set_current_win(win)
 	setWindowProperty(win)
 	setBufferProperty(buf)
+	setPreviewBufferProperty(win_buf.preview.buf)
+	setPreviewWindowProperty(preview_win)
 	previewBuffer[buf] = win_buf.preview
 	putData(buf, data, 0, -1)
 	mappings.addDefaultFunction(buf, 'close_selected', close_selected)

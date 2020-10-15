@@ -1,4 +1,5 @@
 local api = vim.api
+local autocmd = require'popfix.autocmd'
 
 local M = {}
 
@@ -10,10 +11,10 @@ local default_opts = {
 	col = 0,
 	title = "",
 	options = {},
-	border = false
+	border = false,
 }
 
-local function create_win(row, col, width, height, relative)
+local function create_win(row, col, width, height, relative, focusable)
 	local buf = api.nvim_create_buf(false, true)
 	api.nvim_buf_set_option(buf, 'bufhidden', 'wipe')
 	local options = {
@@ -22,9 +23,11 @@ local function create_win(row, col, width, height, relative)
 		width = width,
 		height = height,
 		row = row,
-		col = col
+		col = col,
+		focusable = focusable
 	}
 	local win = api.nvim_open_win(buf, false, options)
+	api.nvim_win_set_option(win, 'winhl', 'Normal:PopFixNormal')
 	return {
 		buf = buf,
 		win = win
@@ -49,24 +52,29 @@ function M.create_win(opts)
 	opts.title = opts.title or default_opts.title
 	opts.row = opts.row or default_opts.row
 	opts.col = opts.col or default_opts.col
-	opts.border = opts.border or default_opts.border
+	if opts.border == nil then
+		opts.border = default_opts.border
+	end
 
 	local border_buf = nil
 
-	local win_buf_pair = create_win(opts.row, opts.col, opts.width, opts.height, opts.relative)
 
 	if opts.border then
 		local border_win_buf_pair = create_win(opts.row - 1, opts.col - 1,
-		opts.width + 2, opts.height + 2, opts.relative
+		opts.width + 2, opts.height + 2, opts.relative, false
 		)
 		border_buf = border_win_buf_pair.buf
 		fill_border_data(border_buf, opts.width , opts.height, opts.title )
 	end
 
+	local win_buf_pair = create_win(opts.row, opts.col, opts.width, opts.height, opts.relative, true)
+
 
 	if border_buf then
-		api.nvim_command(string.format('au Bufwipeout <buffer=%s> exe "silent\
-		bwipeout! %s"',win_buf_pair.buf, border_buf))
+		autocmd.addCommand(win_buf_pair.buf,{
+			['BufWipeout'] = string.format('exe "silent bwipeout! %s"', border_buf)
+		}, true)
+		-- api.nvim_command(autocmdstring)
 	end
 	return win_buf_pair
 end

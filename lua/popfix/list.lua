@@ -114,11 +114,15 @@ local function setBufferProperty(buf)
 	api.nvim_buf_set_option(buf, 'modifiable', false)
 	api.nvim_buf_set_option(buf, 'bufhidden', 'wipe')
 	api.nvim_buf_set_option(buf, 'modifiable', false)
-	local autocmds = {
-		['CursorMoved'] = selectionHandler,
+	local nested_autocmds = {
 		['BufWipeout'] = close_cancelled,
+		['BufDelete'] = close_cancelled,
 	}
-	autocmd.addCommand(buf, autocmds)
+	local non_nested_autocmds = {
+		['CursorMoved'] = selectionHandler,
+	}
+	autocmd.addCommand(buf, nested_autocmds, true)
+	autocmd.addCommand(buf, non_nested_autocmds, false)
 end
 
 local function putData(buf, data, starting, ending)

@@ -18,14 +18,24 @@ end
 
 -- utility function for converting lua functions to appropriate string
 -- and then add autocmd
-local function buffer_autocmd(buf,property,action)
+local function buffer_autocmd(buf, property, action, nested)
 	if type(action) == "string" then
-		local command = "autocmd %s <buffer> %s"
-		command = string.format(command,property,action)
+		local command
+		if nested then
+			command = "autocmd %s <buffer=%s> ++nested %s"
+		else
+			command = "autocmd %s <buffer=%s> %s"
+		end
+		command = string.format(command, property, buf, action)
 		vim.api.nvim_command(command)
 	else
 		local func = assign_function(buf,action)
-		local command = "autocmd %s <buffer=%s> lua require('popfix.autocmd').execute(%s,%s)"
+		local command
+		if nested then
+			command = "autocmd %s <buffer=%s> ++nested lua require('popfix.autocmd').execute(%s,%s)"
+		else
+			command = "autocmd %s <buffer=%s> lua require('popfix.autocmd').execute(%s,%s)"
+		end
 		command = string.format(command,property,buf,buf,func)
 		vim.api.nvim_command(command)
 	end
@@ -41,9 +51,10 @@ end
 --			or
 --		string : lua_functions
 -- }
-function autocmd.addCommand(buf, mapping_table)
+function autocmd.addCommand(buf, mapping_table, nested)
+	if nested == nil then nested = false end
 	for property,action in pairs(mapping_table) do
-		buffer_autocmd(buf,property,action)
+		buffer_autocmd(buf,property,action, nested)
 	end
 end
 

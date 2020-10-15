@@ -28,8 +28,10 @@ function M.writePreview(previewer, data)
 		api.nvim_set_current_win(cur_win)
 	elseif previewer.type == 'buffer' then
 		api.nvim_buf_set_lines(previewer.buf, 0, -1, false, data.lines or {''})
-		api.nvim_buf_add_highlight(previewer.buf, previewerNamespace, "Visual",
-		data.line, 0, -1)
+		if data.line ~= nil then
+			api.nvim_buf_add_highlight(previewer.buf, previewerNamespace,
+			"Visual", data.line, 0, -1)
+		end
 	else
 		print('Invalid preview type')
 		return
