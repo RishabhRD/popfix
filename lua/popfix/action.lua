@@ -33,9 +33,9 @@ function action.select(buf, index, line)
 	end
 	if bufferProperty[buf]['method'] == 'line' then
 		local data = api.nvim_buf_get_lines(buf, line - 1, line , false)
-		callbackList[buf]['select'](buf, data[1])
+		return callbackList[buf]['select'](buf, data[1])
 	elseif bufferProperty[buf]['method'] == 'index' then
-		callbackList[buf]['select'](buf, index)
+		return callbackList[buf]['select'](buf, index)
 	end
 end
 

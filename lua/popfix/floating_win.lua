@@ -54,6 +54,8 @@ function M.create_win(opts)
 
 	local border_buf = nil
 
+	local win_buf_pair = create_win(opts.row, opts.col, opts.width, opts.height, opts.relative)
+
 	if opts.border then
 		local border_win_buf_pair = create_win(opts.row - 1, opts.col - 1,
 		opts.width + 2, opts.height + 2, opts.relative
@@ -62,11 +64,10 @@ function M.create_win(opts)
 		fill_border_data(border_buf, opts.width , opts.height, opts.title )
 	end
 
-	local win_buf_pair = create_win(opts.row, opts.col, opts.width, opts.height, opts.relative)
-	api.nvim_set_current_win(win_buf_pair.win)
 
 	if border_buf then
-		api.nvim_command('au Bufwipeout <buffer> exe "silent bwipeout! "'..border_buf)
+		api.nvim_command(string.format('au Bufwipeout <buffer=%s> exe "silent\
+		bwipeout! %s"',win_buf_pair.buf, border_buf))
 	end
 	return win_buf_pair
 end

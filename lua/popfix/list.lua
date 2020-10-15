@@ -79,7 +79,7 @@ local function popup_cursor(height, title, border, data)
 	return buf_win
 end
 
-local function popup_win(title, border, height_hint)
+local function popup_editor(title, border, height_hint)
 	title = title or ''
 	if border == nil then
 		border = false
@@ -141,7 +141,7 @@ function M.popupList(mode, height, title, border, numbering, data)
 	elseif mode == 'cursor' then
 		win_buf = popup_cursor(height, title, border, data)
 	elseif mode == 'editor' then
-		win_buf = popup_win(title, border, height)
+		win_buf = popup_editor(title, border, height)
 	else
 		print 'Unknown mode'
 		return
@@ -156,9 +156,11 @@ function M.popupList(mode, height, title, border, numbering, data)
 	putData(buf, data, 0, -1)
 	mappings.addDefaultFunction(buf, 'close_selected', close_selected)
 	mappings.addDefaultFunction(buf, 'close_cancelled', close_cancelled)
+	api.nvim_set_current_win(win)
 	action.registerBuffer(buf, win)
 	return buf
 end
+
 
 function M.transferControl(buf, callbacks, info, keymaps)
 	if callbacks == nil then return end
