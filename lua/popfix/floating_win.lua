@@ -72,7 +72,7 @@ function M.create_win(opts)
 
 	if border_buf then
 		autocmd.addCommand(win_buf_pair.buf,{
-			['BufWipeout'] = string.format('exe "silent bwipeout! %s"', border_buf)
+			['BufWipeout'] = string.format('exe "silent bwipeout! %s"', border_buf, true)
 		}, true)
 		-- api.nvim_command(autocmdstring)
 	end

@@ -7,6 +7,7 @@ local api = vim.api
 
 local M = {}
 local previewBuffer = {}
+local splitBuffer = {}
 
 local function putData(buf, data, starting, ending)
 	api.nvim_buf_set_option(buf, 'modifiable', true)
@@ -25,6 +26,8 @@ local function close_selected(buf)
 	local preview = previewBuffer[buf]
 	api.nvim_win_close(preview.win, true)
 	api.nvim_win_close(win, true)
+	api.nvim_win_close(splitBuffer[buf], true)
+	splitBuffer[buf] = false
 end
 
 local function close_cancelled(buf)
@@ -38,6 +41,8 @@ local function close_cancelled(buf)
 	local preview = previewBuffer[buf]
 	vim.cmd('bwipeout! '..preview.buf)
 	api.nvim_win_close(win, true)
+	api.nvim_win_close(splitBuffer[buf], true)
+	splitBuffer[buf] = false
 end
 
 local function selectionHandler(buf)
@@ -64,6 +69,7 @@ local function popup_split(title, border, height, type)
 	vim.cmd('vsplit')
 	local tmpBuffer = api.nvim_create_buf(false, true)
 	api.nvim_win_set_buf(api.nvim_get_current_win(), tmpBuffer)
+	splitBuffer[buf] = api.nvim_get_current_win()
 	-- local y = pos[2]
 	local opts = {
 		relative = "editor",
