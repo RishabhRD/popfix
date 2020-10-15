@@ -14,7 +14,7 @@ local default_opts = {
 	border = false,
 }
 
-local function create_win(row, col, width, height, relative, focusable)
+local function create_win(row, col, width, height, relative, focusable, type)
 	local buf = api.nvim_create_buf(false, true)
 	api.nvim_buf_set_option(buf, 'bufhidden', 'wipe')
 	local options = {
@@ -45,7 +45,9 @@ local function fill_border_data(buf, width, height, title)
 	api.nvim_buf_set_lines(buf, 0, -1, false, border_lines)
 end
 
-function M.create_win(opts)
+--TODO: get rid of this type hack.
+function M.create_win(opts, type)
+	if type == nil then type = 'editor' end
 	opts.relative = opts.relative or default_opts.relative
 	opts.width = opts.width or default_opts.width
 	opts.height = opts.height or default_opts.height
@@ -58,6 +60,10 @@ function M.create_win(opts)
 
 	local border_buf = nil
 
+	local win_buf_pair
+	if type == 'split' then
+		win_buf_pair = create_win(opts.row, opts.col, opts.width, opts.height, opts.relative, true)
+	end
 
 	if opts.border then
 		local border_win_buf_pair = create_win(opts.row - 1, opts.col - 1,
@@ -67,7 +73,9 @@ function M.create_win(opts)
 		fill_border_data(border_buf, opts.width , opts.height, opts.title )
 	end
 
-	local win_buf_pair = create_win(opts.row, opts.col, opts.width, opts.height, opts.relative, true)
+	if type == 'editor' then
+		win_buf_pair = create_win(opts.row, opts.col, opts.width, opts.height, opts.relative, true)
+	end
 
 
 	if border_buf then

@@ -26,8 +26,10 @@ local function close_selected(buf)
 	local preview = previewBuffer[buf]
 	api.nvim_win_close(preview.win, true)
 	api.nvim_win_close(win, true)
-	api.nvim_win_close(splitBuffer[buf], true)
-	splitBuffer[buf] = false
+	if splitBuffer[buf] then
+		api.nvim_win_close(splitBuffer[buf], true)
+	end
+	splitBuffer[buf] = nil
 end
 
 local function close_cancelled(buf)
@@ -39,10 +41,12 @@ local function close_cancelled(buf)
 	mappings.free(buf)
 	autocmd.free(buf)
 	local preview = previewBuffer[buf]
-	vim.cmd('bwipeout! '..preview.buf)
+	api.nvim_win_close(preview.win, true)
 	api.nvim_win_close(win, true)
-	api.nvim_win_close(splitBuffer[buf], true)
-	splitBuffer[buf] = false
+	if splitBuffer[buf] then
+		api.nvim_win_close(splitBuffer[buf], true)
+	end
+	splitBuffer[buf] = nil
 end
 
 local function selectionHandler(buf)
@@ -80,7 +84,7 @@ local function popup_split(title, border, height, type)
 		border = border.previewer,
 		title = title.previewer
 	}
-	local preview = Previewer.getPreviewer(opts, type)
+	local preview = Previewer.getPreviewer(opts, type, 'split')
 	return  {
 		buf = buf,
 		win = win,

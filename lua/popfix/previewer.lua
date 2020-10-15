@@ -5,9 +5,8 @@ local M = {}
 
 local previewerNamespace = api.nvim_create_namespace('previewer')
 
-function M.getPreviewer(opts, type)
-	local win_buf = floating_win.create_win(opts)
-	api.nvim_win_set_option(win_buf.win, 'wrap', false)
+function M.getPreviewer(opts, type, tp)
+	local win_buf = floating_win.create_win(opts, tp)
 	return {
 		win = win_buf.win,
 		buf = win_buf.buf,
@@ -24,6 +23,7 @@ function M.writePreview(previewer, data)
 		}
 		local cur_win = api.nvim_get_current_win()
 		api.nvim_set_current_win(previewer.win)
+		--TODO: kill the job buddy
 		vim.fn.termopen(data.cmd, opts)
 		api.nvim_set_current_win(cur_win)
 	elseif previewer.type == 'buffer' then
