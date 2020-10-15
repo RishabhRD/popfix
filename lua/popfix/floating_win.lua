@@ -16,7 +16,6 @@ local default_opts = {
 local function create_win(row, col, width, height, relative)
 	local buf = api.nvim_create_buf(false, true)
 	api.nvim_buf_set_option(buf, 'bufhidden', 'wipe')
-	print(relative)
 	local options = {
 		style = "minimal",
 		relative = relative,

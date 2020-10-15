@@ -54,7 +54,7 @@ local function popup_split(title, border, height, type)
 	api.nvim_command('bot new')
 	local win = api.nvim_get_current_win()
 	local buf = api.nvim_get_current_buf()
-	api.nvim_buf_set_name(buf, string.format('PopPreview #%s %s', buf, title))
+	api.nvim_buf_set_name(buf, string.format('PopPreview #%s %s', buf, title.list))
 	api.nvim_win_set_height(win, height)
 	local width = math.floor(api.nvim_win_get_width(win) / 2)
 	local pos = api.nvim_win_get_position(win)
@@ -65,7 +65,7 @@ local function popup_split(title, border, height, type)
 		width = width,
 		height = height,
 		row = x,
-		col = math.floor(width/2),
+		col = math.floor(width),
 		border = border.previewer,
 		title = title.previewer
 	}
@@ -85,7 +85,7 @@ local function popup_editor(title, border, height_hint, type)
 	local win_width = math.ceil(width * 0.8) / 2
 
 	local row = math.ceil((height - win_height) / 2 - 1)
-	local col = math.ceil((width - win_width) / 2)
+	local col = math.ceil((width - 2 * win_width) / 2)
 
 	local opts = {
 		relative = "editor",
