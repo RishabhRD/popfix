@@ -1,75 +1,65 @@
-local api = vim.api
 local action = {}
-local selection = {}
-local callbackList = {}
-local bufferProperty = {}
 
-function action.registerCallbacks(buf, callbacks, info)
-	callbackList[buf] = callbacks
-	bufferProperty[buf]['method'] = info.method
+local function free(self)
+	self.method = nil
+	self.callbackList = nil
+	self.selection = nil
 end
 
-function action.registerBuffer(buf, win)
-	bufferProperty[buf] = {}
-	selection[buf] = {}
-	callbackList[buf] = {}
-	bufferProperty[buf]['win'] = win
+function action:register(callbacks, method)
+	free(self)
+	self.callbackList = callbacks
+	self.method = method
+	self.selection = {}
 end
 
-local function unregisterBuffer(buf)
-	bufferProperty[buf] = nil
-	callbackList[buf] = nil
-	selection[buf] = nil
-end
 
-function action.select(buf, index, line)
-	selection[buf]['index'] = index
-	selection[buf]['line'] = line
-	if callbackList[buf] == nil then
+function action:select(index, line)
+	self.selection.index = index
+	self.selection.line = line
+
+	if self.callbackList == nil then
 		return
 	end
-	if callbackList[buf]['select'] == nil then
+	if self.callbackList.select == nil then
 		return
 	end
-	if bufferProperty[buf]['method'] == 'line' then
-		local data = api.nvim_buf_get_lines(buf, line - 1, line , false)
-		return callbackList[buf]['select'](buf, data[1])
-	elseif bufferProperty[buf]['method'] == 'index' then
-		return callbackList[buf]['select'](buf, index)
+	if self.method == 'line' then
+		return self.callbackList.select(line)
+	elseif self.method == 'index' then
+		return self.callbackList.select(index)
 	end
 end
 
-function action.close(buf, index, line, selected)
-	if callbackList[buf] == nil then
-		unregisterBuffer(buf)
+function action:close(index, line, selected)
+	if self.callbackList == nil then
+		free(self)
 		return
 	end
-	if callbackList[buf]['close'] == nil then
-		unregisterBuffer(buf)
+	if self.callbackList.close == nil then
+		free(self)
 		return
 	end
-	if bufferProperty[buf]['method'] == 'line' then
-		local data = api.nvim_buf_get_lines(buf, line - 1, line, false)
-		callbackList[buf]['close'](buf, data[1], selected)
-	elseif bufferProperty[buf]['method'] == 'index' then
-		callbackList[buf]['close'](buf, index, selected)
+	if self.method == 'line' then
+		self.callbackList.close(line, selected)
+	elseif self.method == 'index' then
+		self.callbackList.close(index, selected)
 	end
-	unregisterBuffer(buf)
+	free(self)
 end
 
-function action.getCurrentLine(buf)
-	if bufferProperty[buf] == nil then return nil end
-	return selection[buf]['line']
+function action:getCurrentLine()
+	if self.method == nil then return nil end
+	return self.selection.line
 end
 
-function action.getCurrentIndex(buf)
-	if bufferProperty[buf] == nil then return nil end
-	return selection[buf]['index']
+function action:getCurrentIndex()
+	if self.method == nil then return nil end
+	return self.selection.index
 end
 
-function action.getAssociatedWindow(buf)
-	if bufferProperty[buf] == nil then return nil end
-	return bufferProperty[buf]['win']
+function action:freed()
+	return self.method == nil
 end
 
 return action

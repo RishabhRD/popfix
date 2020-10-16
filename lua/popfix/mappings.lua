@@ -1,5 +1,6 @@
 local mappings = {}
 local function_store = {}
+local param_map = {}
 local key_id = 0
 
 local map = function(buf,type,key,value,opts)
@@ -70,7 +71,10 @@ end
 --			'string' : lua functions
 --		}
 -- }
-function mappings.add_keymap(buf,mapping_table)
+function mappings.add_keymap(buf,mapping_table, param)
+	if param ~= nil then
+		param_map[buf] = param
+	end
 	local normalMappings = mapping_table.n
 	if normalMappings ~= nil then
 		for key,value in pairs(normalMappings) do
@@ -86,29 +90,16 @@ function mappings.add_keymap(buf,mapping_table)
 end
 
 mappings.execute_keymap = function(buf, key)
+	if function_store[buf] == nil then return end
 	local func = function_store[buf][key]
-	func(buf)
+	func(param_map[buf])
 end
 
 -- free keymaps from buffer buf
 -- i.e., free the data structure
 mappings.free = function(buf)
 	function_store[buf] = nil
-	mappings[buf] = nil
-end
-
-function mappings.addDefaultFunction(buf, action, func)
-	if mappings[buf] == nil then
-		mappings[buf] = {}
-	end
-	mappings[buf][action] = func
-end
-
-function mappings.getMapping(buf, action)
-	if mappings[buf] == nil then
-		return nil
-	end
-	return mappings[buf][action]
+	param_map[buf] = nil
 end
 
 return mappings

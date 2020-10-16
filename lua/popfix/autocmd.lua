@@ -1,5 +1,6 @@
 local autocmd = {}
 local callback = {}
+local param_map = {}
 local key_id = 0
 
 local function get_next_id()
@@ -51,7 +52,10 @@ end
 --			or
 --		string : lua_functions
 -- }
-function autocmd.addCommand(buf, mapping_table, nested)
+function autocmd.addCommand(buf, mapping_table, nested, param)
+	if param ~= nil then
+		param_map[buf] = param
+	end
 	if nested == nil then nested = false end
 	for property,action in pairs(mapping_table) do
 		buffer_autocmd(buf,property,action, nested)
@@ -59,17 +63,14 @@ function autocmd.addCommand(buf, mapping_table, nested)
 end
 
 function autocmd.execute(buf,key)
-	if callback[buf] == nil then
-		return
-	end
+	if callback[buf] == nil then return end
 	local func = callback[buf][key]
-	func(buf)
+	func(param_map[buf])
 end
-
--- remove autocmd with buffer
 -- i.e., free the data structure to free memory
 function autocmd.free(buf)
 	callback[buf] = nil
+	param_map[buf] = nil
 end
 
 return autocmd

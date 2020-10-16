@@ -1,12 +1,9 @@
-local Previewer = require'popfix.previewer'
 local floating_win = require'popfix.floating_win'
 local autocmd = require'popfix.autocmd'
 local mappings = require'popfix.mappings'
-local action = require'popfix.action'
 local api = vim.api
 
 local M = {}
-local splitBuffer = {}
 
 
 local function putData(buf, data, starting, ending)
@@ -15,49 +12,47 @@ local function putData(buf, data, starting, ending)
 	api.nvim_buf_set_option(buf, 'modifiable', false)
 end
 
-local function close_selected(buf)
-	local win = action.getAssociatedWindow(buf)
-	if win == nil then return end
-	local line = action.getCurrentLine(buf)
-	local index = action.getCurrentIndex(buf)
-	action.close(buf, index, line, true)
-	mappings.free(buf)
-	autocmd.free(buf)
-	Previewer:close()
-	api.nvim_win_close(win, true)
-	if splitBuffer[buf] then
-		api.nvim_win_close(splitBuffer[buf], true)
+local function close_selected(self)
+	if self.action:freed() then return end
+	local line = self.action:getCurrentLine()
+	local index = self.action:getCurrentIndex()
+	self.action:close(index, line, true)
+	self.Previewer:close()
+	api.nvim_win_close(self.win, true)
+	if self.splitWindow then
+		api.nvim_win_close(self.splitWindow, true)
 	end
-	splitBuffer[buf] = nil
+	self.splitWindow = nil
+	mappings.free(self.buf)
+	autocmd.free(self.buf)
 end
 
-local function close_cancelled(buf)
-	local win = action.getAssociatedWindow(buf)
-	if win == nil then return end
-	local line = action.getCurrentLine(buf)
-	local index = action.getCurrentIndex(buf)
-	action.close(buf, index, line, false)
-	mappings.free(buf)
-	autocmd.free(buf)
-	Previewer:close()
-	api.nvim_win_close(win, true)
-	if splitBuffer[buf] then
-		api.nvim_win_close(splitBuffer[buf], true)
+local function close_cancelled(self)
+	if self.action:freed() then return end
+	local line = self.action:getCurrentLine()
+	local index = self.action:getCurrentIndex()
+	self.action:close(index, line, false)
+	self.Previewer:close()
+	api.nvim_win_close(self.win, true)
+	if self.splitWindow then
+		api.nvim_win_close(self.splitWindow, true)
 	end
-	splitBuffer[buf] = nil
+	self.splitWindow = nil
+	mappings.free(self.buf)
+	autocmd.free(self.buf)
 end
 
-local function selectionHandler(buf)
-	local win = action.getAssociatedWindow(buf)
-	local oldLine = action.getCurrentLine(buf)
-	local line = api.nvim_win_get_cursor(win)[1]
-	if oldLine ~= line then
-		local data = action.select(buf, line, line)
-		Previewer:writePreview(data)
+local function selectionHandler(self)
+	local oldIndex = self.action:getCurrentIndex()
+	local line = api.nvim_win_get_cursor(self.win)[1]
+	if oldIndex ~= line then
+		print(line)
+		local data = self.action:select(line, api.nvim_buf_get_lines(self.buf, line - 1, line, false)[1])
+		self.Previewer:writePreview(data)
 	end
 end
 
-local function popup_split(title, border, height, type)
+local function popup_split(self, title, border, height, type)
 	height = height or 12
 	api.nvim_command('bot new')
 	local win = api.nvim_get_current_win()
@@ -70,7 +65,7 @@ local function popup_split(title, border, height, type)
 	vim.cmd('vsplit')
 	local tmpBuffer = api.nvim_create_buf(false, true)
 	api.nvim_win_set_buf(api.nvim_get_current_win(), tmpBuffer)
-	splitBuffer[buf] = api.nvim_get_current_win()
+	self.splitWindow = api.nvim_get_current_win()
 	-- local y = pos[2]
 	local opts = {
 		relative = "editor",
@@ -81,14 +76,12 @@ local function popup_split(title, border, height, type)
 		border = border.previewer,
 		title = title.previewer
 	}
-	Previewer:newPreviewer(opts, type, 'split')
-	return  {
-		buf = buf,
-		win = win,
-	}
+	self.Previewer:newPreviewer(opts, type, 'split')
+	self.buf = buf
+	self.win = win
 end
 
-local function popup_editor(title, border, height_hint, type)
+local function popup_editor(self, title, border, height_hint, type)
 	local width = api.nvim_get_option("columns")
 	local height = api.nvim_get_option("lines")
 
@@ -132,11 +125,9 @@ local function popup_editor(title, border, height_hint, type)
 			preview_opts.row = preview_opts.row + 1
 		end
 	end
-	Previewer:newPreviewer(preview_opts, type)
-	return {
-		buf = win_buf.buf,
-		win = win_buf.win,
-	}
+	self.Previewer:newPreviewer(preview_opts, type)
+	self.buf = win_buf.buf
+	self.win = win_buf.win
 end
 
 local function setWindowProperty(win)
@@ -148,22 +139,15 @@ end
 local function setBufferProperty(buf)
 	api.nvim_buf_set_option(buf, 'modifiable', false)
 	api.nvim_buf_set_option(buf, 'bufhidden', 'wipe')
-	local nested_autocmds = {
-		['BufWipeout'] = close_cancelled,
-		['BufDelete'] = close_cancelled,
-	}
-	local non_nested_autocmds = {
-		['CursorMoved'] = selectionHandler,
-	}
-	autocmd.addCommand(buf, nested_autocmds, true)
-	autocmd.addCommand(buf, non_nested_autocmds, false)
 end
 
-function M.popup(mode, height, title, border, numbering, data, type)
+function M:popup(mode, height, title, border, numbering, data, type)
 	if data == nil then
 		print "nil data"
 		return
 	end
+	self.Previewer = require'popfix.previewer'
+	self.action = require'popfix.action'
 	if numbering == nil then
 		numbering = {
 			previewer = false,
@@ -200,31 +184,28 @@ function M.popup(mode, height, title, border, numbering, data, type)
 	if title.list == nil then
 		title.list = ''
 	end
-	local win_buf
 	if mode == 'split' then
-		win_buf = popup_split(title, border, height, type)
+		popup_split(self, title, border, height, type)
 	elseif mode == 'editor' then
-		win_buf = popup_editor(title, border, height, type)
+		popup_editor(self, title, border, height, type)
 	elseif mode == 'cursor' then
 		print 'Cursor mode not supported for preview (yet)!'
 	else
 		print 'Unknown mode'
 	end
-	local buf = win_buf.buf
-	local win = win_buf.win
-	api.nvim_win_set_option(Previewer.win, 'number', numbering.previewer)
-	api.nvim_win_set_option(win, 'number', numbering.list)
-	api.nvim_set_current_win(win)
-	setWindowProperty(win)
-	setBufferProperty(buf)
-	putData(buf, data, 0, -1)
-	mappings.addDefaultFunction(buf, 'close_selected', close_selected)
-	mappings.addDefaultFunction(buf, 'close_cancelled', close_cancelled)
-	action.registerBuffer(buf, win)
-	return buf
+	api.nvim_win_set_option(self.Previewer.win, 'number', numbering.previewer)
+	api.nvim_win_set_option(self.win, 'number', numbering.list)
+	api.nvim_set_current_win(self.win)
+	setWindowProperty(self.win)
+	setBufferProperty(self.buf)
+	putData(self.buf, data, 0, -1)
+	self.exported_func = {
+		close_selected = close_selected,
+		close_cancelled = close_cancelled
+	}
 end
 
-function M.transferControl(buf, callbacks, info, keymaps)
+function M:transferControl(callbacks, method, keymaps)
 	if callbacks == nil then return end
 	local default_keymaps = {
 		n = {
@@ -233,13 +214,22 @@ function M.transferControl(buf, callbacks, info, keymaps)
 			['<CR>'] = close_selected
 		}
 	}
+	local nested_autocmds = {
+		['BufWipeout'] = close_cancelled,
+		['BufDelete'] = close_cancelled,
+	}
+	local non_nested_autocmds = {
+		['CursorMoved'] = selectionHandler,
+	}
+	autocmd.addCommand(self.buf, nested_autocmds, true, self)
+	autocmd.addCommand(self.buf, non_nested_autocmds, false, self)
 	keymaps = keymaps or default_keymaps
-	mappings.add_keymap(buf, keymaps)
-	action.registerCallbacks(buf, callbacks, info)
-	local data = action.select(buf, 1, 1)
-	if data ~= nil then
-		Previewer:writePreview(data)
-	end
+	mappings.add_keymap(self.buf, keymaps, self)
+	self.action:register(callbacks, method)
+end
+
+function M:getFunction(name)
+	return self.exported_func[name]
 end
 
 return M
