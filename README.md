@@ -6,6 +6,11 @@ underlying buffer and window.
 
 **WARNING: neovim 0.5 is required for using this API.**
 
+## TODO
+
+- Implement OOP pattern and depreciate global things.
+- One instance of each thing
+
 ## Where this can be helpful?
 
 If your plugin doesn't require highly customized window popups and things,

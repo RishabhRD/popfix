@@ -44,9 +44,7 @@ local function popup_split(height, title)
 end
 
 local function popup_cursor(height, title, border, data)
-	border = border or false
 	local width = 40
-	title = title or ''
 	if not data then
 		width = width or 40
 		height = height or data
@@ -80,10 +78,6 @@ local function popup_cursor(height, title, border, data)
 end
 
 local function popup_editor(title, border, height_hint)
-	title = title or ''
-	if border == nil then
-		border = false
-	end
 	local width = api.nvim_get_option("columns")
 	local height = api.nvim_get_option("lines")
 
@@ -131,37 +125,58 @@ local function putData(buf, data, starting, ending)
 	api.nvim_buf_set_option(buf, 'modifiable', false)
 end
 
-function M.popupList(mode, height, title, border, numbering, data)
+function M.popup(mode, height, title, border, numbering, data)
 	if data == nil then
 		print "nil data"
 		return
 	end
 	if numbering == nil then
-		numbering = true
+		numbering = {
+			list = 'true',
+		}
+	end
+	if numbering.list == nil then
+		numbering.list = true
+	end
+	if border == nil then
+		border = {
+			list = 'true',
+		}
+	end
+	if border.list == nil then
+		border.list = true
+	end
+	if title == nil then
+		title = {
+			list = '',
+		}
+	end
+	if title.list == nil then
+		title.list = ''
 	end
 	local win_buf
 	if mode == 'split' then
 		win_buf = popup_split(height)
 	elseif mode == 'cursor' then
-		win_buf = popup_cursor(height, title, border, data)
+		win_buf = popup_cursor(height, title.list, border.list, data)
 	elseif mode == 'editor' then
-		win_buf = popup_editor(title, border, height)
+		win_buf = popup_editor(title.list, border.list, height)
 	else
 		print 'Unknown mode'
 		return
 	end
 	local buf = win_buf.buf
 	local win = win_buf.win
-	if numbering then
+	if numbering.list then
 		api.nvim_win_set_option(win,'number',true)
 	end
+	action.registerBuffer(buf, win)
 	setWindowProperty(win)
 	setBufferProperty(buf)
 	putData(buf, data, 0, -1)
 	mappings.addDefaultFunction(buf, 'close_selected', close_selected)
 	mappings.addDefaultFunction(buf, 'close_cancelled', close_cancelled)
 	api.nvim_set_current_win(win)
-	action.registerBuffer(buf, win)
 	return buf
 end
 
@@ -170,7 +185,7 @@ function M.transferControl(buf, callbacks, info, keymaps)
 	if callbacks == nil then return end
 	local default_keymaps = {
 		n = {
-			['q'] = close_cancelled,
+			-- ['q'] = close_cancelled,
 			['<Esc>'] = close_cancelled,
 			['<CR>'] = close_selected
 		}

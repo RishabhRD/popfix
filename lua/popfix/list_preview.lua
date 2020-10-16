@@ -6,8 +6,8 @@ local action = require'popfix.action'
 local api = vim.api
 
 local M = {}
-local previewBuffer = {}
 local splitBuffer = {}
+
 
 local function putData(buf, data, starting, ending)
 	api.nvim_buf_set_option(buf, 'modifiable', true)
@@ -23,8 +23,7 @@ local function close_selected(buf)
 	action.close(buf, index, line, true)
 	mappings.free(buf)
 	autocmd.free(buf)
-	local preview = previewBuffer[buf]
-	api.nvim_win_close(preview.win, true)
+	Previewer:close()
 	api.nvim_win_close(win, true)
 	if splitBuffer[buf] then
 		api.nvim_win_close(splitBuffer[buf], true)
@@ -40,8 +39,7 @@ local function close_cancelled(buf)
 	action.close(buf, index, line, false)
 	mappings.free(buf)
 	autocmd.free(buf)
-	local preview = previewBuffer[buf]
-	api.nvim_win_close(preview.win, true)
+	Previewer:close()
 	api.nvim_win_close(win, true)
 	if splitBuffer[buf] then
 		api.nvim_win_close(splitBuffer[buf], true)
@@ -53,10 +51,9 @@ local function selectionHandler(buf)
 	local win = action.getAssociatedWindow(buf)
 	local oldLine = action.getCurrentLine(buf)
 	local line = api.nvim_win_get_cursor(win)[1]
-	local previewer = previewBuffer[buf]
 	if oldLine ~= line then
 		local data = action.select(buf, line, line)
-		Previewer.writePreview(previewer, data)
+		Previewer:writePreview(data)
 	end
 end
 
@@ -84,11 +81,10 @@ local function popup_split(title, border, height, type)
 		border = border.previewer,
 		title = title.previewer
 	}
-	local preview = Previewer.getPreviewer(opts, type, 'split')
+	Previewer:newPreviewer(opts, type, 'split')
 	return  {
 		buf = buf,
 		win = win,
-		preview = preview
 	}
 end
 
@@ -136,11 +132,10 @@ local function popup_editor(title, border, height_hint, type)
 			preview_opts.row = preview_opts.row + 1
 		end
 	end
-	local preview = Previewer.getPreviewer(preview_opts, type)
+	Previewer:newPreviewer(preview_opts, type)
 	return {
 		buf = win_buf.buf,
 		win = win_buf.win,
-		preview = preview
 	}
 end
 
@@ -164,15 +159,7 @@ local function setBufferProperty(buf)
 	autocmd.addCommand(buf, non_nested_autocmds, false)
 end
 
-local function setPreviewBufferProperty(buf)
-	api.nvim_buf_set_option(buf, 'bufhidden', 'wipe')
-end
-
-local function setPreviewWindowProperty(win)
-	api.nvim_win_set_option(win, 'wrap', false)
-end
-
-function M.popupListPreview(mode, height, title, border, numbering, data, type)
+function M.popup(mode, height, title, border, numbering, data, type)
 	if data == nil then
 		print "nil data"
 		return
@@ -225,15 +212,11 @@ function M.popupListPreview(mode, height, title, border, numbering, data, type)
 	end
 	local buf = win_buf.buf
 	local win = win_buf.win
-	local preview_win = win_buf.preview.win
-	api.nvim_win_set_option(preview_win, 'number', numbering.previewer)
+	api.nvim_win_set_option(Previewer.win, 'number', numbering.previewer)
 	api.nvim_win_set_option(win, 'number', numbering.list)
 	api.nvim_set_current_win(win)
 	setWindowProperty(win)
 	setBufferProperty(buf)
-	setPreviewBufferProperty(win_buf.preview.buf)
-	setPreviewWindowProperty(preview_win)
-	previewBuffer[buf] = win_buf.preview
 	putData(buf, data, 0, -1)
 	mappings.addDefaultFunction(buf, 'close_selected', close_selected)
 	mappings.addDefaultFunction(buf, 'close_cancelled', close_cancelled)
@@ -245,7 +228,7 @@ function M.transferControl(buf, callbacks, info, keymaps)
 	if callbacks == nil then return end
 	local default_keymaps = {
 		n = {
-			['q'] = close_cancelled,
+			-- ['q'] = close_cancelled,
 			['<Esc>'] = close_cancelled,
 			['<CR>'] = close_selected
 		}
@@ -254,9 +237,8 @@ function M.transferControl(buf, callbacks, info, keymaps)
 	mappings.add_keymap(buf, keymaps)
 	action.registerCallbacks(buf, callbacks, info)
 	local data = action.select(buf, 1, 1)
-	local previewer = previewBuffer[buf]
 	if data ~= nil then
-		Previewer.writePreview(previewer, data)
+		Previewer:writePreview(data)
 	end
 end
 
