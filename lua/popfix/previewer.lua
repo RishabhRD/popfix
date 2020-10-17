@@ -1,53 +1,57 @@
 local floating_win = require'popfix.floating_win'
 local api = vim.api
 
-local M = {}
+local previewer = {}
+local previewNamespace = api.nvim_create_namespace('popfix.previewer')
 
-local selfNamespace = api.nvim_create_namespace('self')
+local buf = nil
+local win = nil
+local type = nil
+local currentTerminalJob = nil
 
-local function isCurrentJobRunning(self)
-	if self.currentTerminalJob == nil then return false end
-	return vim.fn.jobwait({self.currentTerminalJob}, 0)[1] == -1
+local function isCurrentJobRunning()
+	if currentTerminalJob == nil then return false end
+	return vim.fn.jobwait({currentTerminalJob}, 0)[1] == -1
 end
 
-local function stopCurrentJob(self)
-	if self.currentTerminalJob ~= nil then
-		if isCurrentJobRunning(self) then
-			vim.fn.jobstop(self.currentTerminalJob)
+local function stopCurrentJob()
+	if currentTerminalJob ~= nil then
+		if isCurrentJobRunning() then
+			vim.fn.jobstop(currentTerminalJob)
 		end
-		self.currentTerminalJob = nil
+		currentTerminalJob = nil
 	end
 end
 
-function M:newPreviewer(opts, type, tp)
-	self:close()
+function previewer.new(opts, typeHint, tp)
+	previewer.close()
 	local win_buf = floating_win.create_win(opts, tp)
-	self.currentTerminalJob = nil
-	self.type = type
-	self.win = win_buf.win
-	self.buf = win_buf.buf
-	api.nvim_buf_set_option(self.buf, 'bufhidden', 'hide')
-	api.nvim_win_set_option(self.win, 'wrap', false)
+	currentTerminalJob = nil
+	type = typeHint
+	win = win_buf.win
+	buf = win_buf.buf
+	api.nvim_buf_set_option(buf, 'bufhidden', 'hide')
+	api.nvim_win_set_option(win, 'wrap', false)
 end
 
-function M:writePreview(data)
-	if self.type == 'terminal' then
-		-- TODO: terminal windows are waiting to close. Close them buddy ;)
-		-- Memory leak here.
+function previewer.writePreview(data)
+	if type == 'terminal' then
+		-- TODO. terminal windows are waiting to close. Close them buddy ;)
+		-- memory leak here.
 		local cwd = data.cwd
 		local opts = {
 			cwd = cwd or vim.fn.getcwd()
 		}
 		local cur_win = api.nvim_get_current_win()
-		api.nvim_set_current_win(self.win)
+		api.nvim_set_current_win(win)
 		vim.cmd('set nomod')
-		stopCurrentJob(self)
-		self.currentTerminalJob = vim.fn.termopen(data.cmd, opts)
+		stopCurrentJob()
+		currentTerminalJob = vim.fn.termopen(data.cmd, opts)
 		api.nvim_set_current_win(cur_win)
-	elseif self.type == 'buffer' then
-		api.nvim_buf_set_lines(self.buf, 0, -1, false, data.lines or {''})
+	elseif type == 'buffer' then
+		api.nvim_buf_set_lines(buf, 0, -1, false, data.lines or {''})
 		if data.line ~= nil then
-			api.nvim_buf_add_highlight(self.buf, selfNamespace,
+			api.nvim_buf_add_highlight(buf, previewNamespace,
 			"Visual", data.line, 0, -1)
 		end
 	else
@@ -56,18 +60,14 @@ function M:writePreview(data)
 	end
 end
 
-function M:close()
-	if self.buf ~= nil then
-		api.nvim_command(string.format('bwipeout! %s', self.buf))
+function previewer.close()
+	if buf ~= nil then
+		api.nvim_command(string.format('bwipeout! %s', buf))
 	end
-	self.buf = nil
-	self.win = nil
-	self.type = nil
-	stopCurrentJob(self)
+	buf = nil
+	win = nil
+	type = nil
+	stopCurrentJob()
 end
 
-function M:isNil()
-	return self.buf == nil
-end
-
-return M
+return previewer

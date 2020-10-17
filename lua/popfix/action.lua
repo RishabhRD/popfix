@@ -1,65 +1,71 @@
 local action = {}
 
-local function free(self)
-	self.method = nil
-	self.callbackList = nil
-	self.selection = nil
+local method = nil
+local callbackList = nil
+local selection = nil
+
+
+local function free()
+	method = nil
+	callbackList = nil
+	selection = nil
 end
 
-function action:register(callbacks, method)
-	free(self)
-	self.callbackList = callbacks
-	self.method = method
-	self.selection = {}
+function action.register(callbacks, functionMethod)
+	free()
+	callbackList = callbacks
+	method = functionMethod
+	selection = {}
 end
 
 
-function action:select(index, line)
-	self.selection.index = index
-	self.selection.line = line
+function action.select(index, line)
+	selection.index = index
+	selection.line = line
 
-	if self.callbackList == nil then
+	if callbackList == nil then
 		return
 	end
-	if self.callbackList.select == nil then
+	if callbackList.select == nil then
 		return
 	end
-	if self.method == 'line' then
-		return self.callbackList.select(line)
-	elseif self.method == 'index' then
-		return self.callbackList.select(index)
+	if method == 'line' then
+		local tmp =  callbackList.select(line)
+		return tmp
+	elseif method == 'index' then
+		return callbackList.select(index)
 	end
 end
 
-function action:close(index, line, selected)
-	if self.callbackList == nil then
-		free(self)
+function action.close(index, line, selected)
+	if callbackList == nil then
+		free()
 		return
 	end
-	if self.callbackList.close == nil then
-		free(self)
+	if callbackList.close == nil then
+		free()
 		return
 	end
-	if self.method == 'line' then
-		self.callbackList.close(line, selected)
-	elseif self.method == 'index' then
-		self.callbackList.close(index, selected)
+	if method == 'line' then
+		callbackList.close(line, selected)
+	elseif method == 'index' then
+		callbackList.close(index, selected)
 	end
-	free(self)
+	free()
 end
 
-function action:getCurrentLine()
-	if self.method == nil then return nil end
-	return self.selection.line
+function action.getCurrentLine()
+	if method == nil then return nil end
+	return selection.line
 end
 
-function action:getCurrentIndex()
-	if self.method == nil then return nil end
-	return self.selection.index
+function action.getCurrentIndex()
+	if method == nil then return nil end
+	return selection.index
 end
 
-function action:freed()
-	return self.method == nil
+function action.freed()
+	return method == nil
 end
 
 return action
