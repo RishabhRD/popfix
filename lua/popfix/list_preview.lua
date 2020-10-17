@@ -33,6 +33,10 @@ local function close_selected()
 	splitWindow = nil
 	mappings.free(localBuffer)
 	autocmd.free(localBuffer)
+	localBuffer = nil
+	localWindow = nil
+	splitWindow = nil
+	exportedFunc = nil
 end
 
 local function close_cancelled()
@@ -48,6 +52,10 @@ local function close_cancelled()
 	splitWindow = nil
 	mappings.free(localBuffer)
 	autocmd.free(localBuffer)
+	localBuffer = nil
+	localWindow = nil
+	splitWindow = nil
+	exportedFunc = nil
 end
 
 local function selectionHandler()

@@ -3,32 +3,40 @@ local autocmd = require'popfix.autocmd'
 local mappings = require'popfix.mappings'
 local action = require'popfix.action'
 local api = vim.api
+
+local localBuffer = nil
+local localWindow = nil
+local exportedFunction = nil
+
 local M = {}
 
-local function close_selected(buf)
-	local win = action.getAssociatedWindow(buf)
-	if win == nil then return end
-	local line = action.getCurrentLine(buf)
-	local index = action.getCurrentIndex(buf)
-	action.close(buf, index, line, true)
-	api.nvim_win_close(win, true)
+local function close_selected()
+	if action.freed() then return end
+	local line = action.getCurrentLine()
+	local index = action.getCurrentIndex()
+	action.close(index, line, true)
+	api.nvim_win_close(localWindow, true)
+	localBuffer = nil
+	localWindow = nil
+	exportedFunction = nil
 end
 
-local function close_cancelled(buf)
-	local win = action.getAssociatedWindow(buf)
-	if win == nil then return end
-	local line = action.getCurrentLine(buf)
-	local index = action.getCurrentIndex(buf)
-	action.close(buf, index, line, false)
-	api.nvim_win_close(win, true)
+local function close_cancelled()
+	if action.freed() then return end
+	local line = action.getCurrentLine()
+	local index = action.getCurrentIndex()
+	action.close(index, line, false)
+	api.nvim_win_close(localWindow, true)
+	localBuffer = nil
+	localWindow = nil
+	exportedFunction = nil
 end
 
-local function selectionHandler(buf)
-	local win = action.getAssociatedWindow(buf)
-	local oldLine = action.getCurrentLine(buf)
-	local line = api.nvim_win_get_cursor(win)[1]
-	if oldLine ~= line then
-		action.select(buf, line, line)
+local function selectionHandler()
+	local oldIndex = action.getCurrentIndex()
+	local line = api.nvim_win_get_cursor(localWindow)[1]
+	if oldIndex ~= line then
+		action.select(line, api.nvim_buf_get_lines(localBuffer, line - 1, line, false)[1])
 	end
 end
 
@@ -40,7 +48,8 @@ local function popup_split(height, title)
 	title = title or ''
 	api.nvim_buf_set_name(buf, 'PopList #'..buf..title)
 	api.nvim_win_set_height(win, height)
-	return {buf = buf, win = win}
+	localBuffer = buf
+	localWindow = win
 end
 
 local function popup_cursor(height, title, border, data)
@@ -74,7 +83,8 @@ local function popup_cursor(height, title, border, data)
 		opts.row = 2
 	end
 	local buf_win = floating_win.create_win(opts)
-	return buf_win
+	localBuffer = buf_win.buf
+	localWindow = buf_win.win
 end
 
 local function popup_editor(title, border, height_hint)
@@ -96,7 +106,9 @@ local function popup_editor(title, border, height_hint)
 		title = title,
 		border = border
 	}
-	return floating_win.create_win(opts)
+	local buf_win = floating_win.create_win(opts)
+	localBuffer = buf_win.buf
+	localWindow = buf_win.win
 end
 
 local function setWindowProperty(win)
@@ -108,15 +120,6 @@ local function setBufferProperty(buf)
 	api.nvim_buf_set_option(buf, 'modifiable', false)
 	api.nvim_buf_set_option(buf, 'bufhidden', 'wipe')
 	api.nvim_buf_set_option(buf, 'modifiable', false)
-	local nested_autocmds = {
-		['BufWipeout'] = close_cancelled,
-		['BufDelete'] = close_cancelled,
-	}
-	local non_nested_autocmds = {
-		['CursorMoved'] = selectionHandler,
-	}
-	autocmd.addCommand(buf, nested_autocmds, true)
-	autocmd.addCommand(buf, non_nested_autocmds, false)
 end
 
 local function putData(buf, data, starting, ending)
@@ -130,6 +133,7 @@ function M.popup(mode, height, title, border, numbering, data)
 		print "nil data"
 		return
 	end
+	close_cancelled()
 	if numbering == nil then
 		numbering = {
 			list = 'true',
@@ -154,35 +158,33 @@ function M.popup(mode, height, title, border, numbering, data)
 	if title.list == nil then
 		title.list = ''
 	end
-	local win_buf
 	if mode == 'split' then
-		win_buf = popup_split(height)
+		popup_split(height)
 	elseif mode == 'cursor' then
-		win_buf = popup_cursor(height, title.list, border.list, data)
+		popup_cursor(height, title.list, border.list, data)
 	elseif mode == 'editor' then
-		win_buf = popup_editor(title.list, border.list, height)
+		popup_editor(title.list, border.list, height)
 	else
 		print 'Unknown mode'
 		return
 	end
-	local buf = win_buf.buf
-	local win = win_buf.win
 	if numbering.list then
-		api.nvim_win_set_option(win,'number',true)
+		api.nvim_win_set_option(localWindow,'number',true)
 	end
-	action.registerBuffer(buf, win)
-	setWindowProperty(win)
-	setBufferProperty(buf)
-	putData(buf, data, 0, -1)
-	mappings.addDefaultFunction(buf, 'close_selected', close_selected)
-	mappings.addDefaultFunction(buf, 'close_cancelled', close_cancelled)
-	api.nvim_set_current_win(win)
-	return buf
+	setWindowProperty(localWindow)
+	setBufferProperty(localBuffer)
+	putData(localBuffer, data, 0, -1)
+	exportedFunction = {
+		close_cancelled = close_cancelled,
+		close_selected = close_selected
+	}
+	api.nvim_set_current_win(localWindow)
 end
 
 
-function M.transferControl(buf, callbacks, info, keymaps)
+function M.transferControl(callbacks, info, keymaps)
 	if callbacks == nil then return end
+	action.register(callbacks, info)
 	local default_keymaps = {
 		n = {
 			-- ['q'] = close_cancelled,
@@ -190,12 +192,22 @@ function M.transferControl(buf, callbacks, info, keymaps)
 			['<CR>'] = close_selected
 		}
 	}
+	local nested_autocmds = {
+		['BufWipeout'] = close_cancelled,
+		['BufDelete'] = close_cancelled,
+	}
+	local non_nested_autocmds = {
+		['CursorMoved'] = selectionHandler,
+	}
+	autocmd.addCommand(localBuffer, nested_autocmds, true)
+	autocmd.addCommand(localBuffer, non_nested_autocmds, false)
 	keymaps = keymaps or default_keymaps
-	mappings.add_keymap(buf, keymaps)
-	action.registerCallbacks(buf, callbacks, info)
-	action.select(buf, 1, 1)
+	mappings.add_keymap(localBuffer, keymaps)
+	action.select(1, api.nvim_buf_get_lines(localBuffer, 0, 1, false)[1])
+end
+
+function M.getFunction(name)
+	return exportedFunction[name]
 end
 
 return M
-
-
