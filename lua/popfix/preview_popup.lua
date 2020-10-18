@@ -72,11 +72,13 @@ function M.popup(opts)
 	if not list.new(opts.list) then
 		return false
 	end
-	vim.cmd('vsplit')
-	local tmpBuffer = api.nvim_create_buf(false, true)
-	api.nvim_buf_set_option(tmpBuffer, 'bufhidden', 'wipe')
-	api.nvim_win_set_buf(api.nvim_get_current_win(), tmpBuffer)
-	splitWindow = api.nvim_get_current_win()
+	if opts.preview.mode == 'split' then
+		vim.cmd('vsplit')
+		local tmpBuffer = api.nvim_create_buf(false, true)
+		api.nvim_buf_set_option(tmpBuffer, 'bufhidden', 'wipe')
+		api.nvim_win_set_buf(api.nvim_get_current_win(), tmpBuffer)
+		splitWindow = api.nvim_get_current_win()
+	end
 	if not preview.new(opts.preview) then
 		list.close()
 		return false

@@ -74,7 +74,6 @@ local function popup_editor(title, border, height_hint, preview)
 	local buf_win = floating_win.create_win(opts)
 	list.buffer = buf_win.buf
 	list.window = buf_win.win
-	print(vim.inspect(api.nvim_win_get_position(list.window)))
 end
 
 function list.new(opts)

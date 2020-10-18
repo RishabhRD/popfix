@@ -35,15 +35,23 @@ function preview.new(opts)
 	opts.title = opts.title or ''
 	opts.height = api.nvim_win_get_height(list.window)
 	opts.width = api.nvim_win_get_width(list.window)
-	--TODO: do correct positioning of preview and list window
-	local position = api.nvim_win_get_position(list.window)
-	opts.row = position[1]
-	opts.col = position[2] + opts.width
+	local width = api.nvim_get_option("columns")
+	local height = api.nvim_get_option("lines")
+	if opts.mode == 'editor' then
+		opts.row = math.ceil((height - opts.height) / 2 - 1)
+		opts.col = math.ceil((width - 2 * opts.width) / 2)
+	elseif opts.mode == 'split' then
+		local position = api.nvim_win_get_position(list.window)
+		opts.row = position[1]
+		opts.col = opts.width
+	end
 	if opts.list_border then
-		opts.col = opts.col + 1
-		if not opts.border then
-			opts.height = opts.height + 2
-			opts.row = opts.row - 1
+		if opts.mode == 'editor' then
+			opts.col = opts.col + 1
+			if not opts.border then
+				opts.height = opts.height + 2
+				opts.row = opts.row - 1
+			end
 		end
 	end
 	if opts.border then
@@ -53,6 +61,7 @@ function preview.new(opts)
 			opts.row = opts.row + 1
 		end
 	end
+	opts.col = opts.col + opts.width
 	local win_buf = floating_win.create_win(opts, opts.mode)
 	currentTerminalJob = nil
 	type = opts.type
