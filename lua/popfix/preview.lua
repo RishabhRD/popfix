@@ -93,11 +93,11 @@ function preview.writePreview(data)
 		currentTerminalJob = vim.fn.termopen(data.cmd, opts)
 		jumpString = string.format('noautocmd lua vim.api.nvim_set_current_win(%s)', cur_win)
 		vim.cmd(jumpString)
-	elseif type == 'buffer' then
-		api.nvim_buf_set_lines(preview.buffer, 0, -1, false, data.lines or {''})
+	elseif type == 'text' then
+		api.nvim_buf_set_lines(preview.buffer, 0, -1, false, data.data or {''})
 		if data.line ~= nil then
 			api.nvim_buf_add_highlight(preview.buffer, previewNamespace,
-			"Visual", data.line, 0, -1)
+			"Visual", data.line - 1, 0, -1)
 		end
 	else
 		print('Invalid preview type')

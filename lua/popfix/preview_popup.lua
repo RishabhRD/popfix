@@ -125,7 +125,6 @@ function M.popup(opts)
 			end
 		end
 	end
-	print(vim.inspect(opts.keymaps))
 	mappings.add_keymap(list.buffer, opts.keymaps)
 	exportedFunc = {
 		close_selected = close_selected,
