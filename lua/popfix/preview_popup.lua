@@ -96,8 +96,7 @@ function M.popup(opts)
 	local nested_autocmds = {
 		['BufWipeout'] = close_cancelled,
 		['BufDelete'] = close_cancelled,
-		-- TODO: add bufleave but also add noautocmd
-		-- ['BufLeave'] = close_cancelled
+		['BufLeave'] = close_cancelled
 	}
 	local non_nested_autocmds = {
 		['CursorMoved'] = selectionHandler,

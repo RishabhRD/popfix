@@ -86,11 +86,13 @@ function preview.writePreview(data)
 			cwd = cwd or vim.fn.getcwd()
 		}
 		local cur_win = api.nvim_get_current_win()
-		api.nvim_set_current_win(preview.window)
+		local jumpString = string.format('noautocmd lua vim.api.nvim_set_current_win(%s)', preview.window)
+		vim.cmd(jumpString)
 		vim.cmd('set nomod')
 		stopCurrentJob()
 		currentTerminalJob = vim.fn.termopen(data.cmd, opts)
-		api.nvim_set_current_win(cur_win)
+		jumpString = string.format('noautocmd lua vim.api.nvim_set_current_win(%s)', cur_win)
+		vim.cmd(jumpString)
 	elseif type == 'buffer' then
 		api.nvim_buf_set_lines(preview.buffer, 0, -1, false, data.lines or {''})
 		if data.line ~= nil then
