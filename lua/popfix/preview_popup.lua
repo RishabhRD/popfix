@@ -1,12 +1,14 @@
+local preview = require'popfix.preview'
+local list = require'popfix.list'
+local action = require'popfix.action'
 local autocmd = require'popfix.autocmd'
 local mappings = require'popfix.mappings'
-local action = require'popfix.action'
-local list = require'popfix.list'
 local api = vim.api
 
-local exportedFunction = nil
-
 local M = {}
+
+local splitWindow = nil
+local exportedFunc = nil
 
 local function close_selected()
 	if action.freed() then return end
@@ -15,8 +17,13 @@ local function close_selected()
 	action.close(index, line, true)
 	mappings.free(list.buffer)
 	autocmd.free(list.buffer)
+	preview.close()
 	list.close()
-	exportedFunction = nil
+	if splitWindow then
+		api.nvim_win_close(splitWindow, true)
+		splitWindow = nil
+	end
+	exportedFunc = nil
 	--TODO: return to original window
 end
 
@@ -27,8 +34,13 @@ local function close_cancelled()
 	action.close(index, line, false)
 	mappings.free(list.buffer)
 	autocmd.free(list.buffer)
+	preview.close()
 	list.close()
-	exportedFunction = nil
+	if splitWindow then
+		api.nvim_win_close(splitWindow, true)
+		splitWindow = nil
+	end
+	exportedFunc = nil
 	--TODO: return to original window
 end
 
@@ -36,7 +48,8 @@ local function selectionHandler()
 	local oldIndex = action.getCurrentIndex()
 	local line = list.getCurrentLineNumber()
 	if oldIndex ~= line then
-		action.select(line, list.getCurrentLine())
+		local data = action.select(line, list.getCurrentLine())
+		preview.writePreview(data)
 	end
 end
 
@@ -46,29 +59,29 @@ function M.popup(opts)
 		return false
 	end
 	if opts.mode == nil then opts.mode = 'split' end
-	if opts.list == nil then
+	if opts.list == nil or opts.preview == nil then
 		print 'No attributes found'
 		return false
 	end
-	if opts.mode == 'cursor' then
-		local width = 0
-		for _, str in ipairs(opts.data) do
-			if #str > width then
-				width = #str
-			end
-		end
-		opts.width = width + 5
-		opts.height = opts.height or #opts.data
-	end
 	opts.list.height = opts.height
 	opts.list.mode = opts.mode
+	opts.list.preview = true
+	opts.preview.mode = opts.mode
+	opts.preview.list_border = opts.list.border
 	opts.mode = nil
 	if not list.new(opts.list) then
-		close_cancelled()
+		return false
+	end
+	vim.cmd('vsplit')
+	local tmpBuffer = api.nvim_create_buf(false, true)
+	api.nvim_buf_set_option(tmpBuffer, 'bufhidden', 'wipe')
+	api.nvim_win_set_buf(api.nvim_get_current_win(), tmpBuffer)
+	splitWindow = api.nvim_get_current_win()
+	if not preview.new(opts.preview) then
+		list.close()
 		return false
 	end
 	list.setData(opts.data, 0, -1)
-	--TODO: don't simply return
 	if opts.callbacks == nil then return end
 	action.register(opts.callbacks, opts.info)
 	local default_keymaps = {
@@ -81,7 +94,8 @@ function M.popup(opts)
 	local nested_autocmds = {
 		['BufWipeout'] = close_cancelled,
 		['BufDelete'] = close_cancelled,
-		['BufLeave'] = close_cancelled
+		-- TODO: add bufleave but also add noautocmd
+		-- ['BufLeave'] = close_cancelled
 	}
 	local non_nested_autocmds = {
 		['CursorMoved'] = selectionHandler,
@@ -91,7 +105,7 @@ function M.popup(opts)
 	opts.keymaps = opts.keymaps or default_keymaps
 	--TODO: handle additional keymaps
 	mappings.add_keymap(list.buffer, opts.keymaps)
-	exportedFunction = {
+	exportedFunc = {
 		close_selected = close_selected,
 		close_cancelled = close_cancelled
 	}
@@ -100,7 +114,7 @@ function M.popup(opts)
 end
 
 function M.getFunction(name)
-	return exportedFunction[name]
+	return exportedFunc[name]
 end
 
 return M

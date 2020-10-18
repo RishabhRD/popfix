@@ -26,7 +26,7 @@ function action.select(index, line)
 	if callbackList.select == nil then
 		return
 	end
-	callbackList.select(index, line)
+	return callbackList.select(index, line)
 end
 
 function action.close(index, line, selected)

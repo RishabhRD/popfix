@@ -41,15 +41,26 @@ local function popup_cursor(height, title, border, width)
 	list.window = buf_win.win
 end
 
-local function popup_editor(title, border, height_hint)
+local function popup_editor(title, border, height_hint, preview)
 	local width = api.nvim_get_option("columns")
 	local height = api.nvim_get_option("lines")
 
-	local win_height = height_hint or math.ceil(height * 0.8 - 4)
-	local win_width = math.ceil(width * 0.8)
+	local win_height
+	local win_width
+	local row
+	local col
+	if preview then
+		win_height = height_hint or math.ceil((height * 0.8 - 4) / 2)
+		win_width = math.ceil(width * 0.8 / 2)
+		row = math.ceil((height - win_height) / 2 - 1)
+		col = math.ceil((width - 2 * win_width) / 2)
+	else
+		win_height = height_hint or math.ceil(height * 0.8 - 4)
+		win_width = math.ceil(width * 0.8)
+		row = math.ceil((height - win_height) / 2 - 1)
+		col = math.ceil((width - win_width) / 2)
+	end
 
-	local row = math.ceil((height - win_height) / 2 - 1)
-	local col = math.ceil((width - win_width) / 2)
 
 	local opts = {
 		relative = "editor",
@@ -63,6 +74,7 @@ local function popup_editor(title, border, height_hint)
 	local buf_win = floating_win.create_win(opts)
 	list.buffer = buf_win.buf
 	list.window = buf_win.win
+	print(vim.inspect(api.nvim_win_get_position(list.window)))
 end
 
 function list.new(opts)
@@ -74,7 +86,7 @@ function list.new(opts)
 	if opts.mode == 'split' then
 		popup_split(opts.height, opts.title)
 	elseif opts.mode == 'editor' then
-		popup_editor(opts.title, opts.border, opts.height)
+		popup_editor(opts.title, opts.border, opts.height, opts.preview)
 	elseif opts.mode == 'cursor' then
 		popup_cursor(opts.height, opts.title, opts.border, opts.width)
 	else
