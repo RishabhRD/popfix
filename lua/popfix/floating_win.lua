@@ -57,6 +57,7 @@ function M.create_win(opts, type)
 	end
 
 	local border_buf = nil
+	local border_win = nil
 
 	local win_buf_pair
 	if type == 'split' then
@@ -67,7 +68,9 @@ function M.create_win(opts, type)
 		local border_win_buf_pair = create_win(opts.row - 1, opts.col - 1,
 		opts.width + 2, opts.height + 2, opts.relative, false
 		)
+		border_win = border_win_buf_pair.win
 		api.nvim_win_set_option(border_win_buf_pair.win, 'winhl', 'Normal:Normal')
+		api.nvim_buf_set_option(border_win_buf_pair.buf, 'bufhidden', 'wipe')
 		border_buf = border_win_buf_pair.buf
 		fill_border_data(border_buf, opts.width , opts.height, opts.title )
 	end
@@ -77,11 +80,8 @@ function M.create_win(opts, type)
 	end
 
 
-	if border_buf then
-		autocmd.addCommand(win_buf_pair.buf,{
-			['BufWipeout'] = string.format('exe "silent bwipeout! %s"', border_buf, true)
-		}, true)
-	end
+	win_buf_pair.border = border_buf
+	win_buf_pair.border_win = border_win
 	return win_buf_pair
 end
 

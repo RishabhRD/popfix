@@ -13,6 +13,7 @@ local originalWindow = nil
 
 local function close_selected()
 	if action.freed() then return end
+	api.nvim_set_current_win(originalWindow)
 	local line = action.getCurrentLine()
 	local index = action.getCurrentIndex()
 	action.close(index, line, true)
@@ -25,7 +26,6 @@ local function close_selected()
 		splitWindow = nil
 	end
 	exportedFunc = nil
-	api.nvim_set_current_win(originalWindow)
 	originalWindow = nil
 end
 
