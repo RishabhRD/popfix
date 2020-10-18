@@ -1,74 +1,28 @@
-local floating_win = require'popfix.floating_win'
-local autocmd = require'popfix.autocmd'
-local mappings = require'popfix.mappings'
-local action = require'popfix.action'
 local api = vim.api
+local floating_win = require'popfix.floating_win'
 
-local localBuffer = nil
-local localWindow = nil
-local exportedFunction = nil
-
-local M = {}
-
-local function close_selected()
-	if action.freed() then return end
-	local line = action.getCurrentLine()
-	local index = action.getCurrentIndex()
-	action.close(index, line, true)
-	api.nvim_win_close(localWindow, true)
-	localBuffer = nil
-	localWindow = nil
-	exportedFunction = nil
-end
-
-local function close_cancelled()
-	if action.freed() then return end
-	local line = action.getCurrentLine()
-	local index = action.getCurrentIndex()
-	action.close(index, line, false)
-	api.nvim_win_close(localWindow, true)
-	localBuffer = nil
-	localWindow = nil
-	exportedFunction = nil
-end
-
-local function selectionHandler()
-	local oldIndex = action.getCurrentIndex()
-	local line = api.nvim_win_get_cursor(localWindow)[1]
-	if oldIndex ~= line then
-		action.select(line, api.nvim_buf_get_lines(localBuffer, line - 1, line, false)[1])
-	end
-end
+local list = {}
+list.buffer = nil
+list.window = nil
 
 local function popup_split(height, title)
 	height = height or 12
 	api.nvim_command('bot new')
+	local oldWindow = api.nvim_get_current_win()
 	local win = api.nvim_get_current_win()
 	local buf = api.nvim_get_current_buf()
 	title = title or ''
 	api.nvim_buf_set_name(buf, 'PopList #'..buf..title)
 	api.nvim_win_set_height(win, height)
-	localBuffer = buf
-	localWindow = win
+	list.buffer = buf
+	list.window = win
+	api.nvim_set_current_win(oldWindow)
 end
 
-local function popup_cursor(height, title, border, data)
-	local width = 40
-	if not data then
+local function popup_cursor(height, title, border, width)
+	if not width then
+		--TODO: better width strategy
 		width = width or 40
-		height = height or data
-	else
-		local maxWidth = 0
-		for _,cur in pairs(data) do
-			local curWidth = string.len(cur) + 5
-			if curWidth > maxWidth then
-				maxWidth = curWidth
-			end
-		end
-		width = maxWidth
-		if height == nil then
-			height = height or #data
-		end
 	end
 	local opts = {
 		relative = "cursor",
@@ -83,8 +37,8 @@ local function popup_cursor(height, title, border, data)
 		opts.row = 2
 	end
 	local buf_win = floating_win.create_win(opts)
-	localBuffer = buf_win.buf
-	localWindow = buf_win.win
+	list.buffer = buf_win.buf
+	list.window = buf_win.win
 end
 
 local function popup_editor(title, border, height_hint)
@@ -107,107 +61,59 @@ local function popup_editor(title, border, height_hint)
 		border = border
 	}
 	local buf_win = floating_win.create_win(opts)
-	localBuffer = buf_win.buf
-	localWindow = buf_win.win
+	list.buffer = buf_win.buf
+	list.window = buf_win.win
 end
 
-local function setWindowProperty(win)
-	api.nvim_win_set_option(win, 'wrap', true)
-	api.nvim_win_set_option(win, 'cursorline', true)
-end
-
-local function setBufferProperty(buf)
-	api.nvim_buf_set_option(buf, 'modifiable', false)
-	api.nvim_buf_set_option(buf, 'bufhidden', 'wipe')
-	api.nvim_buf_set_option(buf, 'modifiable', false)
-end
-
-local function putData(buf, data, starting, ending)
-	api.nvim_buf_set_option(buf, 'modifiable', true)
-	api.nvim_buf_set_lines(buf, starting, ending, false, data)
-	api.nvim_buf_set_option(buf, 'modifiable', false)
-end
-
-function M.popup(mode, height, title, border, numbering, data)
-	if data == nil then
-		print "nil data"
-		return
+function list.new(opts)
+	opts.title = opts.title or ''
+	if opts.border == nil then opts.border = false end
+	if opts.mode == nil then
+		opts.mode = 'split'
 	end
-	close_cancelled()
-	if numbering == nil then
-		numbering = {
-			list = 'true',
-		}
-	end
-	if numbering.list == nil then
-		numbering.list = true
-	end
-	if border == nil then
-		border = {
-			list = 'true',
-		}
-	end
-	if border.list == nil then
-		border.list = true
-	end
-	if title == nil then
-		title = {
-			list = '',
-		}
-	end
-	if title.list == nil then
-		title.list = ''
-	end
-	if mode == 'split' then
-		popup_split(height)
-	elseif mode == 'cursor' then
-		popup_cursor(height, title.list, border.list, data)
-	elseif mode == 'editor' then
-		popup_editor(title.list, border.list, height)
+	if opts.mode == 'split' then
+		popup_split(opts.height, opts.title)
+	elseif opts.mode == 'editor' then
+		popup_editor(opts.title, opts.border, opts.height)
+	elseif opts.mode == 'cursor' then
+		popup_cursor(opts.height, opts.title, opts.border, opts.width)
 	else
-		print 'Unknown mode'
-		return
+		print('Unknown mode')
+		return false
 	end
-	if numbering.list then
-		api.nvim_win_set_option(localWindow,'number',true)
+	if opts.numbering == nil then
+		opts.numbering = false
 	end
-	setWindowProperty(localWindow)
-	setBufferProperty(localBuffer)
-	putData(localBuffer, data, 0, -1)
-	exportedFunction = {
-		close_cancelled = close_cancelled,
-		close_selected = close_selected
-	}
-	api.nvim_set_current_win(localWindow)
+	api.nvim_win_set_option(list.window, 'number', opts.numbering)
+	if opts.coloring == nil or opts.coloring == false then
+		api.nvim_win_set_option(list.window, 'winhl', 'Normal:ListNormal')
+	end
+	api.nvim_win_set_option(list.window, 'wrap', false)
+	api.nvim_win_set_option(list.window, 'cursorline', true)
+	api.nvim_buf_set_option(list.buffer, 'modifiable', false)
+	api.nvim_buf_set_option(list.buffer, 'bufhidden', 'wipe')
+	return true
 end
 
-
-function M.transferControl(callbacks, info, keymaps)
-	if callbacks == nil then return end
-	action.register(callbacks, info)
-	local default_keymaps = {
-		n = {
-			-- ['q'] = close_cancelled,
-			['<Esc>'] = close_cancelled,
-			['<CR>'] = close_selected
-		}
-	}
-	local nested_autocmds = {
-		['BufWipeout'] = close_cancelled,
-		['BufDelete'] = close_cancelled,
-	}
-	local non_nested_autocmds = {
-		['CursorMoved'] = selectionHandler,
-	}
-	autocmd.addCommand(localBuffer, nested_autocmds, true)
-	autocmd.addCommand(localBuffer, non_nested_autocmds, false)
-	keymaps = keymaps or default_keymaps
-	mappings.add_keymap(localBuffer, keymaps)
-	action.select(1, api.nvim_buf_get_lines(localBuffer, 0, 1, false)[1])
+function list.setData(data, starting, ending)
+	api.nvim_buf_set_option(list.buffer, 'modifiable', true)
+	api.nvim_buf_set_lines(list.buffer, starting, ending, false, data)
+	api.nvim_buf_set_option(list.buffer, 'modifiable', false)
 end
 
-function M.getFunction(name)
-	return exportedFunction[name]
+function list.close()
+	api.nvim_win_close(list.window, true)
+	list.buffer = nil
+	list.window = nil
 end
 
-return M
+function list.getCurrentLineNumber()
+	return api.nvim_win_get_cursor(list.window)[1]
+end
+
+function list.getCurrentLine()
+	local lineNumber = list.getCurrentLineNumber()
+	return api.nvim_buf_get_lines(list.buffer, lineNumber - 1, lineNumber, false)[1]
+end
+
+return list
