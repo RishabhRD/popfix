@@ -9,6 +9,7 @@ local M = {}
 
 local splitWindow = nil
 local exportedFunc = nil
+local originalWindow = nil
 
 local function close_selected()
 	if action.freed() then return end
@@ -24,7 +25,8 @@ local function close_selected()
 		splitWindow = nil
 	end
 	exportedFunc = nil
-	--TODO: return to original window
+	api.nvim_set_current_win(originalWindow)
+	originalWindow = nil
 end
 
 local function close_cancelled()
@@ -41,7 +43,8 @@ local function close_cancelled()
 		splitWindow = nil
 	end
 	exportedFunc = nil
-	--TODO: return to original window
+	api.nvim_set_current_win(originalWindow)
+	originalWindow = nil
 end
 
 local function selectionHandler()
@@ -49,7 +52,9 @@ local function selectionHandler()
 	local line = list.getCurrentLineNumber()
 	if oldIndex ~= line then
 		local data = action.select(line, list.getCurrentLine())
-		preview.writePreview(data)
+		if data ~= nil then
+			preview.writePreview(data)
+		end
 	end
 end
 
@@ -69,7 +74,9 @@ function M.popup(opts)
 	opts.preview.mode = opts.mode
 	opts.preview.list_border = opts.list.border
 	opts.mode = nil
+	originalWindow = api.nvim_get_current_win()
 	if not list.new(opts.list) then
+		originalWindow = nil
 		return false
 	end
 	if opts.preview.mode == 'split' then
@@ -80,15 +87,15 @@ function M.popup(opts)
 		splitWindow = api.nvim_get_current_win()
 	end
 	if not preview.new(opts.preview) then
+		originalWindow = nil
 		list.close()
 		return false
 	end
 	list.setData(opts.data, 0, -1)
-	if opts.callbacks == nil then return end
 	action.register(opts.callbacks, opts.info)
 	local default_keymaps = {
 		n = {
-			-- ['q'] = close_cancelled,
+			['q'] = close_cancelled,
 			['<Esc>'] = close_cancelled,
 			['<CR>'] = close_selected
 		}
@@ -104,7 +111,21 @@ function M.popup(opts)
 	autocmd.addCommand(list.buffer, nested_autocmds, true)
 	autocmd.addCommand(list.buffer, non_nested_autocmds, false)
 	opts.keymaps = opts.keymaps or default_keymaps
-	--TODO: handle additional keymaps
+	if opts.additional_keymaps then
+		local i_maps = opts.additional_keymaps.i
+		if i_maps then
+			for k, v in pairs(i_maps) do
+				opts.keymaps.i[k] = v
+			end
+		end
+		local n_maps = opts.additional_keymaps.n
+		if n_maps then
+			for k, v in pairs(n_maps) do
+				opts.keymaps.n[k] = v
+			end
+		end
+	end
+	print(vim.inspect(opts.keymaps))
 	mappings.add_keymap(list.buffer, opts.keymaps)
 	exportedFunc = {
 		close_selected = close_selected,
