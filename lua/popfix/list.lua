@@ -85,6 +85,7 @@ function list.new(opts)
 		opts.numbering = false
 	end
 	api.nvim_win_set_option(list.window, 'number', opts.numbering)
+	api.nvim_win_set_option(list.window, 'relativenumber', false)
 	if opts.coloring == nil or opts.coloring == false then
 		api.nvim_win_set_option(list.window, 'winhl', 'Normal:ListNormal')
 	end

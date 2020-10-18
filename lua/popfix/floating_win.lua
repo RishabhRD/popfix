@@ -26,7 +26,6 @@ local function create_win(row, col, width, height, relative, focusable)
 		focusable = focusable
 	}
 	local win = api.nvim_open_win(buf, false, options)
-	api.nvim_win_set_option(win, 'winhl', 'Normal:PopFixNormal')
 	return {
 		buf = buf,
 		win = win
@@ -68,6 +67,7 @@ function M.create_win(opts, type)
 		local border_win_buf_pair = create_win(opts.row - 1, opts.col - 1,
 		opts.width + 2, opts.height + 2, opts.relative, false
 		)
+		api.nvim_win_set_option(border_win_buf_pair.win, 'winhl', 'Normal:Normal')
 		border_buf = border_win_buf_pair.buf
 		fill_border_data(border_buf, opts.width , opts.height, opts.title )
 	end

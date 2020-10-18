@@ -40,16 +40,17 @@ function M.popup(opts)
 		print 'No attributes found'
 		return false
 	end
-	opts.list.height = opts.height
 	if opts.mode == 'cursor' then
 		local width = 0
-		for _, str in opts.data do
+		for _, str in ipairs(opts.data) do
 			if #str > width then
 				width = #str
 			end
 		end
 		opts.width = width + 5
+		opts.height = opts.height or #opts.data
 	end
+	opts.list.height = opts.height
 	opts.list.mode = opts.mode
 	opts.mode = nil
 	if not list.new(opts.list) then
@@ -70,6 +71,7 @@ function M.popup(opts)
 	local nested_autocmds = {
 		['BufWipeout'] = close_cancelled,
 		['BufDelete'] = close_cancelled,
+		['BufLeave'] = close_cancelled
 	}
 	local non_nested_autocmds = {
 		['CursorMoved'] = selectionHandler,
@@ -79,7 +81,6 @@ function M.popup(opts)
 	opts.keymaps = opts.keymaps or default_keymaps
 	--TODO: handle additional keymaps
 	mappings.add_keymap(list.buffer, opts.keymaps)
-	action.select(1, api.nvim_buf_get_lines(list.buffer, 0, 1, false)[1])
 	exportedFunction = {
 		close_selected = close_selected,
 		close_cancelled = close_cancelled
