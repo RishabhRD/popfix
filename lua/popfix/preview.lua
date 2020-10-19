@@ -24,6 +24,7 @@ end
 local function stopCurrentJob()
 	if currentTerminalJob ~= nil then
 		if isCurrentJobRunning() then
+			vim.fn.chanclose(currentTerminalJob)
 			vim.fn.jobstop(currentTerminalJob)
 		end
 		currentTerminalJob = nil
@@ -164,8 +165,10 @@ function preview.close()
 				vim.cmd(string.format('bdelete! %s', buffer.bufnr))
 			end
 		end
+		buffers = nil
 	end
 	stopCurrentJob()
+	-- collectgarbage()
 end
 
 return preview
