@@ -114,7 +114,10 @@ function list.setData(data, starting, ending)
 end
 
 function list.close()
-	api.nvim_win_close(list.window, true)
+	local buf = list.buffer
+	vim.schedule(function()
+		vim.cmd('bwipeout! '..buf)
+	end)
 	list.buffer = nil
 	list.window = nil
 end

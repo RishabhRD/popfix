@@ -79,8 +79,6 @@ function M.create_win(opts, type)
 	if opts.border then
 		local autocmds = {
 			['BufDelete,BufWipeout'] = string.format('bwipeout! %s', border_buf),
-			-- ['BufWipeout'] = string.format('bwipeout! %s', border_buf),
-			-- ['BufLeave'] = string.format('bwipeout! %s', border_buf)
 		}
 		autocmd.addCommand(win_buf_pair.buf, autocmds, true)
 	end

@@ -81,7 +81,7 @@ function M.popup(opts)
 		}
 	}
 	local nested_autocmds = {
-		['BufWipeout'] = close_cancelled,
+		['BufWipeout,BufDelete,BufLeave'] = close_cancelled,
 		['BufDelete'] = close_cancelled,
 		['BufLeave'] = close_cancelled
 	}
