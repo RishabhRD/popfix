@@ -4,8 +4,6 @@ local floating_win = require'popfix.floating_win'
 local list = {}
 list.buffer = nil
 list.window = nil
-list.border = nil
-list.border_win = nil
 
 local function popup_split(height, title)
 	height = height or 12
@@ -41,8 +39,6 @@ local function popup_cursor(height, title, border, width)
 	local buf_win = floating_win.create_win(opts)
 	list.buffer = buf_win.buf
 	list.window = buf_win.win
-	list.border = buf_win.border
-	list.border_win = buf_win.border_win
 end
 
 local function popup_editor(title, border, height_hint, preview)
@@ -78,8 +74,6 @@ local function popup_editor(title, border, height_hint, preview)
 	local buf_win = floating_win.create_win(opts)
 	list.buffer = buf_win.buf
 	list.window = buf_win.win
-	list.border = buf_win.border
-	list.border_win = buf_win.border_win
 end
 
 function list.new(opts)
@@ -120,11 +114,7 @@ function list.setData(data, starting, ending)
 end
 
 function list.close()
-	vim.cmd(string.format('bwipeout! %s', list.buffer))
 	api.nvim_win_close(list.window, true)
-	if list.border then
-		vim.cmd(string.format('bwipeout! %s', list.border))
-	end
 	list.buffer = nil
 	list.window = nil
 end

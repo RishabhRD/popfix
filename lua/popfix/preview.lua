@@ -76,7 +76,6 @@ function preview.new(opts)
 	end
 	preview.window = win_buf.win
 	preview.buffer = win_buf.buf
-	preview.border = win_buf.border
 	if opts.numbering then opts.numbering = false end
 	if opts.coloring == nil or opts.coloring == false then
 		api.nvim_win_set_option(preview.window, 'winhl', 'Normal:ListNormal')
@@ -112,6 +111,7 @@ function preview.writePreview(data)
 	elseif type == 'buffer' then
 		local cur_win = api.nvim_get_current_win()
 		local jumpString = string.format('noautocmd lua vim.api.nvim_set_current_win(%s)', preview.window)
+		-- vim.cmd('filetype detect')
 		vim.cmd(jumpString)
 		if buffers[data.filename] then
 			api.nvim_win_set_buf(preview.window, buffers[data.filename].bufnr)
@@ -119,14 +119,12 @@ function preview.writePreview(data)
 			if fileExists(data.filename) then
 				local buf
 				if vim.fn.bufloaded(data.filename) then
-					vim.cmd(string.format('edit %s', data.filename))
-					buf = vim.fn.bufnr(data.filename)
+					buf = vim.fn.bufadd(data.filename)
 					buffers.filename = {
 						bufnr = buf,
 						loaded = true
 					}
 				else
-					vim.cmd(string.format('edit %s', data.filename))
 					buf = vim.fn.bufnr(data.filename)
 					buffers.filename = {
 						bufnr = buf,
@@ -156,16 +154,15 @@ function preview.close()
 	if preview.buffer ~= nil then
 		vim.cmd(string.format('bwipeout! %s', preview.buffer))
 	end
-	if list.border then
-		vim.cmd(string.format('bwipeout! %s', preview.border))
-	end
 	preview.buffer = nil
 	preview.window = nil
 	type = nil
-	for _, buffer in pairs(buffers) do
-		if buffer.loaded then
-			if vim.fn.bufloaded(buffer.bufnr) == 1 then
-				vim.cmd(string.format('bdelete! %s', buffer.bufnr))
+	if buffers then
+		for _, buffer in pairs(buffers) do
+			if buffer.loaded then
+				if vim.fn.bufloaded(buffer.bufnr) == 1 then
+					vim.cmd(string.format('bdelete! %s', buffer.bufnr))
+				end
 			end
 		end
 	end

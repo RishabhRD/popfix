@@ -36,8 +36,10 @@ local function close_cancelled()
 	action.close(index, line, false)
 	mappings.free(list.buffer)
 	autocmd.free(list.buffer)
-	preview.close()
-	list.close()
+	vim.schedule(function()
+		list.close()
+		preview.close()
+	end)
 	if splitWindow then
 		api.nvim_win_close(splitWindow, true)
 		splitWindow = nil
