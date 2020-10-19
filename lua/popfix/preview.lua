@@ -111,22 +111,21 @@ function preview.writePreview(data)
 	elseif type == 'buffer' then
 		local cur_win = api.nvim_get_current_win()
 		local jumpString = string.format('noautocmd lua vim.api.nvim_set_current_win(%s)', preview.window)
-		-- vim.cmd('filetype detect')
 		vim.cmd(jumpString)
 		if buffers[data.filename] then
 			api.nvim_win_set_buf(preview.window, buffers[data.filename].bufnr)
 		else
 			if fileExists(data.filename) then
 				local buf
-				if vim.fn.bufloaded(data.filename) then
+				if vim.fn.bufloaded(data.filename) == 1 then
 					buf = vim.fn.bufadd(data.filename)
-					buffers.filename = {
+					buffers[data.filename] = {
 						bufnr = buf,
 						loaded = true
 					}
 				else
-					buf = vim.fn.bufnr(data.filename)
-					buffers.filename = {
+					buf = vim.fn.bufadd(data.filename)
+					buffers[data.filename] = {
 						bufnr = buf,
 						loaded = false
 					}
@@ -143,6 +142,8 @@ function preview.writePreview(data)
 		end
 		jumpString = string.format('noautocmd lua vim.api.nvim_set_current_win(%s)', cur_win)
 		vim.cmd(jumpString)
+		--TODO: filetype is not working
+		-- vim.cmd([[doautocmd filetypedetect BufRead ]] .. data.filename)
 	else
 		print('Invalid preview type')
 		return
@@ -159,10 +160,8 @@ function preview.close()
 	type = nil
 	if buffers then
 		for _, buffer in pairs(buffers) do
-			if buffer.loaded then
-				if vim.fn.bufloaded(buffer.bufnr) == 1 then
-					vim.cmd(string.format('bdelete! %s', buffer.bufnr))
-				end
+			if not buffer.loaded then
+				vim.cmd(string.format('bdelete! %s', buffer.bufnr))
 			end
 		end
 	end
