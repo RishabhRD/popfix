@@ -6,11 +6,6 @@ underlying buffer and window.
 
 **WARNING: neovim 0.5 is required for using this API.**
 
-## TODO
-
-- Implement OOP pattern and depreciate global things.
-- One instance of each thing
-
 ## Where this can be helpful?
 
 If your plugin doesn't require highly customized window popups and things,
@@ -35,7 +30,6 @@ architecture.
 
 ## Future goals
 
-- Floating preview
 - Fuzzy search
 
 ## Prerequisites
@@ -50,7 +44,60 @@ Install with any plugin manager. For example with vim-plug
 
 ## API Description
 
-### Keymaps
+### How to invoke plugin
+
+Example:
+
+	local opts = {
+		height = 40,
+		mode = 'split',
+		data = <data-table>,
+		keymaps = <keymaps>,
+		additional_keymaps = <additional-keymaps>,
+		callbacks = {
+			select = <select-callback>,
+			close = <close-callback>
+		}
+		list = {
+			border = true,
+			numbering = true,
+			coloring = true
+		},
+		preview = {
+			type = 'terminal'
+			border = true,
+			numbering = true,
+			coloring = true
+		}
+	}
+
+	require'popfix'.open(opts)
+
+### Height [optional]
+
+Number of results to display in window at a time(window height).
+
+### Mode
+
+Plugin can operate in 3 modes:
+
+- Split
+- Editor
+- Cursor
+
+Split mode opens menu in a bottom split
+
+Editor mode opens menu in a floating window relative to editor.
+
+Cursor mode opens menu in a floating window relative to current cursor position.
+
+### Data
+
+Data to be displayed in menu. (String table)
+
+
+
+### Keymaps [optional]
 
 Keymaps are expressed as lua tables. Currently normal mode and insert mode
 keymappings are supported.
@@ -59,51 +106,45 @@ Keymap table example:
 
 	{
 		n = {
-			['<CR>'] = action.close_selected,
+			['<C-q>'] = <lua-function>
 			['<C-n>'] = 'j'
 		},
 		i = {
-			['<C-c>'] = action.close_cancelled
+			['<C-c>'] = 'close-cancelled'
 		}
 	}
 
-Every keymap lua functions accepts popup buffer id as only argument.
-However, this is not a limitation as it is only needed to map desired
-parameters to buffer id using lua tables.
-A little coding trick would do the job.
+Any lua function or string can be provided as value
 
-n represents normal mode mappings and i represents insert mode mappings.
-First mapping for normal mode maps a lua function ``action.close_selected``
-to <CR>. However, second mapping of normal mode maps string j to <C-n> (i.e.,
-map <C-n> to go down).
-This gives a lot flexibility while writing plugins.
+Keymaps field replaces the default keymaps. (Default keymaps are used if this is
+not provided)
+
+### Additional keymaps [optional]
+
+These are also same type as keymaps. However, these are appended in keymaps list.
+i.e., After applying this resultant keymaps = original keymaps + additional keymaps
 
 ### Special actions
 
 Two special lua functions are shipped for easily managing lifetime of
-popup window.
+popup window. These can be used to pass as keymapping value.
 
-To use these actions, you need to import files:
+- 'close-cancelled'
+- 'close-selected'
 
-	local action = require'popfix.action'
+close-cancelled closes the current preview with invoking close callback as
+cancelled.
 
-Provided actions are:
+close-selected closes the current preview with invoking close callback as
+selected.
 
-- action.close_selected(popup_buf)
-- action.close_cancelled(popup_buf)
 
-First action close popup as the current option is selected. Second action
-close popup as the current option is not selected.
+### Callbacks [optional]
 
-### Callbacks
+API provides 2 callbacks on which plugins can react:
 
-API provides 3 callbacks on which plugins can react:
-
-- init callback
-- select callback
-- close callback
-
-init callback is called after popup menu appears and loaded with data.
+- select callback [optional]
+- close callback  [optional]
 
 select callback is called after selection change event occurs.
 (i.e., cursor moves to different line)
@@ -112,84 +153,65 @@ close callback is called after popup is closed.
 
 Plugins can map any functions to callback with this syntax:
 
-	init_callback(popup_buffer_id)
-	select_callback(popup_buffer_id, line_selected)
-	close_callback(popup_buffer_id, is_selected, line_selected)
+	selection_changed(line_num, line_string)
+	popup_closed(line_num, line_string, selected)
 
-popup_buffer_id represents buffer id of popup menu.
+line_num is line number which is currently selected.
 
-line_selected represents the current selected item in popup menu.
+line_string is string on line_num.
 
-is_selected represents boolean value as buffer was closed as selected or
-cancelled. (See special actions)
+selected is for close callback if current selection was confirmed or cancelled.
 
-### Preview specific criteria
+### List
 
-For preview menu init_callback, select_callback, close_callback functions are
-expected to return a lua table. Lua table format is:
+List supports 3 attributes:
 
-	{
-		data,
-		line,
-		filetype
-	}
+- border [optional]
+- numbering [optional]
+- coloring [optional]
 
-data is list of string and can be represented as:
+If border is true then list is displayed with border. [only for floating window]
 
-	local data = {
-		[1] = "This is an example",
-		[2] = "Example ends here"
-	}
+Numbering is true then numbers are also displayed in list.
 
-line_num is an integer and can be represented as:
+Coloring is true then special color(different than normal background) is
+displayed for list. [only for floating window]
 
-	local line_num = 4
 
-filetype is a string that should be a valid filetype.
-This filetype parameter is used to do syntax coloring of preview data.
-If filetype parameter is nil then no syntax coloring is done.
+### Preview
 
-So, return data can be represented as:
+Preview supports 4 attributes:
 
-	local return_data = {
-		data = data,
-		line = line_num,
-		filetype = filetype
-	}
+- border [optional]
+- numbering [optional]
+- coloring [optional]
+- type
 
-This return_data is used for content of preview window after callback.
+border, numbering, coloring are similar to list attributes and apply in similar
+way to preview window also. However, border and colors are also applied even if
+list is in split mode.
 
-- ``return_data.data`` is filled in preview window and have syntax highlighting according to ``return_data.filetype``
-- ``return_data.line`` is highlighted in preview window.
+type field can have 3 values:
+- terminal
+- text
+- buffer [Still experimental]
 
-### Initializing popup
+Return value of select callback determines the content of preview window.
 
-For initializing a popup use:
+If preview type is terminal then function provided as select callback should
+return a table with attributes:
+- cmd : Command to be executed in terminal
+- cwd [optional] : Working directory in which terminal should be opened.
 
-	local popup_buffer_id = require'popfix.popup'.popup_window(
-		data,
-		key_map,
-		init_callback,
-		select_callback,
-		close_callback
-	)
+If preview type is text then function provided as select callback should return
+a table with attributes:
+- data : text to be displayed (list(table) of strings)
+- line : line to be highlighted with different color
 
-data represents the data to be displayed in popup window.
-
-key_map represents the key mapping to be added to popup window as discussed
-earlier.
-
-Others are callback functions as discussed earlier.
-
-For initializing a popup preview use:
-
-	local popup_buffer_id = require'popfix.preview'.popup_preview(
-		data,
-		key_map,
-		init_callback,
-		select_callback,
-		close_callback
-	)
+If preview type is buffer then function provided as select callback should return
+a table with attributes:
+- filename : filename that should be displayed in preview.
+- line : line number that should be highlighted in file.
 
 ## Some plugins based on this API
 
