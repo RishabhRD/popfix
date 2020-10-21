@@ -62,7 +62,7 @@ function M.popup(opts)
 				width = #str
 			end
 		end
-		opts.width = width + 5
+		opts.list.width = width + 5
 		opts.height = opts.height or #opts.data
 	end
 	originalWindow = api.nvim_get_current_win()
