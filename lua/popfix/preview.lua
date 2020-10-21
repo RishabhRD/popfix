@@ -5,6 +5,7 @@ local api = vim.api
 local preview = {}
 preview.buffer = nil
 preview.window = nil
+local numbering = nil
 
 local previewNamespace = api.nvim_create_namespace('popfix.preview')
 local type = nil
@@ -33,11 +34,15 @@ end
 
 function preview.new(opts)
 	if opts.type == nil then
-		print 'unknown terminal type'
+		print 'provide a preview type'
 		return false
 	end
 	if opts.border == nil then
 		opts.border = false
+	end
+	if opts.type ~= 'text' and opts.type ~= 'buffer' and opts.type ~= 'terminal' then
+		print('not a valid preview type')
+		return false
 	end
 	opts.title = opts.title or ''
 	opts.height = api.nvim_win_get_height(list.window)
@@ -77,13 +82,15 @@ function preview.new(opts)
 	end
 	preview.window = win_buf.win
 	preview.buffer = win_buf.buf
-	if opts.numbering then opts.numbering = false end
+	if opts.numbering == nil then opts.numbering = false end
 	if opts.coloring == nil or opts.coloring == false then
-		api.nvim_win_set_option(preview.window, 'winhl', 'Normal:ListNormal')
+		api.nvim_win_set_option(preview.window, 'winhl', 'Normal:PreviewNormal')
 	end
-	api.nvim_win_set_option(preview.window, 'number', opts.numbering)
 	api.nvim_buf_set_option(preview.buffer, 'bufhidden', 'hide')
 	api.nvim_win_set_option(preview.window, 'wrap', false)
+	api.nvim_win_set_option(preview.window, 'number', opts.numbering)
+	numbering = opts.numbering
+	api.nvim_win_set_option(preview.window, 'relativenumber', false)
 	return true
 end
 
@@ -115,6 +122,9 @@ function preview.writePreview(data)
 		vim.cmd(jumpString)
 		if buffers[data.filename] then
 			api.nvim_win_set_buf(preview.window, buffers[data.filename].bufnr)
+			api.nvim_buf_add_highlight(buffers[data.filename].bufnr, previewNamespace,
+			"Visual", data.line - 1, 0, -1)
+			api.nvim_win_set_option(preview.window, 'number', numbering)
 		else
 			if fileExists(data.filename) then
 				local buf
@@ -132,22 +142,20 @@ function preview.writePreview(data)
 					}
 				end
 				api.nvim_win_set_buf(preview.window, buf)
+				api.nvim_buf_add_highlight(buf, previewNamespace,
+				"Visual", data.line - 1, 0, -1)
+				api.nvim_win_set_option(preview.window, 'number', numbering)
 			else
 				api.nvim_win_set_buf(preview.window, preview.buffer)
 			end
 		end
 		if data.line ~= nil then
 			vim.cmd(string.format('norm %sGzt2k', data.line))
-			api.nvim_buf_add_highlight(preview.buffer, previewNamespace,
-			"Visual", data.line - 1, 0, -1)
 		end
 		jumpString = string.format('noautocmd lua vim.api.nvim_set_current_win(%s)', cur_win)
 		vim.cmd(jumpString)
 		--TODO: filetype is not working
 		-- vim.cmd([[doautocmd filetypedetect BufRead ]] .. data.filename)
-	else
-		print('Invalid preview type')
-		return
 	end
 end
 

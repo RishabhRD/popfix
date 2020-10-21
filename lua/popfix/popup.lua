@@ -26,13 +26,13 @@ local function close_cancelled()
 	if action.freed() then return end
 	local line = action.getCurrentLine()
 	local index = action.getCurrentIndex()
-	action.close(index, line, false)
 	mappings.free(list.buffer)
 	autocmd.free(list.buffer)
 	list.close()
 	exportedFunction = nil
 	api.nvim_set_current_win(originalWindow)
 	originalWindow = nil
+	action.close(index, line, false)
 end
 
 local function selectionHandler()
@@ -82,8 +82,8 @@ function M.popup(opts)
 	}
 	local nested_autocmds = {
 		['BufWipeout,BufDelete,BufLeave'] = close_cancelled,
-		['BufDelete'] = close_cancelled,
-		['BufLeave'] = close_cancelled
+		-- ['BufDelete'] = close_cancelled,
+		-- ['BufLeave'] = close_cancelled
 	}
 	local non_nested_autocmds = {
 		['CursorMoved'] = selectionHandler,

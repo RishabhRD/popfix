@@ -1,18 +1,42 @@
+local previewPopup = require'popfix.preview_popup'
+local popup = require'popfix.popup'
 local M = {}
 
-
--- possible modes: cursor, float, split
-local default_opts = {
-	preview_enabled = false,
-	prompt_enabled = false,
-	mode = 'split'
-}
+local currentInstance = nil
+local close = nil
 
 function M.open(opts)
-	opts = opts or default_opts
-	opts.preview_enabled = opts.preview_enabled or default_opts.preview_enabled
-	opts.prompt_enabled = opts.prompt_enabled or default_opts.prompt_enabled
-	opts.mode = opts.mode or default_opts.mode
+	if currentInstance ~= nil then
+		currentInstance = nil
+		close()
+	end
+	if opts.mode == nil then
+		print('Provide a mode attribute')
+		return
+	end
+	if opts.mode == 'editor' then
+	elseif opts.mode == 'cursor' then
+	elseif opts.mode == 'split' then
+	else
+		print('Note a valid mode')
+	end
+	if opts.list == nil then
+		print('List attribute is necessary')
+		return
+	end
+	if opts.preview then
+		currentInstance = previewPopup
+		close = previewPopup.getFunction('close-cancelled')
+		if not previewPopup.popup(opts) then
+			currentInstance = nil
+		end
+	else
+		currentInstance = popup
+		close = previewPopup.getFunction('close-cancelled')
+		if not popup.popup(opts) then
+			currentInstance = nil
+		end
+	end
 end
 
 return M

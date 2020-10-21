@@ -79,18 +79,12 @@ end
 function list.new(opts)
 	opts.title = opts.title or ''
 	if opts.border == nil then opts.border = false end
-	if opts.mode == nil then
-		opts.mode = 'split'
-	end
 	if opts.mode == 'split' then
 		popup_split(opts.height, opts.title)
 	elseif opts.mode == 'editor' then
 		popup_editor(opts.title, opts.border, opts.height, opts.preview)
 	elseif opts.mode == 'cursor' then
 		popup_cursor(opts.height, opts.title, opts.border, opts.width)
-	else
-		print('Unknown mode')
-		return false
 	end
 	if opts.numbering == nil then
 		opts.numbering = false
@@ -103,7 +97,7 @@ function list.new(opts)
 	api.nvim_win_set_option(list.window, 'wrap', false)
 	api.nvim_win_set_option(list.window, 'cursorline', true)
 	api.nvim_buf_set_option(list.buffer, 'modifiable', false)
-	api.nvim_buf_set_option(list.buffer, 'bufhidden', 'wipe')
+	api.nvim_buf_set_option(list.buffer, 'bufhidden', 'hide')
 	return true
 end
 
@@ -115,9 +109,7 @@ end
 
 function list.close()
 	local buf = list.buffer
-	vim.schedule(function()
-		vim.cmd('bwipeout! '..buf)
-	end)
+	vim.cmd('bwipeout! '..buf)
 	list.buffer = nil
 	list.window = nil
 end

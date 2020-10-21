@@ -8,45 +8,40 @@ local api = vim.api
 local M = {}
 
 local splitWindow = nil
-local exportedFunc = nil
 local originalWindow = nil
 
 local function close_selected()
 	if action.freed() then return end
-	api.nvim_set_current_win(originalWindow)
 	local line = action.getCurrentLine()
 	local index = action.getCurrentIndex()
-	action.close(index, line, true)
 	mappings.free(list.buffer)
 	autocmd.free(list.buffer)
-	preview.close()
 	list.close()
+	preview.close()
 	if splitWindow then
 		api.nvim_win_close(splitWindow, true)
 		splitWindow = nil
 	end
-	exportedFunc = nil
+	api.nvim_set_current_win(originalWindow)
 	originalWindow = nil
+	action.close(index, line, true)
 end
 
 local function close_cancelled()
 	if action.freed() then return end
 	local line = action.getCurrentLine()
 	local index = action.getCurrentIndex()
-	action.close(index, line, false)
 	mappings.free(list.buffer)
 	autocmd.free(list.buffer)
-	vim.schedule(function()
-		list.close()
-		preview.close()
-	end)
+	list.close()
+	preview.close()
 	if splitWindow then
 		api.nvim_win_close(splitWindow, true)
 		splitWindow = nil
 	end
-	exportedFunc = nil
 	api.nvim_set_current_win(originalWindow)
 	originalWindow = nil
+	action.close(index, line, false)
 end
 
 local function selectionHandler()
@@ -65,7 +60,9 @@ function M.popup(opts)
 		print "nil data"
 		return false
 	end
-	if opts.mode == nil then opts.mode = 'split' end
+	if opts.mode == 'cursor' then
+		print 'cursor mode is not supported for preview! (yet)'
+	end
 	if opts.list == nil or opts.preview == nil then
 		print 'No attributes found'
 		return false
@@ -128,16 +125,16 @@ function M.popup(opts)
 		end
 	end
 	mappings.add_keymap(list.buffer, opts.keymaps)
-	exportedFunc = {
-		close_selected = close_selected,
-		close_cancelled = close_cancelled
-	}
 	api.nvim_set_current_win(list.window)
 	return true
 end
 
 function M.getFunction(name)
-	return exportedFunc[name]
+	if name == 'close-selected' then
+		return close_selected
+	elseif name == 'close-cancelled' then
+		return close_cancelled
+	end
 end
 
 return M
