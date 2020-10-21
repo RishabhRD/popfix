@@ -9,6 +9,7 @@ local M = {}
 
 local splitWindow = nil
 local originalWindow = nil
+M.closed = true
 
 local function close_selected()
 	if action.freed() then return end
@@ -25,6 +26,7 @@ local function close_selected()
 	api.nvim_set_current_win(originalWindow)
 	originalWindow = nil
 	action.close(index, line, true)
+	M.closed = true
 end
 
 local function close_cancelled()
@@ -42,6 +44,7 @@ local function close_cancelled()
 	api.nvim_set_current_win(originalWindow)
 	originalWindow = nil
 	action.close(index, line, false)
+	M.closed = true
 end
 
 local function selectionHandler()
@@ -126,6 +129,7 @@ function M.popup(opts)
 	end
 	mappings.add_keymap(list.buffer, opts.keymaps)
 	api.nvim_set_current_win(list.window)
+	M.closed = false
 	return true
 end
 

@@ -5,21 +5,22 @@ local list = require'popfix.list'
 local api = vim.api
 
 local M = {}
+M.closed = true
 
 local exportedFunction = nil
 local originalWindow = nil
 
 local function close_selected()
 	if action.freed() then return end
+	mappings.free(list.buffer)
+	autocmd.free(list.buffer)
+	api.nvim_set_current_win(originalWindow)
+	list.close()
+	originalWindow = nil
 	local line = action.getCurrentLine()
 	local index = action.getCurrentIndex()
 	action.close(index, line, true)
-	mappings.free(list.buffer)
-	autocmd.free(list.buffer)
-	list.close()
-	exportedFunction = nil
-	api.nvim_set_current_win(originalWindow)
-	originalWindow = nil
+	M.closed = true
 end
 
 local function close_cancelled()
@@ -28,11 +29,12 @@ local function close_cancelled()
 	local index = action.getCurrentIndex()
 	mappings.free(list.buffer)
 	autocmd.free(list.buffer)
-	list.close()
 	exportedFunction = nil
 	api.nvim_set_current_win(originalWindow)
+	list.close()
 	originalWindow = nil
 	action.close(index, line, false)
+	M.closed = true
 end
 
 local function selectionHandler()
@@ -82,8 +84,6 @@ function M.popup(opts)
 	}
 	local nested_autocmds = {
 		['BufWipeout,BufDelete,BufLeave'] = close_cancelled,
-		-- ['BufDelete'] = close_cancelled,
-		-- ['BufLeave'] = close_cancelled
 	}
 	local non_nested_autocmds = {
 		['CursorMoved'] = selectionHandler,
@@ -111,6 +111,7 @@ function M.popup(opts)
 		close_cancelled = close_cancelled
 	}
 	api.nvim_set_current_win(list.window)
+	M.closed = false
 	return true
 end
 

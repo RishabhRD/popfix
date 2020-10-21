@@ -109,7 +109,11 @@ end
 
 function list.close()
 	local buf = list.buffer
-	vim.cmd('bwipeout! '..buf)
+	-- local win = list.window
+	vim.schedule(function()
+		vim.cmd('bwipeout! '..buf)
+		-- api.nvim_win_close(win, true)
+	end)
 	list.buffer = nil
 	list.window = nil
 end
