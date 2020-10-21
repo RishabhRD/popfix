@@ -44,6 +44,14 @@ Install with any plugin manager. For example with vim-plug
 
 ## API Description
 
+Popfix UI has 2 major components:
+ - List
+ - Preview
+
+ List displays the menu.
+
+ Preview displays the preview.
+
 ### How to invoke plugin
 
 Example:
@@ -178,7 +186,9 @@ Coloring is true then special color(different than normal background) is
 displayed for list. [only for floating window]
 
 
-### Preview
+### Preview [optional]
+
+If preview option is not provided then preview window is not displayed.
 
 Preview supports 4 attributes:
 
