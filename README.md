@@ -69,13 +69,15 @@ Example:
 		list = {
 			border = true,
 			numbering = true,
-			coloring = true
+			coloring = true,
+			title = 'MyTitle'
 		},
 		preview = {
 			type = 'terminal'
 			border = true,
 			numbering = true,
-			coloring = true
+			coloring = true,
+			title = 'MyTitle'
 		}
 	}
 
@@ -177,6 +179,7 @@ List supports 3 attributes:
 - border [optional]
 - numbering [optional]
 - coloring [optional]
+- title [optional]
 
 If border is true then list is displayed with border. [only for floating window]
 
@@ -184,6 +187,9 @@ Numbering is true then numbers are also displayed in list.
 
 Coloring is true then special color(different than normal background) is
 displayed for list. [only for floating window]
+
+Title represents title of list window. It would be displayed iff borders are
+active.
 
 
 ### Preview [optional]
@@ -195,9 +201,10 @@ Preview supports 4 attributes:
 - border [optional]
 - numbering [optional]
 - coloring [optional]
+- title [optional]
 - type
 
-border, numbering, coloring are similar to list attributes and apply in similar
+border, numbering, coloring and title are similar to list attributes and apply in similar
 way to preview window also. However, border and colors are also applied even if
 list is in split mode.
 
