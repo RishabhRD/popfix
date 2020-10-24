@@ -51,6 +51,7 @@ function action.getCurrentIndex()
 end
 
 function action.freed()
+	print(vim.inspect(selection))
 	return selection == nil
 end
 

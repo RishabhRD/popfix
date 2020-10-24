@@ -39,9 +39,9 @@ local bufferKeyMap = function(buf, mode, key_bind, key_func, opts)
 				func_id
 				)
 		else
-			if mode == "i" and not opts.expr then
-				prefix = "<cmd>"
-			end
+			-- if mode == "i" and not opts.expr then
+			-- 	prefix = "<cmd>"
+			-- end
 
 			map_string = string.format(
 				"%s<cmd>lua require('popfix.mappings').execute_keymap(%s, %s)<CR>",

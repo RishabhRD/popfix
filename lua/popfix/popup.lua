@@ -74,7 +74,7 @@ function M.popup(opts)
 		return false
 	end
 	list.setData(opts.data, 0, -1)
-	action.register(opts.callbacks, opts.info)
+	action.register(opts.callbacks)
 	local default_keymaps = {
 		n = {
 			['q'] = close_cancelled,
