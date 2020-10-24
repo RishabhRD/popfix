@@ -45,6 +45,36 @@ local function selectionHandler()
 	end
 end
 
+local function popup_cursor(opts)
+	local cursorPosition = api.nvim_win_get_cursor(originalWindow)
+	opts.list.row = cursorPosition[0] + 1
+	opts.list.col = cursorPosition[1]
+	if not list.new(opts.list) then
+		return false
+	end
+	return true
+end
+
+local function popup_split(opts)
+	if not list.newSplit(opts) then
+		return false
+	end
+	return true
+end
+
+local function popup_editor(opts)
+	local editorWidth = api.nvim_get_option('columns')
+	local editorHeight = api.nvim_get_option("lines")
+	opts.list.height = opts.height or math.ceil(editorHeight * 0.8 - 4)
+	opts.list.width = opts.width or math.ceil(editorWidth * 0.8)
+	opts.list.row = math.ceil((editorHeight - opts.list.height) /2 - 1)
+	opts.list.col = math.ceil((editorWidth - opts.list.width) /2)
+	if not list.new(opts.list) then
+		return false
+	end
+	return true
+end
+
 function M.popup(opts)
 	if opts.data == nil then
 		print "nil data"
@@ -52,26 +82,27 @@ function M.popup(opts)
 	end
 	if opts.mode == nil then opts.mode = 'split' end
 	if opts.list == nil then
-		print 'No attributes found'
-		return false
-	end
-	if opts.mode == 'cursor' then
-		local width = 0
-		for _, str in ipairs(opts.data) do
-			if #str > width then
-				width = #str
-			end
-		end
-		opts.list.width = width + 5
-		opts.height = opts.height or #opts.data
+		opts.list = {}
 	end
 	originalWindow = api.nvim_get_current_win()
+	--TODO: better width strategy
+	opts.list.width = opts.width or 40
 	opts.list.height = opts.height
-	opts.list.mode = opts.mode
-	opts.mode = nil
-	if not list.new(opts.list) then
-		originalWindow = nil
-		return false
+	if opts.mode == 'cursor' then
+		if not popup_cursor(opts) then
+			originalWindow = nil
+			return false
+		end
+	elseif opts.mode == 'split' then
+		if not popup_split(opts) then
+			originalWindow = nil
+			return false
+		end
+	elseif opts.mode == 'editor' then
+		if not popup_editor(opts) then
+			originalWindow = nil
+			return false
+		end
 	end
 	list.setData(opts.data, 0, -1)
 	action.register(opts.callbacks)

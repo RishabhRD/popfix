@@ -33,6 +33,9 @@ local function create_win(row, col, width, height, relative, focusable)
 end
 
 local function fill_border_data(buf, width, height, title)
+	if title ~= '' then
+		title = '  '..title..'  '
+	end
 	local border_lines = { '╔' .. title .. string.rep('═', width - #title) .. '╗' }
 	local middle_line = '║' .. string.rep(' ', width) .. '║'
 	for i=1, height do

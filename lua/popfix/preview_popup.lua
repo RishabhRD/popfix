@@ -58,6 +58,52 @@ local function selectionHandler()
 	end
 end
 
+local function popup_editor(opts)
+	local editorWidth = api.nvim_get_option('columns')
+	local editorHeight = api.nvim_get_option("lines")
+	opts.list.height = opts.height or math.ceil((editorHeight * 0.8 - 4) / 2)
+	if opts.width then
+		opts.list.width = math.floor(opts.width / 2)
+	else
+		opts.list.width = math.ceil(editorWidth * 0.8 / 2)
+	end
+	opts.list.row = math.ceil((editorHeight - opts.list.height) / 2 - 1)
+	opts.list.col = math.ceil((editorWidth - 2 * opts.list.width) / 2)
+	if not list.new(opts.list) then
+		return false
+	end
+	opts.preview.width = opts.list.width
+	opts.preview.height = opts.list.height
+	opts.preview.row = opts.list.row
+	opts.preview.col = opts.list.col + opts.list.width
+	if not preview.new(opts.preview) then
+		list.close()
+		return false
+	end
+	return true
+end
+
+local function popup_split(opts)
+	opts.list.height = opts.height or 12
+	if not list.newSplit(opts) then
+		return false
+	end
+	api.nvim_set_current_win(list.window)
+	vim.cmd('vnew')
+	splitWindow = api.nvim_get_current_win()
+	api.nvim_set_current_win(originalWindow)
+	opts.preview.width = api.nvim_win_get_width(list.window)
+	opts.preview.height = api.nvim_win_get_height(list.window)
+	opts.preview.row = api.nvim_win_get_position(list.window)[1]
+	opts.preview.col = opts.preview.width
+	if not preview.new(opts.preview) then
+		list.close()
+		api.nvim_win_close(splitWindow)
+		return false
+	end
+	return true
+end
+
 function M.popup(opts)
 	if opts.data == nil then
 		print "nil data"
@@ -70,28 +116,19 @@ function M.popup(opts)
 		print 'No attributes found'
 		return false
 	end
-	opts.list.height = opts.height
-	opts.list.mode = opts.mode
-	opts.list.preview = true
 	opts.preview.mode = opts.mode
 	opts.preview.list_border = opts.list.border
-	opts.mode = nil
 	originalWindow = api.nvim_get_current_win()
-	if not list.new(opts.list) then
-		originalWindow = nil
-		return false
-	end
-	if opts.preview.mode == 'split' then
-		vim.cmd('vsplit')
-		local tmpBuffer = api.nvim_create_buf(false, true)
-		api.nvim_buf_set_option(tmpBuffer, 'bufhidden', 'wipe')
-		api.nvim_win_set_buf(api.nvim_get_current_win(), tmpBuffer)
-		splitWindow = api.nvim_get_current_win()
-	end
-	if not preview.new(opts.preview) then
-		originalWindow = nil
-		list.close()
-		return false
+	if opts.mode == 'split' then
+		if not popup_split(opts) then
+			originalWindow = nil
+			return false
+		end
+	elseif opts.mode == 'editor' then
+		if not popup_editor(opts) then
+			originalWindow = nil
+			return false
+		end
 	end
 	list.setData(opts.data, 0, -1)
 	action.register(opts.callbacks)

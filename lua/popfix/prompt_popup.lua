@@ -30,7 +30,6 @@ end
 local function close_cancelled()
 	if M.closed then return end
 	M.closed = true
-	print(M.closed)
 	local line = action.getCurrentLine()
 	local index = action.getCurrentIndex()
 	mappings.free(prompt.buffer)
