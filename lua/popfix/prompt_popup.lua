@@ -42,6 +42,43 @@ local function close_cancelled()
 end
 
 
+local function popup_cursor(opts)
+end
+
+local function popup_editor(opts)
+	local editorWidth = api.nvim_get_option('columns')
+	local editorHeight = api.nvim_get_option("lines")
+	opts.list.height = opts.height or math.ceil(editorHeight * 0.8 - 4)
+	opts.list.width = opts.width or math.ceil(editorWidth * 0.8)
+	opts.list.row = math.ceil((editorHeight - opts.list.height) /2 - 1)
+	opts.list.col = math.ceil((editorWidth - opts.list.width) /2) + 2
+	opts.prompt.originalWindow = originalWindow
+	if not list.new(opts.list) then
+		return false
+	end
+	if opts.list.border then
+		opts.prompt.list_border = true
+	end
+	opts.prompt.width = opts.list.width
+	opts.prompt.row = opts.list.row - 1
+	if opts.list.border then
+		opts.prompt.row = opts.prompt.row - 1
+	end
+	opts.prompt.col = opts.list.col
+	if opts.prompt.border then
+		opts.prompt.row = opts.prompt.row - 1
+		if not opts.list.border then
+			opts.prompt.width = opts.prompt.width - 2
+			opts.prompt.col = opts.prompt.col + 1
+		end
+	end
+	if not prompt.new(opts.prompt) then
+		list.close()
+		return false
+	end
+	return true
+end
+
 local function popup_split(opts)
 	local editorHeight = api.nvim_get_option("lines")
 	local maximumHeight = editorHeight - 5
@@ -55,6 +92,7 @@ local function popup_split(opts)
 	opts.prompt.col = 0
 	opts.prompt.width = math.floor(api.nvim_win_get_width(list.window) / 2)
 	prompt.new(opts.prompt)
+	return true
 end
 
 function M.new(opts)
@@ -63,17 +101,32 @@ function M.new(opts)
 		return false
 	end
 	opts.list = opts.list or {}
-	opts.list.mode = opts.mode
 	if opts.prompt_type == 'plain' then
 		opts.prompt.callback = plainSearchHandler
 	end
 	originalWindow = api.nvim_get_current_win()
-	popup_split(opts)
+	if opts.mode == 'split' then
+		if not popup_split(opts) then
+			originalWindow = nil
+			return false
+		end
+	elseif opts.mode == 'editor' then
+		if not popup_editor(opts) then
+			originalWindow = nil
+			return false
+		end
+	elseif opts.mode == 'cursor' then
+		if not popup_cursor(opts) then
+			originalWindow = nil
+			return false
+		end
+	end
 	list.setData(opts.data, 0, -1)
 	action.register(opts.callbacks)
 	local default_keymaps = {
 		n = {
-			['q'] = close_cancelled
+			['q'] = close_cancelled,
+			['<Esc>'] = close_cancelled
 		}
 	}
 	opts.keymaps = opts.keymaps or default_keymaps
@@ -93,8 +146,6 @@ function M.new(opts)
 	end
 	local nested_autocmds = {
 		['BufLeave'] = close_cancelled,
-		['BufDelete'] = close_cancelled,
-		['BufWipeout'] = close_cancelled
 	}
 	autocmd.addCommand(prompt.buffer, nested_autocmds, true)
 	api.nvim_set_current_win(prompt.window)

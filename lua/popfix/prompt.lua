@@ -7,6 +7,7 @@ local prompt = {}
 prompt.buffer = nil
 prompt.window = nil
 local prefix = nil
+local originalWindow = nil
 local textChanged = nil
 
 local function getCurrentPromptText()
@@ -23,15 +24,9 @@ function prompt.new(opts)
 	if opts.border == nil then
 		opts.border = false
 	end
+	originalWindow = opts.originalWindow
 	opts.title = opts.title or ''
 	opts.height = 1
-	if opts.border then
-		opts.col = opts.col + 1
-		if not opts.list_border then
-			opts.height = opts.height
-			opts.row = opts.row + 1
-		end
-	end
 	opts.prompt_text = opts.prompt_text or ''
 	prefix = opts.prompt_text .. '> '
 	local win_buf = floating_win.create_win(opts, opts.mode)
@@ -40,7 +35,7 @@ function prompt.new(opts)
 	if opts.coloring == nil or opts.coloring == false then
 		api.nvim_win_set_option(prompt.window, 'winhl', 'Normal:PromptNormal')
 	end
-	api.nvim_buf_set_option(prompt.buffer, 'bufhidden', 'wipe')
+	api.nvim_buf_set_option(prompt.buffer, 'bufhidden', 'hide')
 	api.nvim_win_set_option(prompt.window, 'wrap', false)
 	api.nvim_win_set_option(prompt.window, 'number', false)
 	api.nvim_win_set_option(prompt.window, 'relativenumber', false)
@@ -61,7 +56,10 @@ end
 function prompt.close()
 	if prompt.buffer ~= nil then
 		if api.nvim_buf_is_loaded(prompt.buffer) then
-			vim.cmd(string.format('bwipeout! %s', prompt.buffer))
+			local buf = prompt.buffer
+			vim.schedule(function()
+				vim.cmd(string.format('bwipeout! %s', buf))
+			end)
 		end
 	end
 	autocmd.free(prompt.buffer)

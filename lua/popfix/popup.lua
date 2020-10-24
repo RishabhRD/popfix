@@ -47,8 +47,10 @@ end
 
 local function popup_cursor(opts)
 	local cursorPosition = api.nvim_win_get_cursor(originalWindow)
-	opts.list.row = cursorPosition[0] + 1
-	opts.list.col = cursorPosition[1]
+	local position = api.nvim_win_get_position(originalWindow)
+	--TODO: handle edge cases
+	opts.list.row = position[1] + cursorPosition[1] + 1
+	opts.list.col = position[2] + cursorPosition[2]
 	if not list.new(opts.list) then
 		return false
 	end
