@@ -9,6 +9,7 @@ local M = {}
 
 local splitWindow = nil
 local originalWindow = nil
+local listNamespace = api.nvim_create_namespace('popfix.preview_popup')
 M.closed = true
 
 local function close_selected()
@@ -51,6 +52,11 @@ local function selectionHandler()
 	local oldIndex = action.getCurrentIndex()
 	local line = list.getCurrentLineNumber()
 	if oldIndex ~= line then
+		if oldIndex ~= nil then
+			api.nvim_buf_clear_namespace(list.buffer, listNamespace, oldIndex, -1)
+		end
+		api.nvim_buf_add_highlight(list.buffer, listNamespace, "Visual", line - 1,
+		0, -1)
 		local data = action.select(line, list.getCurrentLine())
 		if data ~= nil then
 			preview.writePreview(data)

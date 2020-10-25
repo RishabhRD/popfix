@@ -6,6 +6,7 @@ local api = vim.api
 
 local M = {}
 M.closed = true
+local listNamespace = api.nvim_create_namespace('popfix.popup')
 
 local exportedFunction = nil
 local originalWindow = nil
@@ -41,6 +42,11 @@ local function selectionHandler()
 	local oldIndex = action.getCurrentIndex()
 	local line = list.getCurrentLineNumber()
 	if oldIndex ~= line then
+		if oldIndex ~= nil then
+			api.nvim_buf_clear_namespace(list.buffer, listNamespace, oldIndex, -1)
+		end
+		api.nvim_buf_add_highlight(list.buffer, listNamespace, "Visual", line - 1,
+		0, -1)
 		action.select(line, list.getCurrentLine())
 	end
 end

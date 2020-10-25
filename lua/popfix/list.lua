@@ -107,7 +107,7 @@ function list.new(opts)
 		api.nvim_win_set_option(list.window, 'winhl', 'Normal:ListNormal')
 	end
 	api.nvim_win_set_option(list.window, 'wrap', false)
-	api.nvim_win_set_option(list.window, 'cursorline', true)
+	api.nvim_win_set_option(list.window, 'cursorline', false)
 	api.nvim_buf_set_option(list.buffer, 'modifiable', false)
 	api.nvim_buf_set_option(list.buffer, 'bufhidden', 'hide')
 	return true
@@ -158,13 +158,13 @@ end
 
 function list.selectNextItem()
 	local lineNumber = list.getCurrentLineNumber()
-	api.nvim_win_set_cursor(list.window, {lineNumber + 1, 0})
+	pcall(api.nvim_win_set_cursor, list.window, {lineNumber +1, 0})
 	vim.cmd('redraw')
 end
 
 function list.selectPreviousItem()
 	local lineNumber = list.getCurrentLineNumber()
-	if lineNumber - 1 >= 0 then
+	if lineNumber - 1 > 0 then
 		api.nvim_win_set_cursor(list.window, {lineNumber - 1, 0})
 	end
 	vim.cmd('redraw')

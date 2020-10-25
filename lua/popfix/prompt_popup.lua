@@ -9,6 +9,7 @@ local prompt = require'popfix.prompt'
 local list = require'popfix.list'
 M.closed = true
 local originalWindow = nil
+local listNamespace = api.nvim_create_namespace('popfix.prompt_popup')
 
 local function plainSearchHandler(str)
 	print(str)
@@ -41,6 +42,26 @@ local function close_cancelled()
 	action.close(index, line, false)
 end
 
+local function selectionHandler()
+	local oldIndex = action.getCurrentIndex()
+	local line = list.getCurrentLineNumber()
+	if oldIndex ~= line then
+		api.nvim_buf_clear_namespace(list.buffer, listNamespace, 0, -1)
+		api.nvim_buf_add_highlight(list.buffer, listNamespace, "Visual", line - 1,
+		0, -1)
+		action.select(line, list.getCurrentLine())
+	end
+end
+
+local function selectNextItem()
+	list.selectNextItem()
+	selectionHandler()
+end
+
+local function selectPreviousItem()
+	list.selectPreviousItem()
+	selectionHandler()
+end
 
 local function popup_cursor(opts)
 end
@@ -131,8 +152,8 @@ function M.new(opts)
 		},
 		i = {
 			['<C-c>'] = close_cancelled,
-			['<C-n>'] = list.selectNextItem,
-			['<C-p>'] = list.selectPreviousItem,
+			['<C-n>'] = selectNextItem,
+			['<C-p>'] = selectPreviousItem,
 		}
 	}
 	opts.keymaps = opts.keymaps or default_keymaps
@@ -153,7 +174,11 @@ function M.new(opts)
 	local nested_autocmds = {
 		['BufLeave'] = close_cancelled,
 	}
+	local non_nested_autocmd = {
+		['CursorMoved'] = selectionHandler,
+	}
 	autocmd.addCommand(prompt.buffer, nested_autocmds, true)
+	autocmd.addCommand(prompt.buffer, non_nested_autocmd, false)
 	api.nvim_set_current_win(prompt.window)
 	mappings.add_keymap(prompt.buffer, opts.keymaps)
 	M.closed = false
