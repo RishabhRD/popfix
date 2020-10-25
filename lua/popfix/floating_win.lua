@@ -14,11 +14,11 @@ local default_opts = {
 	border = false,
 }
 
-local function create_win(row, col, width, height, focusable)
+local function create_win(row, col, width, height, relative, focusable)
 	local buf = api.nvim_create_buf(false, true)
 	local options = {
 		style = "minimal",
-		relative = "editor",
+		relative = relative,
 		width = width,
 		height = height,
 		row = row,
@@ -52,6 +52,7 @@ function M.create_win(opts)
 	opts.title = opts.title or default_opts.title
 	opts.row = opts.row or default_opts.row
 	opts.col = opts.col or default_opts.col
+	opts.relative = opts.relative or "editor"
 	if opts.border == nil then
 		opts.border = default_opts.border
 	end
@@ -59,10 +60,10 @@ function M.create_win(opts)
 	local border_buf = nil
 
 
-	local win_buf_pair = create_win(opts.row, opts.col, opts.width, opts.height, true)
+	local win_buf_pair = create_win(opts.row, opts.col, opts.width, opts.height, opts.relative, true)
 	if opts.border then
 		local border_win_buf_pair = create_win(opts.row - 1, opts.col - 1,
-		opts.width + 2, opts.height + 2, false)
+		opts.width + 2, opts.height + 2, opts.relative, false)
 		api.nvim_win_set_option(border_win_buf_pair.win, 'winhl', 'Normal:Normal'
 		)
 		vim.cmd('redraw')

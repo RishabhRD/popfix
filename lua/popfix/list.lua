@@ -78,7 +78,7 @@ end
 
 local function popup(opts)
 	local local_opts = {
-		relative = "editor",
+		relative = opts.relative,
 		width = opts.width,
 		height = opts.height,
 		row = opts.row,
@@ -86,7 +86,7 @@ local function popup(opts)
 		title = opts.title,
 		border = opts.border
 	}
-	local buf_win = floating_win.create_win(local_opts, opts.mode)
+	local buf_win = floating_win.create_win(local_opts)
 	local win = buf_win.win
 	local buf = buf_win.buf
 	api.nvim_win_set_height(win, opts.height)

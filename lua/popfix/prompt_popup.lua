@@ -53,17 +53,45 @@ local function selectionHandler()
 	end
 end
 
-local function selectNextItem()
+function M.selectNextItem()
 	list.selectNextItem()
 	selectionHandler()
 end
 
-local function selectPreviousItem()
+function M.selectPreviousItem()
 	list.selectPreviousItem()
 	selectionHandler()
 end
 
 local function popup_cursor(opts)
+	--TODO: handle edge cases
+	opts.list.row = 2
+	opts.list.col = 0
+	opts.list.relative = 'cursor'
+	opts.list.height = opts.height
+	opts.prompt.row = 1
+	opts.prompt.col = 0
+	opts.prompt.relative = 'cursor'
+	if opts.list.border then
+		opts.list.row = opts.list.row + 2
+		-- opts.prompt.row = opts.list.row + 1
+	end
+	if opts.prompt.border then
+		opts.list.row = opts.list.row + 1
+		-- opts.prompt.row = opts.list.row + 1
+	end
+	--TODO: better width strategy
+	opts.list.width = opts.width or 40
+	opts.prompt.width = opts.width or 40
+	if not list.new(opts.list) then
+		return false
+	end
+	print(opts.prompt.row)
+	if not prompt.new(opts.prompt) then
+		list.close()
+		return false
+	end
+	return true
 end
 
 local function popup_editor(opts)
@@ -73,7 +101,6 @@ local function popup_editor(opts)
 	opts.list.width = opts.width or math.ceil(editorWidth * 0.8)
 	opts.list.row = math.ceil((editorHeight - opts.list.height) /2 - 1)
 	opts.list.col = math.ceil((editorWidth - opts.list.width) /2) + 2
-	opts.prompt.originalWindow = originalWindow
 	if not list.new(opts.list) then
 		return false
 	end
@@ -152,8 +179,9 @@ function M.new(opts)
 		},
 		i = {
 			['<C-c>'] = close_cancelled,
-			['<C-n>'] = selectNextItem,
-			['<C-p>'] = selectPreviousItem,
+			['<C-n>'] = M.selectNextItem,
+			['<C-p>'] = M.selectPreviousItem,
+			['<CR>'] = close_selected,
 		}
 	}
 	opts.keymaps = opts.keymaps or default_keymaps

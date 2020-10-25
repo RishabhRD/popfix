@@ -27,7 +27,7 @@ function prompt.new(opts)
 	opts.height = 1
 	opts.prompt_text = opts.prompt_text or ''
 	prefix = opts.prompt_text .. '> '
-	local win_buf = floating_win.create_win(opts, opts.mode)
+	local win_buf = floating_win.create_win(opts)
 	prompt.buffer = win_buf.buf
 	prompt.window = win_buf.win
 	if opts.coloring == nil or opts.coloring == false then

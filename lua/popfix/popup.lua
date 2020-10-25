@@ -52,11 +52,10 @@ local function selectionHandler()
 end
 
 local function popup_cursor(opts)
-	local cursorPosition = api.nvim_win_get_cursor(originalWindow)
-	local position = api.nvim_win_get_position(originalWindow)
 	--TODO: handle edge cases
-	opts.list.row = position[1] + cursorPosition[1]
-	opts.list.col = position[2] + cursorPosition[2]
+	opts.list.row = 1
+	opts.list.col = 0
+	opts.list.relative = "cursor"
 	if opts.list.border then
 		opts.list.row = opts.list.row + 1
 	end
