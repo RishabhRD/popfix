@@ -18,7 +18,8 @@ local function plainSearchHandler(str)
 end
 
 local function close_selected()
-	if action.freed() then return end
+	if M.closed then return end
+	M.closed = true
 	local line = action.getCurrentLine()
 	local index = action.getCurrentIndex()
 	mappings.free(list.buffer)
@@ -32,7 +33,6 @@ local function close_selected()
 	api.nvim_set_current_win(originalWindow)
 	originalWindow = nil
 	action.close(index, line, true)
-	M.closed = true
 end
 
 local function close_cancelled()
@@ -59,7 +59,7 @@ local function selectionHandler()
 	local line = list.getCurrentLineNumber()
 	if oldIndex ~= line then
 		api.nvim_buf_clear_namespace(list.buffer, listNamespace, 0, -1)
-		api.nvim_buf_add_highlight(list.buffer, listNamespace, "CursorLine", line -
+		api.nvim_buf_add_highlight(list.buffer, listNamespace, "Visual", line -
 		1, 0, -1)
 		local data = action.select(line, list.getCurrentLine())
 		if data ~= nil then
@@ -195,6 +195,9 @@ function M.popup(opts)
 		n = {
 			['q'] = close_cancelled,
 			['<Esc>'] = close_cancelled,
+			['j'] = M.selectNextItem,
+			['k'] = M.selectPreviousItem,
+			['<CR>'] = close_selected
 		},
 		i = {
 			['<C-c>'] = close_cancelled,

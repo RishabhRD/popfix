@@ -47,7 +47,7 @@ local function selectionHandler()
 	local line = list.getCurrentLineNumber()
 	if oldIndex ~= line then
 		api.nvim_buf_clear_namespace(list.buffer, listNamespace, 0, -1)
-		api.nvim_buf_add_highlight(list.buffer, listNamespace, "CursorLine", line - 1,
+		api.nvim_buf_add_highlight(list.buffer, listNamespace, "Visual", line - 1,
 		0, -1)
 		action.select(line, list.getCurrentLine())
 	end
@@ -140,7 +140,7 @@ local function popup_split(opts)
 	opts.prompt.row = editorHeight - opts.height - 5
 	opts.prompt.col = 1
 	opts.prompt.width = math.floor(api.nvim_win_get_width(list.window) / 2)
-	if prompt.new(opts.prompt) then
+	if not prompt.new(opts.prompt) then
 		list.close()
 		return false
 	end
@@ -179,6 +179,9 @@ function M.popup(opts)
 		n = {
 			['q'] = close_cancelled,
 			['<Esc>'] = close_cancelled,
+			['j'] = M.selectNextItem,
+			['k'] = M.selectPreviousItem,
+			['<CR>'] = close_selected
 		},
 		i = {
 			['<C-c>'] = close_cancelled,

@@ -9,13 +9,13 @@ prompt.window = nil
 local prefix = nil
 local textChanged = nil
 
-local function getCurrentPromptText()
+function prompt.getCurrentPromptText()
     local current_prompt = vim.api.nvim_buf_get_lines(prompt.buffer, 0, 1, false)[1]
 	return string.sub(current_prompt, #prefix + 1)
 end
 
 local function triggerTextChanged()
-	textChanged(getCurrentPromptText())
+	textChanged(prompt.getCurrentPromptText())
 end
 
 
