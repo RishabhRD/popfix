@@ -73,12 +73,11 @@ local function popup_cursor(opts)
 	opts.prompt.col = 0
 	opts.prompt.relative = 'cursor'
 	if opts.list.border then
-		opts.list.row = opts.list.row + 2
-		-- opts.prompt.row = opts.list.row + 1
+		opts.list.row = opts.list.row + 1
 	end
 	if opts.prompt.border then
-		opts.list.row = opts.list.row + 1
-		-- opts.prompt.row = opts.list.row + 1
+		opts.list.row = opts.list.row + 2
+		opts.prompt.row = opts.prompt.row + 1
 	end
 	--TODO: better width strategy
 	opts.list.width = opts.width or 40
@@ -86,7 +85,6 @@ local function popup_cursor(opts)
 	if not list.new(opts.list) then
 		return false
 	end
-	print(opts.prompt.row)
 	if not prompt.new(opts.prompt) then
 		list.close()
 		return false
