@@ -125,7 +125,7 @@ function list.newSplit(opts)
 		api.nvim_win_set_option(list.window, 'winhl', 'Normal:ListNormal')
 	end
 	api.nvim_win_set_option(list.window, 'wrap', false)
-	api.nvim_win_set_option(list.window, 'cursorline', true)
+	api.nvim_win_set_option(list.window, 'cursorline', false)
 	api.nvim_buf_set_option(list.buffer, 'modifiable', false)
 	api.nvim_buf_set_option(list.buffer, 'bufhidden', 'hide')
 	return true

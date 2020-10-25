@@ -67,7 +67,11 @@ end
 local function popup_editor(opts)
 	local editorWidth = api.nvim_get_option('columns')
 	local editorHeight = api.nvim_get_option("lines")
-	opts.list.height = opts.height or math.ceil((editorHeight * 0.8 - 4) / 2)
+	opts.list.height = opts.height or math.ceil((editorHeight * 0.8 - 4) )
+	--TODO: better resize strategy
+	if 2 * editorHeight > editorWidth then
+		opts.list.height = opts.height or math.ceil((editorHeight * 0.8 - 4) / 2)
+	end
 	if opts.width then
 		opts.list.width = math.floor(opts.width / 2)
 	else

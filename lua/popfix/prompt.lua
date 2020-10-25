@@ -47,7 +47,7 @@ function prompt.new(opts)
 		textChanged = opts.callback
 	end
 	vim.cmd(string.format('autocmd BufEnter,WinEnter <buffer=%s>  startinsert', prompt.buffer))
-return true
+	return true
 end
 
 function prompt.close()

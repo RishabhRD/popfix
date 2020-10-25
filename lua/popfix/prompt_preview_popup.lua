@@ -7,9 +7,11 @@ local action = require'popfix.action'
 
 local prompt = require'popfix.prompt'
 local list = require'popfix.list'
+local preview = require'popfix.preview'
 M.closed = true
 local originalWindow = nil
-local listNamespace = api.nvim_create_namespace('popfix.prompt_popup')
+local listNamespace = api.nvim_create_namespace('popfix.prompt_preview_popup')
+local splitWindow = nil
 
 local function plainSearchHandler(str)
 	print(str)
@@ -22,6 +24,11 @@ local function close_selected()
 	mappings.free(list.buffer)
 	list.close()
 	prompt.close()
+	preview.close()
+	if splitWindow then
+		api.nvim_win_close(splitWindow, true)
+		splitWindow = nil
+	end
 	api.nvim_set_current_win(originalWindow)
 	originalWindow = nil
 	action.close(index, line, true)
@@ -38,6 +45,11 @@ local function close_cancelled()
 	api.nvim_set_current_win(originalWindow)
 	list.close()
 	prompt.close()
+	preview.close()
+	if splitWindow then
+		api.nvim_win_close(splitWindow, true)
+		splitWindow = nil
+	end
 	originalWindow = nil
 	action.close(index, line, false)
 end
@@ -47,9 +59,12 @@ local function selectionHandler()
 	local line = list.getCurrentLineNumber()
 	if oldIndex ~= line then
 		api.nvim_buf_clear_namespace(list.buffer, listNamespace, 0, -1)
-		api.nvim_buf_add_highlight(list.buffer, listNamespace, "Visual", line - 1,
-		0, -1)
-		action.select(line, list.getCurrentLine())
+		api.nvim_buf_add_highlight(list.buffer, listNamespace, "Visual", line -
+		1, 0, -1)
+		local data = action.select(line, list.getCurrentLine())
+		if data ~= nil then
+			preview.writePreview(data)
+		end
 	end
 end
 
@@ -62,64 +77,59 @@ function M.selectPreviousItem()
 	list.selectPreviousItem()
 	selectionHandler()
 end
-
-local function popup_cursor(opts)
-	--TODO: handle edge cases
-	opts.list.row = 2
-	opts.list.col = 0
-	opts.list.relative = 'cursor'
-	opts.list.height = opts.height
-	opts.prompt.row = 1
-	opts.prompt.col = 0
-	opts.prompt.relative = 'cursor'
-	if opts.list.border then
-		opts.list.row = opts.list.row + 1
-	end
-	if opts.prompt.border then
-		opts.list.row = opts.list.row + 2
-		opts.prompt.row = opts.prompt.row + 1
-	end
-	--TODO: better width strategy
-	opts.list.width = opts.width or 40
-	opts.prompt.width = opts.width or 40
-	if not list.new(opts.list) then
-		return false
-	end
-	if not prompt.new(opts.prompt) then
-		list.close()
-		return false
-	end
-	return true
-end
-
 local function popup_editor(opts)
+	--TODO: handle edge cases
 	local editorWidth = api.nvim_get_option('columns')
 	local editorHeight = api.nvim_get_option("lines")
-	opts.list.height = opts.height or math.ceil(editorHeight * 0.8 - 4)
-	opts.list.width = opts.width or math.ceil(editorWidth * 0.8)
-	opts.list.row = math.ceil((editorHeight - opts.list.height) /2 - 1)
-	opts.list.col = math.ceil((editorWidth - opts.list.width) /2) + 2
+	opts.list.height = opts.height or math.ceil((editorHeight * 0.8 - 4)) - 1
+	opts.preview.height = opts.list.height + 1
+	if 2 * editorHeight > editorWidth then
+		print('here')
+		opts.list.height = opts.height or math.ceil((editorHeight * 0.8 - 4) / 2)
+	end
+	if opts.width then
+		opts.list.width = math.floor(opts.width / 2)
+	else
+		opts.list.width = math.ceil(editorWidth * 0.8 / 2)
+	end
+	opts.prompt.list_border = opts.list.border
+	opts.list.row = math.ceil((editorHeight - opts.list.height) / 2 - 1)
+	opts.list.col = math.ceil((editorWidth - 2 * opts.list.width) / 2)
+	opts.prompt.width = opts.list.width
+	opts.prompt.row = opts.list.row - 1
+	opts.prompt.col = opts.list.col
+
+	if opts.prompt.border then
+		opts.list.height = opts.list.height - 2
+		opts.list.row = opts.list.row + 1
+	end
+	if opts.list.border then
+		opts.list.height = opts.list.height - 2
+		opts.list.row = opts.list.row + 1
+	end
+	opts.preview.col = opts.prompt.col + opts.prompt.width
+	opts.preview.row = opts.prompt.row
+	opts.preview.width = opts.list.width
+	if opts.list.border and not opts.prompt.border then
+		opts.preview.row = opts.preview.row + 1
+	end
+	if opts.list.border or opts.prompt.border then
+		opts.preview.col = opts.preview.col + 1
+		opts.preview.row = opts.preview.row - 1
+	end
+	if opts.preview.border then
+		opts.preview.col = opts.preview.col + 1
+	end
 	if not list.new(opts.list) then
 		return false
 	end
-	if opts.list.border then
-		opts.prompt.list_border = true
-	end
-	opts.prompt.width = opts.list.width
-	opts.prompt.row = opts.list.row - 1
-	if opts.list.border then
-		opts.prompt.row = opts.prompt.row - 1
-	end
-	opts.prompt.col = opts.list.col
-	if opts.prompt.border then
-		opts.prompt.row = opts.prompt.row - 1
-		if not opts.list.border then
-			opts.prompt.width = opts.prompt.width - 2
-			opts.prompt.col = opts.prompt.col + 1
-		end
-	end
 	if not prompt.new(opts.prompt) then
 		list.close()
+		return false
+	end
+	if not preview.new(opts.preview) then
+		list.close()
+		prompt.close()
 		return false
 	end
 	return true
@@ -127,21 +137,32 @@ end
 
 local function popup_split(opts)
 	--TODO: handle edge cases
-	local editorHeight = api.nvim_get_option("lines")
-	local maximumHeight = editorHeight - 5
 	opts.height = opts.height or 12
-	if opts.height > maximumHeight then
-		opts.height = maximumHeight
-	end
 	opts.list.height = opts.height
-	if not list.newSplit(opts.list) then
+	if not list.newSplit(opts) then
 		return false
 	end
+	api.nvim_set_current_win(list.window)
+	vim.cmd('vnew')
+	splitWindow = api.nvim_get_current_win()
+	api.nvim_set_current_win(originalWindow)
+	opts.preview.width = api.nvim_win_get_width(list.window)
+	opts.preview.height = api.nvim_win_get_height(list.window)
+	opts.preview.row = api.nvim_win_get_position(list.window)[1]
+	opts.preview.col = opts.preview.width
+	if not preview.new(opts.preview) then
+		list.close()
+		api.nvim_win_close(splitWindow)
+		return false
+	end
+	local editorHeight = api.nvim_get_option("lines")
 	opts.prompt.row = editorHeight - opts.height - 5
 	opts.prompt.col = 1
-	opts.prompt.width = math.floor(api.nvim_win_get_width(list.window) / 2)
-	if prompt.new(opts.prompt) then
+	opts.prompt.width = math.floor(api.nvim_win_get_width(list.window))
+	if not prompt.new(opts.prompt) then
 		list.close()
+		api.nvim_win_close(splitWindow, true)
+		preview.close()
 		return false
 	end
 	return true
@@ -164,11 +185,6 @@ function M.popup(opts)
 		end
 	elseif opts.mode == 'editor' then
 		if not popup_editor(opts) then
-			originalWindow = nil
-			return false
-		end
-	elseif opts.mode == 'cursor' then
-		if not popup_cursor(opts) then
 			originalWindow = nil
 			return false
 		end
