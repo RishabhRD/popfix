@@ -47,7 +47,7 @@ local function selectionHandler()
 	local line = list.getCurrentLineNumber()
 	if oldIndex ~= line then
 		api.nvim_buf_clear_namespace(list.buffer, listNamespace, 0, -1)
-		api.nvim_buf_add_highlight(list.buffer, listNamespace, "Visual", line - 1,
+		api.nvim_buf_add_highlight(list.buffer, listNamespace, "CursorLine", line - 1,
 		0, -1)
 		action.select(line, list.getCurrentLine())
 	end
