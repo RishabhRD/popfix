@@ -86,7 +86,7 @@ local function popup(opts)
 		title = opts.title,
 		border = opts.border
 	}
-	local buf_win = floating_win.create_win(local_opts)
+	local buf_win = floating_win.create_win(local_opts, opts.mode)
 	local win = buf_win.win
 	local buf = buf_win.buf
 	api.nvim_win_set_height(win, opts.height)
@@ -140,10 +140,8 @@ end
 
 function list.close()
 	local buf = list.buffer
-	-- local win = list.window
 	vim.schedule(function()
 		vim.cmd('bwipeout! '..buf)
-		-- api.nvim_win_close(win, true)
 	end)
 	list.buffer = nil
 	list.window = nil
@@ -156,6 +154,20 @@ end
 function list.getCurrentLine()
 	local lineNumber = list.getCurrentLineNumber()
 	return api.nvim_buf_get_lines(list.buffer, lineNumber - 1, lineNumber, false)[1]
+end
+
+function list.selectNextItem()
+	local lineNumber = list.getCurrentLineNumber()
+	api.nvim_win_set_cursor(list.window, {lineNumber + 1, 0})
+	vim.cmd('redraw')
+end
+
+function list.selectPreviousItem()
+	local lineNumber = list.getCurrentLineNumber()
+	if lineNumber - 1 >= 0 then
+		api.nvim_win_set_cursor(list.window, {lineNumber - 1, 0})
+	end
+	vim.cmd('redraw')
 end
 
 return list

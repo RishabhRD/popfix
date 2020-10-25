@@ -39,9 +39,6 @@ local bufferKeyMap = function(buf, mode, key_bind, key_func, opts)
 				func_id
 				)
 		else
-			-- if mode == "i" and not opts.expr then
-			-- 	prefix = "<cmd>"
-			-- end
 
 			map_string = string.format(
 				"%s<cmd>lua require('popfix.mappings').execute_keymap(%s, %s)<CR>",
@@ -84,7 +81,7 @@ function mappings.add_keymap(buf,mapping_table, param)
 	local insertMappings = mapping_table.i
 	if insertMappings ~= nil then
 		for key, value in pairs(insertMappings) do
-			bufferKeyMap(buf,'n',key,value)
+			bufferKeyMap(buf,'i',key,value)
 		end
 	end
 end

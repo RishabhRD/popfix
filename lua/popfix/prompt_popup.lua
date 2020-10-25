@@ -101,6 +101,7 @@ function M.new(opts)
 		return false
 	end
 	opts.list = opts.list or {}
+	opts.list.mode = opts.mode
 	if opts.prompt_type == 'plain' then
 		opts.prompt.callback = plainSearchHandler
 	end
@@ -126,7 +127,12 @@ function M.new(opts)
 	local default_keymaps = {
 		n = {
 			['q'] = close_cancelled,
-			['<Esc>'] = close_cancelled
+			['<Esc>'] = close_cancelled,
+		},
+		i = {
+			['<C-c>'] = close_cancelled,
+			['<C-n>'] = list.selectNextItem,
+			['<C-p>'] = list.selectPreviousItem,
 		}
 	}
 	opts.keymaps = opts.keymaps or default_keymaps

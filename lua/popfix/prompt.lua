@@ -7,7 +7,6 @@ local prompt = {}
 prompt.buffer = nil
 prompt.window = nil
 local prefix = nil
-local originalWindow = nil
 local textChanged = nil
 
 local function getCurrentPromptText()
@@ -24,7 +23,6 @@ function prompt.new(opts)
 	if opts.border == nil then
 		opts.border = false
 	end
-	originalWindow = opts.originalWindow
 	opts.title = opts.title or ''
 	opts.height = 1
 	opts.prompt_text = opts.prompt_text or ''
@@ -49,7 +47,6 @@ function prompt.new(opts)
 		textChanged = opts.callback
 	end
 	vim.cmd(string.format('autocmd BufEnter,WinEnter <buffer=%s>  startinsert', prompt.buffer))
-	-- vim.api.nvim_set_current_win(prompt.window)
 return true
 end
 

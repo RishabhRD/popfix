@@ -14,11 +14,11 @@ local default_opts = {
 	border = false,
 }
 
-local function create_win(row, col, width, height, relative, focusable)
+local function create_win(row, col, width, height, focusable)
 	local buf = api.nvim_create_buf(false, true)
 	local options = {
 		style = "minimal",
-		relative = relative,
+		relative = "editor",
 		width = width,
 		height = height,
 		row = row,
@@ -46,10 +46,7 @@ local function fill_border_data(buf, width, height, title)
 	api.nvim_buf_set_lines(buf, 0, -1, false, border_lines)
 end
 
---TODO: get rid of this type hack.
-function M.create_win(opts, type)
-	if type == nil then type = 'editor' end
-	opts.relative = opts.relative or default_opts.relative
+function M.create_win(opts)
 	opts.width = opts.width or default_opts.width
 	opts.height = opts.height or default_opts.height
 	opts.title = opts.title or default_opts.title
@@ -61,24 +58,19 @@ function M.create_win(opts, type)
 
 	local border_buf = nil
 
-	local win_buf_pair
-	if type == 'split' then
-		win_buf_pair = create_win(opts.row, opts.col, opts.width, opts.height, opts.relative, true)
-	end
 
+	local win_buf_pair = create_win(opts.row, opts.col, opts.width, opts.height, true)
 	if opts.border then
 		local border_win_buf_pair = create_win(opts.row - 1, opts.col - 1,
-		opts.width + 2, opts.height + 2, opts.relative, false
+		opts.width + 2, opts.height + 2, false)
+		api.nvim_win_set_option(border_win_buf_pair.win, 'winhl', 'Normal:Normal'
 		)
-		api.nvim_win_set_option(border_win_buf_pair.win, 'winhl', 'Normal:Normal')
-		api.nvim_buf_set_option(border_win_buf_pair.buf, 'bufhidden', 'wipe')
+		vim.cmd('redraw')
+		api.nvim_buf_set_option(border_win_buf_pair.buf, 'bufhidden', 'hide')
 		border_buf = border_win_buf_pair.buf
 		fill_border_data(border_buf, opts.width , opts.height, opts.title )
 	end
 
-	if type == 'editor' then
-		win_buf_pair = create_win(opts.row, opts.col, opts.width, opts.height, opts.relative, true)
-	end
 	if opts.border then
 		local autocmds = {
 			['BufDelete,BufWipeout'] = string.format('bwipeout! %s', border_buf),
