@@ -156,13 +156,13 @@ function list.getCurrentLine()
 	return api.nvim_buf_get_lines(list.buffer, lineNumber - 1, lineNumber, false)[1]
 end
 
-function list.selectNextItem()
+function list.select_next()
 	local lineNumber = list.getCurrentLineNumber()
 	pcall(api.nvim_win_set_cursor, list.window, {lineNumber +1, 0})
 	vim.cmd('redraw')
 end
 
-function list.selectPreviousItem()
+function list.select_prev()
 	local lineNumber = list.getCurrentLineNumber()
 	if lineNumber - 1 > 0 then
 		api.nvim_win_set_cursor(list.window, {lineNumber - 1, 0})

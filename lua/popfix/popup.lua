@@ -8,10 +8,9 @@ local M = {}
 M.closed = true
 local listNamespace = api.nvim_create_namespace('popfix.popup')
 
-local exportedFunction = nil
 local originalWindow = nil
 
-local function close_selected()
+function M.close_selected()
 	if action.freed() then return end
 	mappings.free(list.buffer)
 	autocmd.free(list.buffer)
@@ -24,13 +23,12 @@ local function close_selected()
 	M.closed = true
 end
 
-local function close_cancelled()
+function M.close_cancelled()
 	if action.freed() then return end
 	local line = action.getCurrentLine()
 	local index = action.getCurrentIndex()
 	mappings.free(list.buffer)
 	autocmd.free(list.buffer)
-	exportedFunction = nil
 	api.nvim_set_current_win(originalWindow)
 	list.close()
 	originalWindow = nil
@@ -118,13 +116,13 @@ function M.popup(opts)
 	action.register(opts.callbacks)
 	local default_keymaps = {
 		n = {
-			['q'] = close_cancelled,
-			['<Esc>'] = close_cancelled,
-			['<CR>'] = close_selected
+			['q'] = M.close_cancelled,
+			['<Esc>'] = M.close_cancelled,
+			['<CR>'] = M.close_selected
 		}
 	}
 	local nested_autocmds = {
-		['BufWipeout,BufDelete,BufLeave'] = close_cancelled,
+		['BufWipeout,BufDelete,BufLeave'] = M.close_cancelled,
 	}
 	local non_nested_autocmds = {
 		['CursorMoved'] = selectionHandler,
@@ -135,29 +133,35 @@ function M.popup(opts)
 	if opts.additional_keymaps then
 		local i_maps = opts.additional_keymaps.i
 		if i_maps then
+			if not opts.keymaps.i then
+				opts.keymaps.i = {}
+			end
 			for k, v in pairs(i_maps) do
 				opts.keymaps.i[k] = v
 			end
 		end
 		local n_maps = opts.additional_keymaps.n
 		if n_maps then
+			if not opts.keymaps.n then
+				opts.keymaps.n = {}
+			end
 			for k, v in pairs(n_maps) do
 				opts.keymaps.n[k] = v
 			end
 		end
 	end
 	mappings.add_keymap(list.buffer, opts.keymaps)
-	exportedFunction = {
-		close_selected = close_selected,
-		close_cancelled = close_cancelled
-	}
 	api.nvim_set_current_win(list.window)
 	M.closed = false
 	return true
 end
 
-function M.getFunction(name)
-	return exportedFunction[name]
+function M.select_next()
+	list.select_next()
+end
+
+function M.select_prev()
+	list.select_prev()
 end
 
 return M

@@ -86,12 +86,18 @@ function M.popup(opts)
 	if opts.additional_keymaps then
 		local i_maps = opts.additional_keymaps.i
 		if i_maps then
+			if not opts.keymaps.i then
+				opts.keymaps.i = {}
+			end
 			for k, v in pairs(i_maps) do
 				opts.keymaps.i[k] = v
 			end
 		end
 		local n_maps = opts.additional_keymaps.n
 		if n_maps then
+			if not opts.keymaps.n then
+				opts.keymaps.n = {}
+			end
 			for k, v in pairs(n_maps) do
 				opts.keymaps.n[k] = v
 			end

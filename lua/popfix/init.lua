@@ -1,5 +1,9 @@
+local prompt = require'popfix.prompt'
 local previewPopup = require'popfix.preview_popup'
 local popup = require'popfix.popup'
+local text = require'popfix.text'
+local promptPopup = require'popfix.prompt_popup'
+local promptPreviewPopup = require'popfix.prompt_preview_popup'
 local M = {}
 
 local currentInstance = nil
@@ -20,39 +24,54 @@ function M.open(opts)
 		print('Note a valid mode')
 		return false
 	end
-	if opts.list == nil then
-		print('List attribute is necessary')
-		return false
-	end
-	if opts.preview then
-		currentInstance = previewPopup
-		if opts.keymaps then
-			for key,value in opts.keymaps do
-				if value == 'close-selected' or 'close-cancelled' then
-					opts.keymaps[key] = currentInstance.getFunction(value)
-				end
-			end
-		end
-		M.closed = true
-		if not previewPopup.popup(opts) then
-			currentInstance = nil
+	if not opts.list then
+		if opts.prompt then
+			currentInstance = text
+		else
+			print('List attribute is necessary')
+			return false
 		end
 	else
-		currentInstance = popup
-		if opts.default_keymaps then
-			for key,value in opts.default_keymaps do
-				if value == 'close-selected' or 'close-cancelled' then
-					opts.default_keymaps[key] = currentInstance.getFunction(value)
-				end
+		if opts.preview then
+			if opts.prompt then
+				currentInstance = promptPreviewPopup
+			else
+				currentInstance = previewPopup
+			end
+		else
+			if opts.prompt then
+				currentInstance = promptPopup
+			else
+				currentInstance = popup
 			end
 		end
-		M.closed = true
-		if not popup.popup(opts) then
-			currentInstance = nil
-		end
+	end
+	if not currentInstance.popup(opts) then
+		currentInstance = nil
+		return false
 	end
 	return true
 end
 
+
+function M.close_selected()
+	currentInstance.close_selected()
+end
+
+function M.close_cancelled()
+	currentInstance.close_cancelled()
+end
+
+function M.select_next()
+	pcall(currentInstance.select_next)
+end
+
+function M.select_prev()
+	pcall(currentInstance.select_prev)
+end
+
+function M.set_prompt_info(text)
+	prompt.setPromptText(text)
+end
 
 return M

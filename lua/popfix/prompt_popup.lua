@@ -15,7 +15,7 @@ local function plainSearchHandler(str)
 	print(str)
 end
 
-local function close_selected()
+function M.close_selected()
 	if action.freed() then return end
 	local line = action.getCurrentLine()
 	local index = action.getCurrentIndex()
@@ -28,7 +28,7 @@ local function close_selected()
 	M.closed = true
 end
 
-local function close_cancelled()
+function M.close_cancelled()
 	if M.closed then return end
 	M.closed = true
 	local line = action.getCurrentLine()
@@ -53,13 +53,13 @@ local function selectionHandler()
 	end
 end
 
-function M.selectNextItem()
-	list.selectNextItem()
+function M.select_next()
+	list.select_next()
 	selectionHandler()
 end
 
-function M.selectPreviousItem()
-	list.selectPreviousItem()
+function M.select_prev()
+	list.select_prev()
 	selectionHandler()
 end
 
@@ -177,36 +177,42 @@ function M.popup(opts)
 	action.register(opts.callbacks)
 	local default_keymaps = {
 		n = {
-			['q'] = close_cancelled,
-			['<Esc>'] = close_cancelled,
-			['j'] = M.selectNextItem,
-			['k'] = M.selectPreviousItem,
-			['<CR>'] = close_selected
+			['q'] = M.close_cancelled,
+			['<Esc>'] = M.close_cancelled,
+			['j'] = M.select_next,
+			['k'] = M.select_prev,
+			['<CR>'] = M.close_selected
 		},
 		i = {
-			['<C-c>'] = close_cancelled,
-			['<C-n>'] = M.selectNextItem,
-			['<C-p>'] = M.selectPreviousItem,
-			['<CR>'] = close_selected,
+			['<C-c>'] = M.close_cancelled,
+			['<C-n>'] = M.select_next,
+			['<C-p>'] = M.select_prev,
+			['<CR>'] = M.close_selected,
 		}
 	}
 	opts.keymaps = opts.keymaps or default_keymaps
 	if opts.additional_keymaps then
 		local i_maps = opts.additional_keymaps.i
 		if i_maps then
+			if not opts.keymaps.i then
+				opts.keymaps.i = {}
+			end
 			for k, v in pairs(i_maps) do
 				opts.keymaps.i[k] = v
 			end
 		end
 		local n_maps = opts.additional_keymaps.n
 		if n_maps then
+			if not opts.keymaps.n then
+				opts.keymaps.n = {}
+			end
 			for k, v in pairs(n_maps) do
 				opts.keymaps.n[k] = v
 			end
 		end
 	end
 	local nested_autocmds = {
-		['BufLeave'] = close_cancelled,
+		['BufLeave'] = M.close_cancelled,
 	}
 	local non_nested_autocmd = {
 		['CursorMoved'] = selectionHandler,
