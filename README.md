@@ -53,8 +53,6 @@ Popfix UI has 2 major components:
 
  Preview displays the preview.
 
- Prompt asks for user input using a floating window.
-
 ### How to invoke plugin
 
 Example:
@@ -81,9 +79,6 @@ Example:
 			numbering = true,
 			coloring = true,
 			title = 'MyTitle'
-		},
-		prompt = {
-
 		}
 	}
 
@@ -126,7 +121,7 @@ Keymap table example:
 			['<C-n>'] = 'j'
 		},
 		i = {
-			['<C-c>'] = 'close-cancelled'
+			['<C-c>'] = require'popfix'.close_cancelled
 		}
 	}
 
@@ -142,17 +137,23 @@ i.e., After applying this resultant keymaps = original keymaps + additional keym
 
 ### Special actions
 
-Two special lua functions are shipped for easily managing lifetime of
+4 special lua functions are shipped for easily managing lifetime of
 popup window. These can be used to pass as keymapping value.
 
-- 'close-cancelled'
-- 'close-selected'
+- require'popfix'.close_cancelled
+- require'popfix'.close_selected
+- require'popfix'.select_next
+- require'popfix'.select_prev
 
-close-cancelled closes the current preview with invoking close callback as
+close_cancelled closes the current preview with invoking close callback as
 cancelled.
 
-close-selected closes the current preview with invoking close callback as
+close_selected closes the current preview with invoking close callback as
 selected.
+
+select_next selects the next item in list.
+
+select_prev selects the previous item in list.
 
 
 ### Callbacks [optional]
