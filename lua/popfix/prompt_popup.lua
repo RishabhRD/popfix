@@ -153,7 +153,8 @@ function M.popup(opts)
 		return false
 	end
 	opts.list = opts.list or {}
-	if opts.prompt_type == 'plain' then
+	opts.prompt.search_type = opts.prompt.search_type or 'plain'
+	if opts.prompt.search_type == 'plain' then
 		opts.prompt.callback = plainSearchHandler
 	end
 	originalWindow = api.nvim_get_current_win()

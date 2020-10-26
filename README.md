@@ -47,10 +47,13 @@ Install with any plugin manager. For example with vim-plug
 Popfix UI has 2 major components:
  - List
  - Preview
+ - Prompt
 
  List displays the menu.
 
  Preview displays the preview.
+
+ Prompt asks for user input using a floating window.
 
 ### How to invoke plugin
 
@@ -78,6 +81,9 @@ Example:
 			numbering = true,
 			coloring = true,
 			title = 'MyTitle'
+		},
+		prompt = {
+
 		}
 	}
 
