@@ -47,7 +47,6 @@ Install with any plugin manager. For example with vim-plug
 Popfix UI has 2 major components:
  - List
  - Preview
- - Prompt
 
  List displays the menu.
 
