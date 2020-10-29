@@ -64,7 +64,7 @@ local function popup_cursor(opts)
 end
 
 local function popup_split(opts)
-	if not list.newSplit(opts) then
+	if not list.newSplit(opts.list) then
 		return false
 	end
 	return true

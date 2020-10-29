@@ -95,7 +95,7 @@ end
 
 local function popup_split(opts)
 	opts.list.height = opts.height or 12
-	if not list.newSplit(opts) then
+	if not list.newSplit(opts.list) then
 		return false
 	end
 	api.nvim_set_current_win(list.window)

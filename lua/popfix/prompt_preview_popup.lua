@@ -139,7 +139,7 @@ local function popup_split(opts)
 	--TODO: handle edge cases
 	opts.height = opts.height or 12
 	opts.list.height = opts.height
-	if not list.newSplit(opts) then
+	if not list.newSplit(opts.list) then
 		return false
 	end
 	api.nvim_set_current_win(list.window)
