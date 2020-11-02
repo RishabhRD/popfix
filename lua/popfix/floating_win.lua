@@ -46,6 +46,12 @@ local function fill_border_data(buf, width, height, title, border_chars)
 	if title ~= '' then
 		title = '  '..title..'  '
 	end
+	border_chars.TOP_LEFT = border_chars.TOP_LEFT or ' '
+	border_chars.TOP_RIGHT = border_chars.TOP_RIGHT or ' '
+	border_chars.MID_HORIZONTAL = border_chars.MID_HORIZONTAL or ' '
+	border_chars.MID_VERTICAL = border_chars.MID_VERTICAL or ' '
+	border_chars.BOTTOM_LEFT = border_chars.BOTTOM_LEFT or ' '
+	border_chars.BOTTOM_RIGHT = border_chars.BOTTOM_RIGHT or ' '
 	local border_lines = { border_chars.TOP_LEFT.. title ..
 	string.rep(border_chars.MID_HORIZONTAL, width - #title) ..
 	border_chars.TOP_RIGHT}

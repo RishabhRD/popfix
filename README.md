@@ -4,7 +4,11 @@ popfix is neovim lua API for highly extensible quickfix or popup window.
 Any neovim plugin in lua can make use of it to reduce efforts to manage
 underlying buffer and window.
 
-**WARNING: neovim 0.5 is required for using this API.**
+**NOTE: neovim 0.5 is required for using this API.**
+
+**WARNING: This API is still being developed for new features. Hence, changes
+are possible with API which would not be compatible with old API syntax.**
+
 
 ## Where this can be helpful?
 
@@ -55,6 +59,14 @@ Popfix UI has 2 major components:
 ### How to invoke plugin
 
 Example:
+	local border_chars = {
+		TOP_LEFT = '┌',
+		TOP_RIGHT = '┐',
+		MID_HORIZONTAL = '─',
+		MID_VERTICAL = '│',
+		BOTTOM_LEFT = '└',
+		BOTTOM_RIGHT = '┘',
+	}
 
 	local opts = {
 		height = 40,
@@ -70,7 +82,8 @@ Example:
 			border = true,
 			numbering = true,
 			coloring = true,
-			title = 'MyTitle'
+			title = 'MyTitle',
+			border_chars = border_chars
 		},
 		preview = {
 			type = 'terminal'
@@ -186,6 +199,7 @@ List supports 3 attributes:
 - numbering [optional]
 - coloring [optional]
 - title [optional]
+- border_chars [optional]
 
 If border is true then list is displayed with border. [only for floating window]
 
@@ -196,6 +210,22 @@ displayed for list. [only for floating window]
 
 Title represents title of list window. It would be displayed iff borders are
 active.
+
+border_chars is a table that represents characters used for borders.
+If not provided then popfix provide a default single line border.
+If any of the component is missing in table if provided then it is replaced
+by a space by popfix.
+
+border_char needs to have 6 components:
+- TOP_LEFT
+- TOP_RIGHT
+- MID_HORIZONTAL
+- MID_VERTICAL
+- BOTTOM_LEFT
+- BOTTOM_RIGHT
+
+All these components represents border character at location these components
+represent.
 
 
 ### Preview [optional]
@@ -208,11 +238,12 @@ Preview supports 4 attributes:
 - numbering [optional]
 - coloring [optional]
 - title [optional]
+- border_chars [optional]
 - type
 
-border, numbering, coloring and title are similar to list attributes and apply in similar
-way to preview window also. However, border and colors are also applied even if
-list is in split mode.
+border, numbering, coloring, title and border_chars are similar to list
+attributes and apply in similar way to preview window also. However, border and
+colors are also applied even if list is in split mode.
 
 type field can have 3 values:
 - terminal
