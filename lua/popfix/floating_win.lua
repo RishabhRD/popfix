@@ -14,6 +14,15 @@ local default_opts = {
 	border = false,
 }
 
+local default_border_chars = {
+	TOP_LEFT = '┌',
+	TOP_RIGHT = '┐',
+	MID_HORIZONTAL = '─',
+	MID_VERTICAL = '│',
+	BOTTOM_LEFT = '└',
+	BOTTOM_RIGHT = '┘',
+}
+
 local function create_win(row, col, width, height, relative, focusable)
 	local buf = api.nvim_create_buf(false, true)
 	local options = {
@@ -32,16 +41,21 @@ local function create_win(row, col, width, height, relative, focusable)
 	}
 end
 
-local function fill_border_data(buf, width, height, title)
+local function fill_border_data(buf, width, height, title, border_chars)
+	border_chars = border_chars or default_border_chars
 	if title ~= '' then
 		title = '  '..title..'  '
 	end
-	local border_lines = { '╔' .. title .. string.rep('═', width - #title) .. '╗' }
-	local middle_line = '║' .. string.rep(' ', width) .. '║'
+	local border_lines = { border_chars.TOP_LEFT.. title ..
+	string.rep(border_chars.MID_HORIZONTAL, width - #title) ..
+	border_chars.TOP_RIGHT}
+	local middle_line = border_chars.MID_VERTICAL.. string.rep(' ', width)
+	..border_chars.MID_VERTICAL
 	for i=1, height do
 		table.insert(border_lines, middle_line)
 	end
-	table.insert(border_lines, '╚' .. string.rep('═', width) .. '╝')
+	table.insert(border_lines, border_chars.BOTTOM_LEFT..
+	string.rep(border_chars.MID_HORIZONTAL, width) ..border_chars.BOTTOM_RIGHT)
 
 	api.nvim_buf_set_lines(buf, 0, -1, false, border_lines)
 end
@@ -69,7 +83,7 @@ function M.create_win(opts)
 		vim.cmd('redraw')
 		api.nvim_buf_set_option(border_win_buf_pair.buf, 'bufhidden', 'hide')
 		border_buf = border_win_buf_pair.buf
-		fill_border_data(border_buf, opts.width , opts.height, opts.title )
+		fill_border_data(border_buf, opts.width , opts.height, opts.title , opts.border_chars)
 	end
 
 	if opts.border then

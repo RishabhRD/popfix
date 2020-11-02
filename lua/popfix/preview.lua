@@ -58,7 +58,7 @@ function preview.new(opts)
 			opts.row = opts.row + 1
 		end
 	end
-	local win_buf = floating_win.create_win(opts, opts.mode)
+	local win_buf = floating_win.create_win(opts)
 	currentTerminalJob = nil
 	type = opts.type
 	if opts.type == 'buffer' then
