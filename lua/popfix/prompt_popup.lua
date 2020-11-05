@@ -124,7 +124,7 @@ local function popup_editor(opts)
 	local editorWidth = api.nvim_get_option('columns')
 	local editorHeight = api.nvim_get_option("lines")
 	opts.list.height = opts.height or math.ceil(editorHeight * 0.8 - 4)
-	if opts.height >= api.nvim_get_option('lines') - 4 then
+	if opts.list.height >= api.nvim_get_option('lines') - 4 then
 		print('no enough space to draw popup')
 		return
 	end

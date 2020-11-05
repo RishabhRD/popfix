@@ -82,6 +82,7 @@ local function popup_cursor(opts)
 end
 
 local function popup_split(opts)
+	opts.list.height = opts.list.height or 12
 	if opts.list.height >= api.nvim_get_option('lines') - 4 then
 		print('no enough space to draw popup')
 		return
