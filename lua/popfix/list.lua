@@ -6,7 +6,6 @@ list.buffer = nil
 list.window = nil
 
 local function popup_split(height, title)
-	height = height or 12
 	local oldWindow = api.nvim_get_current_win()
 	vim.cmd('bot new')
 	local win = api.nvim_get_current_win()

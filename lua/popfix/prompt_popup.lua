@@ -72,6 +72,11 @@ local function popup_cursor(opts)
 		print('Not enough space to draw popup')
 		return false
 	end
+	opts.width = opts.width or 40
+	if opts.width >= api.nvim_get_option('columns') - 4 then
+		print('no enough space to draw popup')
+		return false
+	end
 	if opts.list.border then
 		popupHeight = popupHeight + 2
 	end
@@ -104,7 +109,6 @@ local function popup_cursor(opts)
 	opts.prompt.col = 0
 	opts.prompt.relative = 'cursor'
 	--TODO: better width strategy
-	opts.list.width = opts.width or 40
 	opts.prompt.width = opts.width or 40
 	if not list.new(opts.list) then
 		return false
@@ -120,7 +124,15 @@ local function popup_editor(opts)
 	local editorWidth = api.nvim_get_option('columns')
 	local editorHeight = api.nvim_get_option("lines")
 	opts.list.height = opts.height or math.ceil(editorHeight * 0.8 - 4)
+	if opts.height >= api.nvim_get_option('lines') - 4 then
+		print('no enough space to draw popup')
+		return
+	end
 	opts.list.width = opts.width or math.ceil(editorWidth * 0.8)
+	if opts.list.width >= api.nvim_get_option('columns') - 4 then
+		print('no enough space to draw popup')
+		return
+	end
 	opts.list.row = math.ceil((editorHeight - opts.list.height) /2 - 1)
 	opts.list.col = math.ceil((editorWidth - opts.list.width) /2) + 2
 	if not list.new(opts.list) then
