@@ -64,21 +64,41 @@ function M.select_prev()
 end
 
 local function popup_cursor(opts)
-	--TODO: handle edge cases
-	opts.list.row = 2
+	local curWinHeight = api.nvim_win_get_height(0)
+	local currentScreenLine = vim.fn.line('.') - vim.fn.line('w0') + 1
+	local heightDiff = curWinHeight - currentScreenLine
+	local popupHeight = opts.height + 1
+	if opts.list.border then
+		popupHeight = popupHeight + 2
+	end
+	if opts.prompt.border then
+		popupHeight = popupHeight + 2
+	end
+	if popupHeight >= heightDiff then
+		opts.list.row = -popupHeight
+		opts.prompt.row = -1
+		if opts.prompt.border then
+			opts.prompt.row = opts.prompt.row - 1
+		end
+		if opts.list.border then
+			opts.list.row = opts.list.row + 1
+		end
+	else
+		opts.list.row = 2
+		opts.prompt.row = 1
+		if opts.list.border then
+			opts.list.row = opts.list.row + 1
+		end
+		if opts.prompt.border then
+			opts.list.row = opts.list.row + 2
+			opts.prompt.row = opts.prompt.row + 1
+		end
+	end
 	opts.list.col = 0
 	opts.list.relative = 'cursor'
 	opts.list.height = opts.height
-	opts.prompt.row = 1
 	opts.prompt.col = 0
 	opts.prompt.relative = 'cursor'
-	if opts.list.border then
-		opts.list.row = opts.list.row + 1
-	end
-	if opts.prompt.border then
-		opts.list.row = opts.list.row + 2
-		opts.prompt.row = opts.prompt.row + 1
-	end
 	--TODO: better width strategy
 	opts.list.width = opts.width or 40
 	opts.prompt.width = opts.width or 40

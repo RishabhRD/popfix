@@ -7,11 +7,18 @@ local api = vim.api
 local M = {}
 M.closed = true
 local listNamespace = api.nvim_create_namespace('popfix.popup')
+local currentListJob = nil
+local numLines = nil
 
 local originalWindow = nil
 
 function M.close_selected()
 	if action.freed() then return end
+	if currentListJob ~= nil then
+		vim.fn.jobstop(currentListJob)
+		currentListJob = nil
+	end
+	numLines = nil
 	mappings.free(list.buffer)
 	autocmd.free(list.buffer)
 	api.nvim_set_current_win(originalWindow)
@@ -48,8 +55,18 @@ local function selectionHandler()
 end
 
 local function popup_cursor(opts)
-	--TODO: handle edge cases
-	opts.list.row = 1
+	local curWinHeight = api.nvim_win_get_height(0)
+	local currentScreenLine = vim.fn.line('.') - vim.fn.line('w0') + 1
+	local heightDiff = curWinHeight - currentScreenLine
+	local listHeight = opts.list.height
+	if opts.list.border then
+		listHeight = listHeight + 2
+	end
+	if listHeight >= heightDiff then
+		opts.list.row = 0 - listHeight
+	else
+		opts.list.row = 1
+	end
 	opts.list.col = 0
 	opts.list.relative = "cursor"
 	if opts.list.border then
@@ -110,7 +127,22 @@ function M.popup(opts)
 			return false
 		end
 	end
-	list.setData(opts.data, 0, -1)
+	if numLines == nil then numLines = 0 end
+	if type(opts.data) == 'string' then
+		currentListJob = vim.fn.jobstart(opts.data, {
+			on_stdout = function(_, data)
+				print(vim.inspect(data))
+				-- list.setData({data}, numLines, numLines)
+			end,
+			on_stderr = function(_, data)
+				print(vim.inspect(data))
+			end
+
+		})
+	else
+		list.setData(opts.data, 0, -1)
+		numLines = #opts.data
+	end
 	action.register(opts.callbacks)
 	local default_keymaps = {
 		n = {
