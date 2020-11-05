@@ -150,10 +150,13 @@ local function popup_editor(opts)
 end
 
 local function popup_split(opts)
-	--TODO: handle edge cases
+	opts.height = opts.height or 12
+	if opts.height >= api.nvim_get_option('lines') - 4 then
+		print('no enough space to draw popup')
+		return
+	end
 	local editorHeight = api.nvim_get_option("lines")
 	local maximumHeight = editorHeight - 5
-	opts.height = opts.height or 12
 	if opts.height > maximumHeight then
 		opts.height = maximumHeight
 	end

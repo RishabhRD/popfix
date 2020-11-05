@@ -93,6 +93,10 @@ end
 
 local function popup_split(opts)
 	opts.list.height = opts.height or 12
+	if opts.height >= api.nvim_get_option('lines') - 4 then
+		print('no enough space to draw popup')
+		return
+	end
 	if not list.newSplit(opts.list) then
 		return false
 	end
