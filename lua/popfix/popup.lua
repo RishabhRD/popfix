@@ -7,18 +7,11 @@ local api = vim.api
 local M = {}
 M.closed = true
 local listNamespace = api.nvim_create_namespace('popfix.popup')
-local currentListJob = nil
-local numLines = nil
 
 local originalWindow = nil
 
 function M.close_selected()
 	if action.freed() then return end
-	if currentListJob ~= nil then
-		vim.fn.jobstop(currentListJob)
-		currentListJob = nil
-	end
-	numLines = nil
 	mappings.free(list.buffer)
 	autocmd.free(list.buffer)
 	api.nvim_set_current_win(originalWindow)
@@ -127,22 +120,7 @@ function M.popup(opts)
 			return false
 		end
 	end
-	if numLines == nil then numLines = 0 end
-	if type(opts.data) == 'string' then
-		currentListJob = vim.fn.jobstart(opts.data, {
-			on_stdout = function(_, data)
-				print(vim.inspect(data))
-				-- list.setData({data}, numLines, numLines)
-			end,
-			on_stderr = function(_, data)
-				print(vim.inspect(data))
-			end
-
-		})
-	else
 		list.setData(opts.data, 0, -1)
-		numLines = #opts.data
-	end
 	action.register(opts.callbacks)
 	local default_keymaps = {
 		n = {
