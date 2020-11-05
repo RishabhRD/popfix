@@ -55,6 +55,10 @@ local function popup_cursor(opts)
 	if opts.list.border then
 		listHeight = listHeight + 2
 	end
+	if curWinHeight <= listHeight then
+		print('Not enough space to draw popup')
+		return false
+	end
 	if listHeight >= heightDiff then
 		opts.list.row = 0 - listHeight
 	else

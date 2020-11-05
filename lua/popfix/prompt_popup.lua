@@ -68,6 +68,10 @@ local function popup_cursor(opts)
 	local currentScreenLine = vim.fn.line('.') - vim.fn.line('w0') + 1
 	local heightDiff = curWinHeight - currentScreenLine
 	local popupHeight = opts.height + 1
+	if curWinHeight <= popupHeight then
+		print('Not enough space to draw popup')
+		return false
+	end
 	if opts.list.border then
 		popupHeight = popupHeight + 2
 	end
