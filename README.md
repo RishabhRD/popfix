@@ -94,7 +94,12 @@ Example:
 		}
 	}
 
-	require'popfix'.open(opts)
+	local popup = require'popfix':new(opts)
+
+### Return value
+
+It returns the popup resource if popup was created successfully otherwise
+returns false.
 
 ### Height [optional]
 
