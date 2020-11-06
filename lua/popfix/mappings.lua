@@ -22,7 +22,7 @@ local assign_function = function(buf,func)
 end
 
 -- utility functionf to map keys and convert lua function to string internally
-local bufferKeyMap = function(buf, mode, key_bind, key_func, opts)
+local bufferKeyMap = function(buf, mode, key_bind, key_func, opts, param)
 	opts = opts or {
 		silent = true
 	}
@@ -30,6 +30,7 @@ local bufferKeyMap = function(buf, mode, key_bind, key_func, opts)
 		map(buf,mode,key_bind,key_func,opts)
 	else
 		local func_id = assign_function(buf, key_func)
+		param_map[buf][func_id] = param
 		local prefix = ""
 		local map_string
 		if opts.expr then
@@ -69,19 +70,19 @@ end
 --		}
 -- }
 function mappings.add_keymap(buf,mapping_table, param)
-	if param ~= nil then
-		param_map[buf] = param
+	if not param_map[buf] then
+		param_map[buf] = {}
 	end
 	local normalMappings = mapping_table.n
 	if normalMappings ~= nil then
 		for key,value in pairs(normalMappings) do
-			bufferKeyMap(buf,'n',key,value)
+			bufferKeyMap(buf,'n',key,value, nil, param)
 		end
 	end
 	local insertMappings = mapping_table.i
 	if insertMappings ~= nil then
 		for key, value in pairs(insertMappings) do
-			bufferKeyMap(buf,'i',key,value)
+			bufferKeyMap(buf,'i',key,value, nil, param)
 		end
 	end
 end
@@ -89,7 +90,7 @@ end
 mappings.execute_keymap = function(buf, key)
 	if function_store[buf] == nil then return end
 	local func = function_store[buf][key]
-	func(param_map[buf])
+	func(param_map[buf][key])
 end
 
 -- free keymaps from buffer buf

@@ -4,72 +4,71 @@ local autocmd = require'popfix.autocmd'
 local api = vim.api
 
 local prompt = {}
-prompt.buffer = nil
-prompt.window = nil
-local prefix = nil
-local textChanged = nil
 
-function prompt.getCurrentPromptText()
-    local current_prompt = vim.api.nvim_buf_get_lines(prompt.buffer, 0, 1, false)[1]
-	return string.sub(current_prompt, #prefix + 1)
+function prompt:getCurrentPromptText()
+    local current_prompt = vim.api.nvim_buf_get_lines(self.buffer, 0, 1, false)[1]
+	return string.sub(current_prompt, #self.prefix + 1)
 end
 
-local function triggerTextChanged()
-	textChanged(prompt.getCurrentPromptText())
+local function triggerTextChanged(self)
+	self.textChanged(self:getCurrentPromptText())
 end
 
 
-function prompt.new(opts)
+function prompt:new(opts)
+	self.__index = self
+	local obj = {}
+	setmetatable(obj, self)
 	if opts.border == nil then
 		opts.border = false
 	end
 	opts.title = opts.title or ''
 	opts.height = 1
 	opts.prompt_text = opts.prompt_text or ''
-	prefix = opts.prompt_text .. '> '
+	obj.prefix = opts.prompt_text .. '> '
 	local win_buf = floating_win.create_win(opts)
-	prompt.buffer = win_buf.buf
-	prompt.window = win_buf.win
+	obj.buffer = win_buf.buf
+	obj.window = win_buf.win
 	if opts.coloring == nil or opts.coloring == false then
-		api.nvim_win_set_option(prompt.window, 'winhl', 'Normal:PromptNormal')
+		api.nvim_win_set_option(obj.window, 'winhl', 'Normal:PromptNormal')
 	end
-	api.nvim_buf_set_option(prompt.buffer, 'bufhidden', 'hide')
-	api.nvim_win_set_option(prompt.window, 'wrap', false)
-	api.nvim_win_set_option(prompt.window, 'number', false)
-	api.nvim_win_set_option(prompt.window, 'relativenumber', false)
-	api.nvim_buf_set_option(prompt.buffer, 'buftype', 'prompt')
-	vim.fn.prompt_setprompt(prompt.buffer, opts.prompt_text..'> ')
-	local nested_autocmds = {
-		['TextChangedI,TextChangedP,TextChanged'] = triggerTextChanged
-	}
+	api.nvim_buf_set_option(obj.buffer, 'bufhidden', 'hide')
+	api.nvim_win_set_option(obj.window, 'wrap', false)
+	api.nvim_win_set_option(obj.window, 'number', false)
+	api.nvim_win_set_option(obj.window, 'relativenumber', false)
+	api.nvim_buf_set_option(obj.buffer, 'buftype', 'prompt')
+	vim.fn.prompt_setprompt(obj.buffer, opts.prompt_text..'> ')
 	if opts.callback then
-		autocmd.addCommand(prompt.buffer, nested_autocmds, true)
-		textChanged = opts.callback
+		local nested_autocmds = {
+			['TextChangedI,TextChangedP,TextChanged'] = triggerTextChanged
+		}
+		autocmd.addCommand(obj.buffer, nested_autocmds, true, obj)
+		obj.textChanged = opts.callback
 	end
-	vim.cmd(string.format('autocmd BufEnter,WinEnter <buffer=%s>  startinsert', prompt.buffer))
-	return true
+	vim.cmd(string.format('autocmd BufEnter,WinEnter <buffer=%s>  startinsert', obj.buffer))
+	return obj
 end
 
-function prompt.close()
-	if prompt.buffer ~= nil then
-		if api.nvim_buf_is_loaded(prompt.buffer) then
-			local buf = prompt.buffer
+function prompt:close()
+	if self.buffer ~= nil then
+		if api.nvim_buf_is_loaded(self.buffer) then
+			local buf = self.buffer
 			vim.schedule(function()
 				vim.cmd(string.format('bwipeout! %s', buf))
 			end)
 		end
 	end
-	autocmd.free(prompt.buffer)
-	prompt.buffer = nil
-	prompt.window = nil
-	prefix = nil
-	textChanged = nil
+	autocmd.free(self.buffer)
+	self.buffer = nil
+	self.window = nil
+	self.prefix = nil
+	self.textChanged = nil
 end
 
 
-function prompt.setPromptText(text)
-	vim.fn.prompt_setprompt(prompt.buffer, text..'> ')
-	prefix = text..'> '
+function prompt:setPromptText(text)
+	vim.fn.prompt_setprompt(self.buffer, text..'> ')
+	self.prefix = text..'> '
 end
 
 return prompt

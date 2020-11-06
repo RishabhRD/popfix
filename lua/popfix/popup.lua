@@ -5,49 +5,52 @@ local list = require'popfix.list'
 local api = vim.api
 
 local M = {}
-M.closed = true
 local listNamespace = api.nvim_create_namespace('popfix.popup')
 
-local originalWindow = nil
+--TODO: handle self.originalWindow in a more robust way.
 
-function M.close_selected()
-	if action.freed() then return end
-	mappings.free(list.buffer)
-	autocmd.free(list.buffer)
-	api.nvim_set_current_win(originalWindow)
-	list.close()
-	originalWindow = nil
-	local line = action.getCurrentLine()
-	local index = action.getCurrentIndex()
-	action.close(index, line, true)
-	M.closed = true
+function M:close_selected()
+	if self.action:freed() then return end
+	mappings.free(self.list.buffer)
+	autocmd.free(self.list.buffer)
+	api.nvim_set_current_win(self.originalWindow)
+	self.list:close()
+	self.originalWindow = nil
+	local line = self.action:getCurrentLine()
+	local index = self.action:getCurrentIndex()
+	self.action:close(index, line, true)
+	self.closed = true
+	self.list = nil
+	self.action = nil
 end
 
-function M.close_cancelled()
-	if action.freed() then return end
-	local line = action.getCurrentLine()
-	local index = action.getCurrentIndex()
-	mappings.free(list.buffer)
-	autocmd.free(list.buffer)
-	api.nvim_set_current_win(originalWindow)
-	list.close()
-	originalWindow = nil
-	action.close(index, line, false)
-	M.closed = true
+function M:close_cancelled()
+	if self.action:freed() then return end
+	local line = self.action:getCurrentLine()
+	local index = self.action:getCurrentIndex()
+	mappings.free(self.list.buffer)
+	autocmd.free(self.list.buffer)
+	api.nvim_set_current_win(self.originalWindow)
+	self.list:close()
+	self.originalWindow = nil
+	self.action:close(index, line, false)
+	self.closed = true
+	self.list = nil
+	self.action = nil
 end
 
-local function selectionHandler()
-	local oldIndex = action.getCurrentIndex()
-	local line = list.getCurrentLineNumber()
+local function selectionHandler(self)
+	local oldIndex = self.action:getCurrentIndex()
+	local line = self.list:getCurrentLineNumber()
 	if oldIndex ~= line then
-		api.nvim_buf_clear_namespace(list.buffer, listNamespace, 0, -1)
-		api.nvim_buf_add_highlight(list.buffer, listNamespace, "Visual", line - 1,
+		api.nvim_buf_clear_namespace(self.list.buffer, listNamespace, 0, -1)
+		api.nvim_buf_add_highlight(self.list.buffer, listNamespace, "Visual", line - 1,
 		0, -1)
-		action.select(line, list.getCurrentLine())
+		self.action:select(line, self.list:getCurrentLine())
 	end
 end
 
-local function popup_cursor(opts)
+local function popup_cursor(self, opts)
 	local curWinHeight = api.nvim_win_get_height(0)
 	local currentScreenLine = vim.fn.line('.') - vim.fn.line('w0') + 1
 	local heightDiff = curWinHeight - currentScreenLine
@@ -75,25 +78,27 @@ local function popup_cursor(opts)
 	if opts.list.border then
 		opts.list.row = opts.list.row + 1
 	end
-	if not list.new(opts.list) then
+	self.list = list:new(opts.list)
+	if not self.list then
 		return false
 	end
 	return true
 end
 
-local function popup_split(opts)
+local function popup_split(self, opts)
 	opts.list.height = opts.list.height or 12
 	if opts.list.height >= api.nvim_get_option('lines') - 4 then
 		print('no enough space to draw popup')
 		return
 	end
-	if not list.newSplit(opts.list) then
+	self.list = list:newSplit(opts.list)
+	if not self.list then
 		return false
 	end
 	return true
 end
 
-local function popup_editor(opts)
+local function popup_editor(self, opts)
 	local editorWidth = api.nvim_get_option('columns')
 	local editorHeight = api.nvim_get_option("lines")
 	opts.list.height = opts.height or math.ceil(editorHeight * 0.8 - 4)
@@ -108,13 +113,17 @@ local function popup_editor(opts)
 	end
 	opts.list.row = math.ceil((editorHeight - opts.list.height) /2 - 1)
 	opts.list.col = math.ceil((editorWidth - opts.list.width) /2)
-	if not list.new(opts.list) then
+	self.list = list:new(opts.list)
+	if not self.list then
 		return false
 	end
 	return true
 end
 
-function M.popup(opts)
+function M:new(opts)
+	self.__index = self
+	local obj = {}
+	setmetatable(obj, self)
 	if opts.data == nil then
 		print "nil data"
 		return false
@@ -123,43 +132,43 @@ function M.popup(opts)
 	if opts.list == nil then
 		opts.list = {}
 	end
-	originalWindow = api.nvim_get_current_win()
+	obj.originalWindow = api.nvim_get_current_win()
 	--TODO: better width strategy
 	opts.list.width = opts.width or 40
 	opts.list.height = opts.height
 	if opts.mode == 'cursor' then
-		if not popup_cursor(opts) then
-			originalWindow = nil
+		if not popup_cursor(obj, opts) then
+			obj.originalWindow = nil
 			return false
 		end
 	elseif opts.mode == 'split' then
-		if not popup_split(opts) then
-			originalWindow = nil
+		if not popup_split(obj, opts) then
+			obj.originalWindow = nil
 			return false
 		end
 	elseif opts.mode == 'editor' then
-		if not popup_editor(opts) then
-			originalWindow = nil
+		if not popup_editor(obj, opts) then
+			obj.originalWindow = nil
 			return false
 		end
 	end
-		list.setData(opts.data, 0, -1)
-	action.register(opts.callbacks)
+	obj.list:setData(opts.data, 0, -1)
+	obj.action = action:register(opts.callbacks)
 	local default_keymaps = {
 		n = {
-			['q'] = M.close_cancelled,
-			['<Esc>'] = M.close_cancelled,
-			['<CR>'] = M.close_selected
+			['q'] = self.close_cancelled,
+			['<Esc>'] = self.close_cancelled,
+			['<CR>'] = self.close_selected
 		}
 	}
 	local nested_autocmds = {
-		['BufWipeout,BufDelete,BufLeave'] = M.close_cancelled,
+		['BufWipeout,BufDelete,BufLeave'] = self.close_cancelled,
 	}
 	local non_nested_autocmds = {
 		['CursorMoved'] = selectionHandler,
 	}
-	autocmd.addCommand(list.buffer, nested_autocmds, true)
-	autocmd.addCommand(list.buffer, non_nested_autocmds, false)
+	autocmd.addCommand(obj.list.buffer, nested_autocmds, true, obj)
+	autocmd.addCommand(obj.list.buffer, non_nested_autocmds, false, obj)
 	opts.keymaps = opts.keymaps or default_keymaps
 	if opts.additional_keymaps then
 		local i_maps = opts.additional_keymaps.i
@@ -181,18 +190,18 @@ function M.popup(opts)
 			end
 		end
 	end
-	mappings.add_keymap(list.buffer, opts.keymaps)
-	api.nvim_set_current_win(list.window)
-	M.closed = false
-	return true
+	mappings.add_keymap(obj.list.buffer, opts.keymaps, obj)
+	api.nvim_set_current_win(obj.list.window)
+	obj.closed = false
+	return obj
 end
 
-function M.select_next()
-	list.select_next()
+function M:select_next()
+	self.list:select_next()
 end
 
-function M.select_prev()
-	list.select_prev()
+function M:select_prev()
+	self.list:select_prev()
 end
 
 return M

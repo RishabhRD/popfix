@@ -5,81 +5,87 @@ local action = require'popfix.action'
 local mappings = require'popfix.mappings'
 local autocmd = require'popfix.autocmd'
 
-M.closed = true
-local originalWindow = nil
 
-
-local function close_cancelled()
-	if M.closed then return end
-	M.closed = true
-	local line = prompt.getCurrentPromptText()
-	mappings.free(prompt.buffer)
-	autocmd.free(prompt.buffer)
-	api.nvim_set_current_win(originalWindow)
-	prompt.close()
-	originalWindow = nil
-	action.close(0, line, false)
+function M:close_cancelled()
+	if self.closed then return end
+	self.closed = true
+	local line = self.prompt:getCurrentPromptText()
+	mappings.free(self.prompt.buffer)
+	autocmd.free(self.prompt.buffer)
+	api.nvim_set_current_win(self.originalWindow)
+	self.prompt:close()
+	self.originalWindow = nil
+	self.action:close(0, line, false)
+	self.prompt = nil
+	self.action = nil
 end
 
-local function close_selected()
-	if M.closed then return end
-	M.closed = true
-	local line = prompt.getCurrentPromptText()
-	mappings.free(prompt.buffer)
-	autocmd.free(prompt.buffer)
-	api.nvim_set_current_win(originalWindow)
-	prompt.close()
-	originalWindow = nil
-	action.close(0, line, true)
+function M:close_selected()
+	if self.closed then return end
+	self.closed = true
+	local line = self.prompt:getCurrentPromptText()
+	mappings.free(self.prompt.buffer)
+	autocmd.free(self.prompt.buffer)
+	api.nvim_set_current_win(self.originalWindow)
+	self.prompt:close()
+	self.originalWindow = nil
+	self.action:close(0, line, true)
+	self.prompt = nil
+	self.action = nil
 end
 
-local function popup_editor(opts)
+local function popup_editor(self, opts)
 	local editorWidth = api.nvim_get_option('columns')
 	local editorHeight = api.nvim_get_option("lines")
 	opts.prompt.width = opts.width or math.ceil(editorWidth * 0.8)
 	opts.prompt.row = math.ceil((editorHeight - 1) / 2 - 5)
 	opts.prompt.col = math.ceil((editorWidth - opts.prompt.width) /2)
-	if not prompt.new(opts.prompt) then
+	self.prompt = prompt:new(opts.prompt)
+	if not self.prompt then
 		return false
 	end
 	return true
 end
 
-local function popup_cursor(opts)
+local function popup_cursor(self, opts)
 	opts.prompt.row = 1
 	opts.prompt.col = 0
 	opts.prompt.relative = "cursor"
 	if opts.prompt.border then
 		opts.prompt.row = opts.prompt.row + 1
 	end
-	if not prompt.new(opts.prompt) then
+	self.prompt = prompt:new(opts.prompt)
+	if not self.prompt then
 		return false
 	end
 	return true
 end
 
-function M.popup(opts)
-	originalWindow = api.nvim_get_current_win()
+function M.new(self, opts)
+	self.__index = self
+	local obj = {}
+	setmetatable(obj, self)
+	obj.originalWindow = api.nvim_get_current_win()
 	if opts.mode == 'editor' then
-		if not popup_editor(opts) then
+		if not popup_editor(obj, opts) then
 			return false
 		end
 	elseif opts.mode == 'cursor' then
-		if not popup_cursor(opts) then
+		if not popup_cursor(obj, opts) then
 			return false
 		end
 	end
-	M.closed = false
-	action.register(opts.callbacks)
+	obj.closed = false
+	obj.action = action:register(opts.callbacks)
 	local default_keymaps = {
 		n = {
-			['q'] = close_cancelled,
-			['<Esc>'] = close_cancelled,
-			['<CR>'] = close_selected
+			['q'] = obj.close_cancelled,
+			['<Esc>'] = obj.close_cancelled,
+			['<CR>'] = obj.close_selected
 		},
 		i = {
-			['<C-c>'] = close_cancelled,
-			['<CR>'] = close_selected,
+			['<C-c>'] = obj.close_cancelled,
+			['<CR>'] = obj.close_selected,
 		}
 	}
 	opts.keymaps = opts.keymaps or default_keymaps
@@ -104,11 +110,11 @@ function M.popup(opts)
 		end
 	end
 	local nested_autocmds = {
-		['BufLeave'] = close_cancelled,
+		['BufLeave'] = obj.close_cancelled,
 	}
-	autocmd.addCommand(prompt.buffer, nested_autocmds, true)
-	mappings.add_keymap(prompt.buffer, opts.keymaps)
-	api.nvim_set_current_win(prompt.window)
+	autocmd.addCommand(obj.prompt.buffer, nested_autocmds, true, obj)
+	mappings.add_keymap(obj.prompt.buffer, opts.keymaps, obj)
+	api.nvim_set_current_win(obj.prompt.window)
 	return true
 end
 

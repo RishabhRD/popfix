@@ -19,7 +19,7 @@ end
 
 -- utility function for converting lua functions to appropriate string
 -- and then add autocmd
-local function buffer_autocmd(buf, property, action, nested)
+local function buffer_autocmd(buf, property, action, nested, param)
 	if type(action) == "string" then
 		local command
 		if nested then
@@ -28,7 +28,7 @@ local function buffer_autocmd(buf, property, action, nested)
 			command = "autocmd %s <buffer=%s> %s"
 		end
 		command = string.format(command, property, buf, action)
-		vim.api.nvim_command(command)
+		vim.cmd(command)
 	else
 		local func = assign_function(buf,action)
 		local command
@@ -37,8 +37,11 @@ local function buffer_autocmd(buf, property, action, nested)
 		else
 			command = "autocmd %s <buffer=%s> lua require('popfix.autocmd').execute(%s,%s)"
 		end
+		if param then
+			param_map[buf][func] = param
+		end
 		command = string.format(command,property,buf,buf,func)
-		vim.api.nvim_command(command)
+		vim.cmd(command)
 	end
 end
 
@@ -53,19 +56,19 @@ end
 --		string : lua_functions
 -- }
 function autocmd.addCommand(buf, mapping_table, nested, param)
-	if param ~= nil then
-		param_map[buf] = param
+	if not param_map[buf] then
+		param_map[buf] = {}
 	end
 	if nested == nil then nested = false end
 	for property,action in pairs(mapping_table) do
-		buffer_autocmd(buf,property,action, nested)
+		buffer_autocmd(buf,property,action, nested, param)
 	end
 end
 
 function autocmd.execute(buf,key)
 	if callback[buf] == nil then return end
 	local func = callback[buf][key]
-	func(param_map[buf])
+	func(param_map[buf][key])
 end
 -- i.e., free the data structure to free memory
 function autocmd.free(buf)

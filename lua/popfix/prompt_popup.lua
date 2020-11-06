@@ -7,64 +7,68 @@ local action = require'popfix.action'
 
 local prompt = require'popfix.prompt'
 local list = require'popfix.list'
-M.closed = true
-local originalWindow = nil
 local listNamespace = api.nvim_create_namespace('popfix.prompt_popup')
 
 local function plainSearchHandler(str)
 	print(str)
 end
 
-function M.close_selected()
-	if action.freed() then return end
-	local line = action.getCurrentLine()
-	local index = action.getCurrentIndex()
-	mappings.free(list.buffer)
-	list.close()
-	prompt.close()
-	api.nvim_set_current_win(originalWindow)
-	originalWindow = nil
-	action.close(index, line, true)
-	M.closed = true
+function M:close_selected()
+	if self.closed then return end
+	local line = self.action.getCurrentLine()
+	local index = self.action.getCurrentIndex()
+	mappings.free(self.list.buffer)
+	self.list.close()
+	self.prompt.close()
+	api.nvim_set_current_win(self.originalWindow)
+	self.originalWindow = nil
+	self.action.close(index, line, true)
+	self.closed = true
+	self.list = nil
+	self.prompt = nil
+	self.action = nil
 end
 
-function M.close_cancelled()
-	if M.closed then return end
-	M.closed = true
-	local line = action.getCurrentLine()
-	local index = action.getCurrentIndex()
-	mappings.free(prompt.buffer)
-	autocmd.free(prompt.buffer)
-	api.nvim_set_current_win(originalWindow)
-	list.close()
-	prompt.close()
-	originalWindow = nil
-	action.close(index, line, false)
+function M:close_cancelled()
+	if self.closed then return end
+	self.closed = true
+	local line = self.action:getCurrentLine()
+	local index = self.action:getCurrentIndex()
+	mappings.free(self.prompt.buffer)
+	autocmd.free(self.prompt.buffer)
+	api.nvim_set_current_win(self.originalWindow)
+	self.list:close()
+	self.prompt:close()
+	self.originalWindow = nil
+	self.action:close(index, line, false)
+	self.list = nil
+	self.prompt = nil
+	self.action = nil
 end
 
-local function selectionHandler()
-	local oldIndex = action.getCurrentIndex()
-	local line = list.getCurrentLineNumber()
+local function selectionHandler(self)
+	local oldIndex = self.action:getCurrentIndex()
+	local line = self.list:getCurrentLineNumber()
 	if oldIndex ~= line then
-		api.nvim_buf_clear_namespace(list.buffer, listNamespace, 0, -1)
-		api.nvim_buf_add_highlight(list.buffer, listNamespace, "Visual", line - 1,
+		api.nvim_buf_clear_namespace(self.list.buffer, listNamespace, 0, -1)
+		api.nvim_buf_add_highlight(self.list.buffer, listNamespace, "Visual", line - 1,
 		0, -1)
-		action.select(line, list.getCurrentLine())
+		self.action:select(line, self.list:getCurrentLine())
 	end
 end
 
-function M.select_next()
-	list.select_next()
-	selectionHandler()
+function M:select_next()
+	self.list:select_next()
+	selectionHandler(self)
 end
 
-function M.select_prev()
-	list.select_prev()
-	selectionHandler()
+function M:select_prev()
+	self.list:select_prev()
+	selectionHandler(self)
 end
 
-local function popup_cursor(opts)
-	local curWinHeight = api.nvim_win_get_height(0)
+local function popup_cursor(self, opts)
+	local curWinHeight = api.nvim_win_get_height(self.originalWindow)
 	local currentScreenLine = vim.fn.line('.') - vim.fn.line('w0') + 1
 	local heightDiff = curWinHeight - currentScreenLine
 	local popupHeight = opts.height + 1
@@ -108,19 +112,21 @@ local function popup_cursor(opts)
 	opts.list.height = opts.height
 	opts.prompt.col = 0
 	opts.prompt.relative = 'cursor'
-	--TODO: better width strategy
-	opts.prompt.width = opts.width or 40
-	if not list.new(opts.list) then
+	opts.prompt.width = opts.width
+	opts.list.width = opts.width
+	self.list = list:new(opts.list)
+	if not self.list then
 		return false
 	end
-	if not prompt.new(opts.prompt) then
-		list.close()
+	self.prompt = prompt:new(opts.prompt)
+	if not self.prompt then
+		self.list:close()
 		return false
 	end
 	return true
 end
 
-local function popup_editor(opts)
+local function popup_editor(self, opts)
 	local editorWidth = api.nvim_get_option('columns')
 	local editorHeight = api.nvim_get_option("lines")
 	opts.list.height = opts.height or math.ceil(editorHeight * 0.8 - 4)
@@ -135,7 +141,8 @@ local function popup_editor(opts)
 	end
 	opts.list.row = math.ceil((editorHeight - opts.list.height) /2 - 1)
 	opts.list.col = math.ceil((editorWidth - opts.list.width) /2) + 2
-	if not list.new(opts.list) then
+	self.list = list:new(opts.list)
+	if not self.list then
 		return false
 	end
 	if opts.list.border then
@@ -154,14 +161,15 @@ local function popup_editor(opts)
 			opts.prompt.col = opts.prompt.col + 1
 		end
 	end
-	if not prompt.new(opts.prompt) then
-		list.close()
+	self.prompt = prompt:new(opts.prompt)
+	if not self.prompt then
+		self.list:close()
 		return false
 	end
 	return true
 end
 
-local function popup_split(opts)
+local function popup_split(self, opts)
 	opts.height = opts.height or 12
 	if opts.height >= api.nvim_get_option('lines') - 4 then
 		print('no enough space to draw popup')
@@ -173,20 +181,25 @@ local function popup_split(opts)
 		opts.height = maximumHeight
 	end
 	opts.list.height = opts.height
-	if not list.newSplit(opts.list) then
+	self.list = list:newSplit(opts.list)
+	if not self.list then
 		return false
 	end
 	opts.prompt.row = editorHeight - opts.height - 5
 	opts.prompt.col = 1
-	opts.prompt.width = math.floor(api.nvim_win_get_width(list.window) / 2)
-	if not prompt.new(opts.prompt) then
-		list.close()
+	opts.prompt.width = math.floor(api.nvim_win_get_width(self.list.window) / 2)
+	self.prompt = prompt:new(opts.prompt)
+	if not self.prompt then
+		self.list:close()
 		return false
 	end
 	return true
 end
 
-function M.popup(opts)
+function M:new(opts)
+	self.__index = self
+	local obj = {}
+	setmetatable(obj, self)
 	if opts.data == nil or #opts.data == 0 then
 		print 'nil data'
 		return false
@@ -196,38 +209,38 @@ function M.popup(opts)
 	if opts.prompt.search_type == 'plain' then
 		opts.prompt.callback = plainSearchHandler
 	end
-	originalWindow = api.nvim_get_current_win()
+	obj.originalWindow = api.nvim_get_current_win()
 	if opts.mode == 'split' then
-		if not popup_split(opts) then
-			originalWindow = nil
+		if not popup_split(obj, opts) then
+			obj.originalWindow = nil
 			return false
 		end
 	elseif opts.mode == 'editor' then
-		if not popup_editor(opts) then
-			originalWindow = nil
+		if not popup_editor(obj, opts) then
+			obj.originalWindow = nil
 			return false
 		end
 	elseif opts.mode == 'cursor' then
-		if not popup_cursor(opts) then
-			originalWindow = nil
+		if not popup_cursor(obj, opts) then
+			obj.originalWindow = nil
 			return false
 		end
 	end
-	list.setData(opts.data, 0, -1)
-	action.register(opts.callbacks)
+	obj.list:setData(opts.data, 0, -1)
+	obj.action = action:register(opts.callbacks)
 	local default_keymaps = {
 		n = {
-			['q'] = M.close_cancelled,
-			['<Esc>'] = M.close_cancelled,
-			['j'] = M.select_next,
-			['k'] = M.select_prev,
-			['<CR>'] = M.close_selected
+			['q'] = obj.close_cancelled,
+			['<Esc>'] = obj.close_cancelled,
+			['j'] = obj.select_next,
+			['k'] = obj.select_prev,
+			['<CR>'] = obj.close_selected
 		},
 		i = {
-			['<C-c>'] = M.close_cancelled,
-			['<C-n>'] = M.select_next,
-			['<C-p>'] = M.select_prev,
-			['<CR>'] = M.close_selected,
+			['<C-c>'] = obj.close_cancelled,
+			['<C-n>'] = obj.select_next,
+			['<C-p>'] = obj.select_prev,
+			['<CR>'] = obj.close_selected,
 		}
 	}
 	opts.keymaps = opts.keymaps or default_keymaps
@@ -252,17 +265,17 @@ function M.popup(opts)
 		end
 	end
 	local nested_autocmds = {
-		['BufLeave'] = M.close_cancelled,
+		['BufLeave'] = obj.close_cancelled,
 	}
 	local non_nested_autocmd = {
 		['CursorMoved'] = selectionHandler,
 	}
-	autocmd.addCommand(prompt.buffer, nested_autocmds, true)
-	autocmd.addCommand(prompt.buffer, non_nested_autocmd, false)
-	api.nvim_set_current_win(prompt.window)
-	mappings.add_keymap(prompt.buffer, opts.keymaps)
-	M.closed = false
-	return true
+	autocmd.addCommand(obj.prompt.buffer, nested_autocmds, true, obj)
+	autocmd.addCommand(obj.prompt.buffer, non_nested_autocmd, false, obj)
+	api.nvim_set_current_win(obj.prompt.window)
+	mappings.add_keymap(obj.prompt.buffer, opts.keymaps, obj)
+	obj.closed = false
+	return obj
 end
 
 return M

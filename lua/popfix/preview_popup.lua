@@ -7,62 +7,65 @@ local api = vim.api
 
 local M = {}
 
-local splitWindow = nil
-local originalWindow = nil
 local listNamespace = api.nvim_create_namespace('popfix.preview_popup')
-M.closed = true
 
-function M.close_selected()
-	if action.freed() then return end
-	local line = action.getCurrentLine()
-	local index = action.getCurrentIndex()
-	mappings.free(list.buffer)
-	autocmd.free(list.buffer)
-	list.close()
-	preview.close()
-	if splitWindow then
-		api.nvim_win_close(splitWindow, true)
-		splitWindow = nil
+function M:close_selected()
+	if self.action:freed() then return end
+	local line = self.action:getCurrentLine()
+	local index = self.action:getCurrentIndex()
+	mappings.free(self.list.buffer)
+	autocmd.free(self.list.buffer)
+	self.list:close()
+	self.preview:close()
+	if self.splitWindow then
+		api.nvim_win_close(self.splitWindow, true)
+		self.splitWindow = nil
 	end
-	api.nvim_set_current_win(originalWindow)
-	originalWindow = nil
-	action.close(index, line, true)
-	M.closed = true
+	api.nvim_set_current_win(self.originalWindow)
+	self.originalWindow = nil
+	self.action:close(index, line, true)
+	self.closed = true
+	self.list = nil
+	self.preview = nil
+	self.action = nil
 end
 
-function M.close_cancelled()
-	if action.freed() then return end
-	local line = action.getCurrentLine()
-	local index = action.getCurrentIndex()
-	mappings.free(list.buffer)
-	autocmd.free(list.buffer)
-	list.close()
-	preview.close()
-	if splitWindow then
-		api.nvim_win_close(splitWindow, true)
-		splitWindow = nil
+function M:close_cancelled()
+	if self.action:freed() then return end
+	local line = self.action:getCurrentLine()
+	local index = self.action:getCurrentIndex()
+	mappings.free(self.list.buffer)
+	autocmd.free(self.list.buffer)
+	self.list:close()
+	self.preview:close()
+	if self.splitWindow then
+		api.nvim_win_close(self.splitWindow, true)
+		self.splitWindow = nil
 	end
-	api.nvim_set_current_win(originalWindow)
-	originalWindow = nil
-	action.close(index, line, false)
-	M.closed = true
+	api.nvim_set_current_win(self.originalWindow)
+	self.originalWindow = nil
+	self.action:close(index, line, false)
+	self.closed = true
+	self.list = nil
+	self.preview = nil
+	self.action = nil
 end
 
-local function selectionHandler()
-	local oldIndex = action.getCurrentIndex()
-	local line = list.getCurrentLineNumber()
+local function selectionHandler(self)
+	local oldIndex = self.action:getCurrentIndex()
+	local line = self.list:getCurrentLineNumber()
 	if oldIndex ~= line then
-		api.nvim_buf_clear_namespace(list.buffer, listNamespace, 0, -1)
-		api.nvim_buf_add_highlight(list.buffer, listNamespace, "Visual", line - 1,
+		api.nvim_buf_clear_namespace(self.list.buffer, listNamespace, 0, -1)
+		api.nvim_buf_add_highlight(self.list.buffer, listNamespace, "Visual", line - 1,
 		0, -1)
-		local data = action.select(line, list.getCurrentLine())
+		local data = self.action:select(line, self.list:getCurrentLine())
 		if data ~= nil then
-			preview.writePreview(data)
+			self.preview:writePreview(data)
 		end
 	end
 end
 
-local function popup_editor(opts)
+local function popup_editor(self, opts)
 	local editorWidth = api.nvim_get_option('columns')
 	local editorHeight = api.nvim_get_option("lines")
 	opts.list.height = opts.height or math.ceil((editorHeight * 0.8 - 4) )
@@ -87,49 +90,56 @@ local function popup_editor(opts)
 	end
 	opts.list.row = math.ceil((editorHeight - opts.list.height) / 2 - 1)
 	opts.list.col = math.ceil((editorWidth - 2 * opts.list.width) / 2)
-	if not list.new(opts.list) then
+	self.list = list:new(opts.list)
+	if not self.list then
 		return false
 	end
 	opts.preview.width = opts.list.width
 	opts.preview.height = opts.list.height
 	opts.preview.row = opts.list.row
 	opts.preview.col = opts.list.col + opts.list.width
-	if not preview.new(opts.preview) then
-		list.close()
+	self.preview = preview:new(opts.preview)
+	if not self.preview then
+		self.list:close()
 		return false
 	end
 	return true
 end
 
-local function popup_split(opts)
+local function popup_split(self, opts)
 	opts.list.height = opts.height or 12
 	opts.height = opts.list.height
 	if opts.height >= api.nvim_get_option('lines') - 4 then
 		print('no enough space to draw popup')
 		return
 	end
-	if not list.newSplit(opts.list) then
+	self.list = list:newSplit(opts.list)
+	if not self.list then
 		return false
 	end
-	api.nvim_set_current_win(list.window)
+	api.nvim_set_current_win(self.list.window)
 	vim.cmd('vnew')
-	splitWindow = api.nvim_get_current_win()
+	self.splitWindow = api.nvim_get_current_win()
 	local splitBuffer = api.nvim_get_current_buf()
 	api.nvim_buf_set_option(splitBuffer, 'bufhidden', 'wipe')
-	api.nvim_set_current_win(originalWindow)
-	opts.preview.width = api.nvim_win_get_width(list.window)
-	opts.preview.height = api.nvim_win_get_height(list.window)
-	opts.preview.row = api.nvim_win_get_position(list.window)[1]
+	api.nvim_set_current_win(self.originalWindow)
+	opts.preview.width = api.nvim_win_get_width(self.list.window)
+	opts.preview.height = api.nvim_win_get_height(self.list.window)
+	opts.preview.row = api.nvim_win_get_position(self.list.window)[1]
 	opts.preview.col = opts.preview.width
-	if not preview.new(opts.preview) then
-		list.close()
-		api.nvim_win_close(splitWindow)
+	self.preview = preview:new(opts.preview)
+	if not self.preview then
+		self.list:close()
+		api.nvim_win_close(self.splitWindow)
 		return false
 	end
 	return true
 end
 
-function M.popup(opts)
+function M:new(opts)
+	self.__index = self
+	local obj = {}
+	setmetatable(obj, self)
 	if opts.data == nil then
 		print "nil data"
 		return false
@@ -143,37 +153,37 @@ function M.popup(opts)
 	end
 	opts.preview.mode = opts.mode
 	opts.preview.list_border = opts.list.border
-	originalWindow = api.nvim_get_current_win()
+	obj.originalWindow = api.nvim_get_current_win()
 	if opts.mode == 'split' then
-		if not popup_split(opts) then
-			originalWindow = nil
+		if not popup_split(obj, opts) then
+			obj.originalWindow = nil
 			return false
 		end
 	elseif opts.mode == 'editor' then
-		if not popup_editor(opts) then
-			originalWindow = nil
+		if not popup_editor(obj, opts) then
+			obj.originalWindow = nil
 			return false
 		end
 	end
-	list.setData(opts.data, 0, -1)
-	action.register(opts.callbacks)
+	obj.list:setData(opts.data, 0, -1)
+	obj.action = action:register(opts.callbacks)
 	local default_keymaps = {
 		n = {
-			['q'] = M.close_cancelled,
-			['<Esc>'] = M.close_cancelled,
-			['<CR>'] = M.close_selected
+			['q'] = obj.close_cancelled,
+			['<Esc>'] = obj.close_cancelled,
+			['<CR>'] = obj.close_selected
 		}
 	}
 	local nested_autocmds = {
-		['BufWipeout'] = M.close_cancelled,
-		['BufDelete'] = M.close_cancelled,
-		['BufLeave'] = M.close_cancelled
+		['BufWipeout'] = obj.close_cancelled,
+		['BufDelete'] = obj.close_cancelled,
+		['BufLeave'] = obj.close_cancelled
 	}
 	local non_nested_autocmds = {
 		['CursorMoved'] = selectionHandler,
 	}
-	autocmd.addCommand(list.buffer, nested_autocmds, true)
-	autocmd.addCommand(list.buffer, non_nested_autocmds, false)
+	autocmd.addCommand(obj.list.buffer, nested_autocmds, true, obj)
+	autocmd.addCommand(obj.list.buffer, non_nested_autocmds, false, obj)
 	opts.keymaps = opts.keymaps or default_keymaps
 	if opts.additional_keymaps then
 		local i_maps = opts.additional_keymaps.i
@@ -195,18 +205,18 @@ function M.popup(opts)
 			end
 		end
 	end
-	mappings.add_keymap(list.buffer, opts.keymaps)
-	api.nvim_set_current_win(list.window)
-	M.closed = false
+	mappings.add_keymap(obj.list.buffer, opts.keymaps, obj)
+	api.nvim_set_current_win(obj.list.window)
+	obj.closed = false
 	return true
 end
 
-function M.select_next()
-	list.select_next()
+function M:select_next()
+	self.list:select_next()
 end
 
-function M.select_prev()
-	list.select_prev()
+function M:select_prev()
+	self.list:select_prev()
 end
 
 return M
