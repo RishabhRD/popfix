@@ -40,9 +40,10 @@ function prompt:new(opts)
 	vim.fn.prompt_setprompt(obj.buffer, opts.prompt_text..'> ')
 	if opts.callback then
 		local nested_autocmds = {
-			['TextChangedI,TextChangedP,TextChanged'] = triggerTextChanged
+			['TextChangedI,TextChangedP,TextChanged'] = triggerTextChanged,
+			['once'] = true
 		}
-		autocmd.addCommand(obj.buffer, nested_autocmds, true, obj)
+		autocmd.addCommand(obj.buffer, nested_autocmds, obj)
 		obj.textChanged = opts.callback
 	end
 	vim.cmd(string.format('autocmd BufEnter,WinEnter <buffer=%s>  startinsert', obj.buffer))

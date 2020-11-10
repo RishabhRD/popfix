@@ -257,12 +257,13 @@ function M:new(opts)
 	end
 	local nested_autocmds = {
 		['BufLeave'] = obj.close_cancelled,
+		['nested'] = true
 	}
 	local non_nested_autocmd = {
 		['CursorMoved'] = selectionHandler,
 	}
-	autocmd.addCommand(obj.prompt.buffer, nested_autocmds, true, obj)
-	autocmd.addCommand(obj.prompt.buffer, non_nested_autocmd, false, obj)
+	autocmd.addCommand(obj.prompt.buffer, nested_autocmds, obj)
+	autocmd.addCommand(obj.prompt.buffer, non_nested_autocmd, obj)
 	api.nvim_set_current_win(obj.prompt.window)
 	mappings.add_keymap(obj.prompt.buffer, opts.keymaps, obj)
 	obj.closed = false

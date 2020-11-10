@@ -177,13 +177,14 @@ function M:new(opts)
 	local nested_autocmds = {
 		['BufWipeout'] = obj.close_cancelled,
 		['BufDelete'] = obj.close_cancelled,
-		['BufLeave'] = obj.close_cancelled
+		['BufLeave'] = obj.close_cancelled,
+		['nested'] = true
 	}
 	local non_nested_autocmds = {
 		['CursorMoved'] = selectionHandler,
 	}
-	autocmd.addCommand(obj.list.buffer, nested_autocmds, true, obj)
-	autocmd.addCommand(obj.list.buffer, non_nested_autocmds, false, obj)
+	autocmd.addCommand(obj.list.buffer, nested_autocmds, obj)
+	autocmd.addCommand(obj.list.buffer, non_nested_autocmds, obj)
 	opts.keymaps = opts.keymaps or default_keymaps
 	if opts.additional_keymaps then
 		local i_maps = opts.additional_keymaps.i

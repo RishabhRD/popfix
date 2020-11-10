@@ -19,28 +19,20 @@ end
 
 -- utility function for converting lua functions to appropriate string
 -- and then add autocmd
-local function buffer_autocmd(buf, property, action, nested, param)
+local function buffer_autocmd(buf, property, action, param, nested, once)
+	local nested_string = ''
+	if nested then nested_string = "++nested" end
+	local once_string = ''
+	if once then once_string = "++once" end
 	if type(action) == "string" then
-		local command
-		if nested then
-			command = "autocmd %s <buffer=%s> ++nested %s"
-		else
-			command = "autocmd %s <buffer=%s> %s"
-		end
-		command = string.format(command, property, buf, action)
+		local command = string.format("autocmd %s <buffer=%s> %s %s %s", property, buf, nested_string, once_string, action)
 		vim.cmd(command)
 	else
 		local func = assign_function(buf,action)
-		local command
-		if nested then
-			command = "autocmd %s <buffer=%s> ++nested lua require('popfix.autocmd').execute(%s,%s)"
-		else
-			command = "autocmd %s <buffer=%s> lua require('popfix.autocmd').execute(%s,%s)"
-		end
 		if param then
 			param_map[buf][func] = param
 		end
-		command = string.format(command,property,buf,buf,func)
+		local command = string.format("autocmd %s <buffer=%s> %s %s lua require('popfix.autocmd').execute(%s,%s)", property, buf, nested_string, once_string, buf, func)
 		vim.cmd(command)
 	end
 end
@@ -55,13 +47,20 @@ end
 --			or
 --		string : lua_functions
 -- }
-function autocmd.addCommand(buf, mapping_table, nested, param)
+function autocmd.addCommand(buf, mapping_table, param)
 	if not param_map[buf] then
 		param_map[buf] = {}
 	end
-	if nested == nil then nested = false end
+	local nested = mapping_table.nested
+	local once = mapping_table.once
+	if mapping_table['nested'] then
+		mapping_table['nested'] = nil
+	end
+	if mapping_table['once'] then
+		mapping_table['once'] = nil
+	end
 	for property,action in pairs(mapping_table) do
-		buffer_autocmd(buf,property,action, nested, param)
+		buffer_autocmd(buf,property,action, param, nested, once)
 	end
 end
 

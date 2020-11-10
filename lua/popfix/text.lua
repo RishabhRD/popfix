@@ -111,8 +111,9 @@ function M.new(self, opts)
 	end
 	local nested_autocmds = {
 		['BufLeave'] = obj.close_cancelled,
+		['once'] = true
 	}
-	autocmd.addCommand(obj.prompt.buffer, nested_autocmds, true, obj)
+	autocmd.addCommand(obj.prompt.buffer, nested_autocmds, obj)
 	mappings.add_keymap(obj.prompt.buffer, opts.keymaps, obj)
 	api.nvim_set_current_win(obj.prompt.window)
 	return true
