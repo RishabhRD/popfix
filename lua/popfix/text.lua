@@ -7,8 +7,6 @@ local autocmd = require'popfix.autocmd'
 
 
 function M:close_cancelled()
-	if self.closed then return end
-	self.closed = true
 	local line = self.prompt:getCurrentPromptText()
 	mappings.free(self.prompt.buffer)
 	autocmd.free(self.prompt.buffer)
@@ -21,8 +19,6 @@ function M:close_cancelled()
 end
 
 function M:close_selected()
-	if self.closed then return end
-	self.closed = true
 	local line = self.prompt:getCurrentPromptText()
 	mappings.free(self.prompt.buffer)
 	autocmd.free(self.prompt.buffer)
@@ -111,6 +107,7 @@ function M.new(self, opts)
 	end
 	local nested_autocmds = {
 		['BufLeave'] = obj.close_cancelled,
+		['nested'] = true,
 		['once'] = true
 	}
 	autocmd.addCommand(obj.prompt.buffer, nested_autocmds, obj)

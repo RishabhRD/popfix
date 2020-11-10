@@ -15,8 +15,6 @@ local function plainSearchHandler(str)
 end
 
 function M:close_selected()
-	if self.closed then return end
-	self.closed = true
 	local line = self.action:getCurrentLine()
 	local index = self.action:getCurrentIndex()
 	mappings.free(self.list.buffer)
@@ -37,8 +35,6 @@ function M:close_selected()
 end
 
 function M:close_cancelled()
-	if self.closed then return end
-	self.closed = true
 	local line = self.action:getCurrentLine()
 	local index = self.action:getCurrentIndex()
 	mappings.free(self.list.buffer)
@@ -257,7 +253,8 @@ function M:new(opts)
 	end
 	local nested_autocmds = {
 		['BufLeave'] = obj.close_cancelled,
-		['nested'] = true
+		['nested'] = true,
+		['once'] = true
 	}
 	local non_nested_autocmd = {
 		['CursorMoved'] = selectionHandler,

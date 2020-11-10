@@ -14,24 +14,20 @@ local function plainSearchHandler(str)
 end
 
 function M:close_selected()
-	if self.closed then return end
-	local line = self.action.getCurrentLine()
-	local index = self.action.getCurrentIndex()
+	local line = self.action:getCurrentLine()
+	local index = self.action:getCurrentIndex()
 	mappings.free(self.list.buffer)
-	self.list.close()
-	self.prompt.close()
+	self.list:close()
+	self.prompt:close()
 	api.nvim_set_current_win(self.originalWindow)
 	self.originalWindow = nil
-	self.action.close(index, line, true)
-	self.closed = true
+	self.action:close(index, line, true)
 	self.list = nil
 	self.prompt = nil
 	self.action = nil
 end
 
 function M:close_cancelled()
-	if self.closed then return end
-	self.closed = true
 	local line = self.action:getCurrentLine()
 	local index = self.action:getCurrentIndex()
 	mappings.free(self.prompt.buffer)
@@ -266,6 +262,7 @@ function M:new(opts)
 	end
 	local nested_autocmds = {
 		['BufLeave'] = obj.close_cancelled,
+		['once'] = true,
 		['nested'] = true
 	}
 	local non_nested_autocmd = {

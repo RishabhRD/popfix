@@ -41,7 +41,7 @@ function prompt:new(opts)
 	if opts.callback then
 		local nested_autocmds = {
 			['TextChangedI,TextChangedP,TextChanged'] = triggerTextChanged,
-			['once'] = true
+			['nested'] = true
 		}
 		autocmd.addCommand(obj.buffer, nested_autocmds, obj)
 		obj.textChanged = opts.callback

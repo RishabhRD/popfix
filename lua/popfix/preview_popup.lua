@@ -10,7 +10,6 @@ local M = {}
 local listNamespace = api.nvim_create_namespace('popfix.preview_popup')
 
 function M:close_selected()
-	if self.action:freed() then return end
 	local line = self.action:getCurrentLine()
 	local index = self.action:getCurrentIndex()
 	mappings.free(self.list.buffer)
@@ -24,14 +23,12 @@ function M:close_selected()
 	api.nvim_set_current_win(self.originalWindow)
 	self.originalWindow = nil
 	self.action:close(index, line, true)
-	self.closed = true
 	self.list = nil
 	self.preview = nil
 	self.action = nil
 end
 
 function M:close_cancelled()
-	if self.action:freed() then return end
 	local line = self.action:getCurrentLine()
 	local index = self.action:getCurrentIndex()
 	mappings.free(self.list.buffer)
@@ -45,7 +42,6 @@ function M:close_cancelled()
 	api.nvim_set_current_win(self.originalWindow)
 	self.originalWindow = nil
 	self.action:close(index, line, false)
-	self.closed = true
 	self.list = nil
 	self.preview = nil
 	self.action = nil
@@ -175,10 +171,9 @@ function M:new(opts)
 		}
 	}
 	local nested_autocmds = {
-		['BufWipeout'] = obj.close_cancelled,
-		['BufDelete'] = obj.close_cancelled,
-		['BufLeave'] = obj.close_cancelled,
-		['nested'] = true
+		['BufWipeout,BufDelete,BufLeave'] = obj.close_cancelled,
+		['nested'] = true,
+		['once'] = true
 	}
 	local non_nested_autocmds = {
 		['CursorMoved'] = selectionHandler,
