@@ -6,28 +6,26 @@ local mappings = require'popfix.mappings'
 local autocmd = require'popfix.autocmd'
 
 
-function M:close_cancelled()
+local function close(self, bool)
 	local line = self.prompt:getCurrentPromptText()
 	mappings.free(self.prompt.buffer)
 	autocmd.free(self.prompt.buffer)
-	api.nvim_set_current_win(self.originalWindow)
+	if api.nvim_win_is_valid(self.originalWindow) then
+		api.nvim_set_current_win(self.originalWindow)
+	end
 	self.prompt:close()
 	self.originalWindow = nil
-	self.action:close(0, line, false)
+	self.action:close(0, line, bool)
 	self.prompt = nil
 	self.action = nil
 end
 
+function M:close_cancelled()
+	close(self, false)
+end
+
 function M:close_selected()
-	local line = self.prompt:getCurrentPromptText()
-	mappings.free(self.prompt.buffer)
-	autocmd.free(self.prompt.buffer)
-	api.nvim_set_current_win(self.originalWindow)
-	self.prompt:close()
-	self.originalWindow = nil
-	self.action:close(0, line, true)
-	self.prompt = nil
-	self.action = nil
+	close(self, true)
 end
 
 local function popup_editor(self, opts)

@@ -9,7 +9,7 @@ local M = {}
 
 local listNamespace = api.nvim_create_namespace('popfix.preview_popup')
 
-function M:close_selected()
+local function close(self, bool)
 	local line = self.action:getCurrentLine()
 	local index = self.action:getCurrentIndex()
 	mappings.free(self.list.buffer)
@@ -20,31 +20,22 @@ function M:close_selected()
 		api.nvim_win_close(self.splitWindow, true)
 		self.splitWindow = nil
 	end
-	api.nvim_set_current_win(self.originalWindow)
+	if api.nvim_win_is_valid(self.originalWindow) then
+		api.nvim_set_current_win(self.originalWindow)
+	end
 	self.originalWindow = nil
-	self.action:close(index, line, true)
+	self.action:close(index, line, bool)
 	self.list = nil
 	self.preview = nil
 	self.action = nil
 end
 
+function M:close_selected()
+	close(self, true)
+end
+
 function M:close_cancelled()
-	local line = self.action:getCurrentLine()
-	local index = self.action:getCurrentIndex()
-	mappings.free(self.list.buffer)
-	autocmd.free(self.list.buffer)
-	self.list:close()
-	self.preview:close()
-	if self.splitWindow then
-		api.nvim_win_close(self.splitWindow, true)
-		self.splitWindow = nil
-	end
-	api.nvim_set_current_win(self.originalWindow)
-	self.originalWindow = nil
-	self.action:close(index, line, false)
-	self.list = nil
-	self.preview = nil
-	self.action = nil
+	close(self, false)
 end
 
 local function selectionHandler(self)

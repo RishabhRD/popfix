@@ -9,30 +9,27 @@ local listNamespace = api.nvim_create_namespace('popfix.popup')
 
 --TODO: handle self.originalWindow in a more robust way.
 
-function M:close_selected()
+local function close(self, bool)
 	mappings.free(self.list.buffer)
 	autocmd.free(self.list.buffer)
-	api.nvim_set_current_win(self.originalWindow)
+	if api.nvim_win_is_valid(self.originalWindow) then
+		api.nvim_set_current_win(self.originalWindow)
+	end
 	self.list:close()
 	self.originalWindow = nil
 	local line = self.action:getCurrentLine()
 	local index = self.action:getCurrentIndex()
-	self.action:close(index, line, true)
+	self.action:close(index, line, bool)
 	self.list = nil
 	self.action = nil
 end
 
+function M:close_selected()
+	close(self, true)
+end
+
 function M:close_cancelled()
-	local line = self.action:getCurrentLine()
-	local index = self.action:getCurrentIndex()
-	mappings.free(self.list.buffer)
-	autocmd.free(self.list.buffer)
-	api.nvim_set_current_win(self.originalWindow)
-	self.list:close()
-	self.originalWindow = nil
-	self.action:close(index, line, false)
-	self.list = nil
-	self.action = nil
+	close(self, false)
 end
 
 local function selectionHandler(self)
