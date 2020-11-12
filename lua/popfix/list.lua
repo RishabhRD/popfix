@@ -54,6 +54,7 @@ function list:new(opts)
 	api.nvim_buf_set_option(initial.buffer, 'modifiable', false)
 	api.nvim_buf_set_option(initial.buffer, 'bufhidden', 'hide')
 	local obj = setmetatable(initial, self)
+	obj.numData = 0
 	return obj
 end
 
@@ -75,14 +76,36 @@ function list:newSplit(opts)
 	api.nvim_buf_set_option(initial.buffer, 'modifiable', false)
 	api.nvim_buf_set_option(initial.buffer, 'bufhidden', 'hide')
 	local obj = setmetatable(initial, self)
+	obj.numData = 0
 	return obj
 end
 
 
 function list:setData(data, starting, ending)
-	api.nvim_buf_set_option(self.buffer, 'modifiable', true)
-	api.nvim_buf_set_lines(self.buffer, starting, ending, false, data)
-	api.nvim_buf_set_option(self.buffer, 'modifiable', false)
+	if not starting then starting = 0 end
+	if not ending then ending = -1 end
+	self.numData = #data
+	local buf = self.buffer
+	vim.schedule(function()
+		if vim.fn.bufexists(buf) then
+			api.nvim_buf_set_option(buf, 'modifiable', true)
+			api.nvim_buf_set_lines(buf, starting, ending, false, data)
+			api.nvim_buf_set_option(buf, 'modifiable', false)
+		end
+	end)
+end
+
+function list:addData(data)
+	local numData = self.numData
+	local buf = self.buffer
+	vim.schedule(function()
+		if vim.fn.bufexists(buf) then
+			api.nvim_buf_set_option(buf, 'modifiable', true)
+			api.nvim_buf_set_lines(buf, numData, -1, false, data)
+			api.nvim_buf_set_option(buf, 'modifiable', false)
+		end
+	end)
+	self.numData = self.numData + #data
 end
 
 function list:close()

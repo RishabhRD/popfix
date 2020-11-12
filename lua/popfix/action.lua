@@ -16,6 +16,7 @@ function action:register(callbacks)
 end
 
 function action:select(index, line)
+	if not self.selection then return end
 	self.selection.index = index
 	self.selection.line = line
 

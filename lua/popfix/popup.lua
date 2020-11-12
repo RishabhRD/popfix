@@ -3,6 +3,8 @@ local mappings = require'popfix.mappings'
 local action = require'popfix.action'
 local list = require'popfix.list'
 local api = vim.api
+local Job = require'popfix.job'
+local util = require'popfix.util'
 
 local M = {}
 local listNamespace = api.nvim_create_namespace('popfix.popup')
@@ -10,6 +12,10 @@ local listNamespace = api.nvim_create_namespace('popfix.popup')
 --TODO: handle self.originalWindow in a more robust way.
 
 local function close(self, bool)
+	if self.job then
+		self.job:shutdown()
+		self.job = nil
+	end
 	mappings.free(self.list.buffer)
 	autocmd.free(self.list.buffer)
 	if api.nvim_win_is_valid(self.originalWindow) then
@@ -145,8 +151,25 @@ function M:new(opts)
 			return false
 		end
 	end
-	obj.list:setData(opts.data, 0, -1)
 	obj.action = action:register(opts.callbacks)
+	if type(opts.data) == 'string' then
+		local cmd, args = util.getArgs(opts.data)
+		obj.job = Job:new{
+			command = cmd,
+			args = args,
+			cwd = vim.fn.getcwd(),
+			on_stdout = function(_, line)
+				obj.list:addData({line}, listNamespace, obj.action)
+			end,
+			on_exit = function()
+				--TODO: is doing nil doesn't leak resources
+				obj.job = nil
+			end,
+		}
+		obj.job:start()
+	else
+		obj.list:setData(opts.data, 0, -1)
+	end
 	local default_keymaps = {
 		n = {
 			['q'] = self.close_cancelled,

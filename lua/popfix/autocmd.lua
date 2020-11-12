@@ -60,7 +60,7 @@ function autocmd.addCommand(buf, mapping_table, param)
 		mapping_table['once'] = nil
 	end
 	for property,action in pairs(mapping_table) do
-		buffer_autocmd(buf,property,action, param, nested, once)
+		buffer_autocmd(buf, property, action, param, nested, once)
 	end
 end
 
