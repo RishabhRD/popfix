@@ -191,6 +191,8 @@ function M:new(opts)
 		obj.job:start()
 	else
 		obj.list:setData(opts.data, 0, -1)
+		autocmd.addCommand(obj.list.buffer, nested_autocmds, obj)
+		autocmd.addCommand(obj.list.buffer, non_nested_autocmds, obj)
 	end
 	local default_keymaps = {
 		n = {

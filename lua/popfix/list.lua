@@ -86,13 +86,11 @@ function list:setData(data, starting, ending)
 	if not ending then ending = -1 end
 	self.numData = #data
 	local buf = self.buffer
-	vim.schedule(function()
-		if vim.fn.bufexists(buf) then
-			api.nvim_buf_set_option(buf, 'modifiable', true)
-			api.nvim_buf_set_lines(buf, starting, ending, false, data)
-			api.nvim_buf_set_option(buf, 'modifiable', false)
-		end
-	end)
+	if vim.fn.bufexists(buf) then
+		api.nvim_buf_set_option(buf, 'modifiable', true)
+		api.nvim_buf_set_lines(buf, starting, ending, false, data)
+		api.nvim_buf_set_option(buf, 'modifiable', false)
+	end
 end
 
 function list:addData(data)
