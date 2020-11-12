@@ -98,13 +98,11 @@ end
 function list:addData(data)
 	local numData = self.numData
 	local buf = self.buffer
-	vim.schedule(function()
-		if vim.fn.bufexists(buf) then
-			api.nvim_buf_set_option(buf, 'modifiable', true)
-			api.nvim_buf_set_lines(buf, numData, -1, false, data)
-			api.nvim_buf_set_option(buf, 'modifiable', false)
-		end
-	end)
+	if vim.fn.bufexists(buf) then
+		api.nvim_buf_set_option(buf, 'modifiable', true)
+		api.nvim_buf_set_lines(buf, numData, -1, false, data)
+		api.nvim_buf_set_option(buf, 'modifiable', false)
+	end
 	self.numData = self.numData + #data
 end
 

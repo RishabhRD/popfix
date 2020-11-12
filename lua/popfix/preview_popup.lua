@@ -159,15 +159,30 @@ function M:new(opts)
 			return false
 		end
 	end
+	local nested_autocmds = {
+		['BufWipeout,BufDelete,BufLeave'] = obj.close_cancelled,
+		['nested'] = true,
+		['once'] = true
+	}
+	local non_nested_autocmds = {
+		['CursorMoved'] = selectionHandler,
+	}
 	if type(opts.data) == 'string' then
 		local cmd, args = util.getArgs(opts.data)
 		obj.job = Job:new{
 			command = cmd,
 			args = args,
 			cwd = vim.fn.getcwd(),
-			on_stdout = function(_, line)
-				obj.list:addData({line}, listNamespace, obj.action)
-			end,
+			on_stdout = vim.schedule_wrap(function(_, line)
+				if obj.list then
+					obj.list:addData({line})
+					if not obj.first_added then
+						obj.first_added = true
+						autocmd.addCommand(obj.list.buffer, nested_autocmds, obj)
+						autocmd.addCommand(obj.list.buffer, non_nested_autocmds, obj)
+					end
+				end
+			end),
 			on_exit = function()
 				--TODO: is doing nil doesn't leak resources
 				obj.job = nil
@@ -184,16 +199,6 @@ function M:new(opts)
 			['<CR>'] = obj.close_selected
 		}
 	}
-	local nested_autocmds = {
-		['BufWipeout,BufDelete,BufLeave'] = obj.close_cancelled,
-		['nested'] = true,
-		['once'] = true
-	}
-	local non_nested_autocmds = {
-		['CursorMoved'] = selectionHandler,
-	}
-	autocmd.addCommand(obj.list.buffer, nested_autocmds, obj)
-	autocmd.addCommand(obj.list.buffer, non_nested_autocmds, obj)
 	opts.keymaps = opts.keymaps or default_keymaps
 	if opts.additional_keymaps then
 		local i_maps = opts.additional_keymaps.i
