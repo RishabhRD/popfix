@@ -104,6 +104,16 @@ function list:addData(data)
 	self.numData = self.numData + #data
 end
 
+function list:clear()
+	self.numData = 0
+	local buf = self.buffer
+	if vim.fn.bufexists(buf) then
+		api.nvim_buf_set_option(buf, 'modifiable', true)
+		api.nvim_buf_set_lines(buf, 0, -1, false, {})
+		api.nvim_buf_set_option(buf, 'modifiable', false)
+	end
+end
+
 function list:close()
 	local buf = self.buffer
 	vim.schedule(function()

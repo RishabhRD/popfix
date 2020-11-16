@@ -11,7 +11,7 @@ function prompt:getCurrentPromptText()
 end
 
 local function triggerTextChanged(self)
-	self.textChanged(self:getCurrentPromptText())
+	self.textChanged(self.handlerInstance, self:getCurrentPromptText())
 end
 
 
@@ -26,6 +26,7 @@ function prompt:new(opts)
 	opts.height = 1
 	opts.prompt_text = opts.prompt_text or ''
 	obj.prefix = opts.prompt_text .. '> '
+	obj.handlerInstance = opts.handlerInstance
 	local win_buf = floating_win.create_win(opts)
 	obj.buffer = win_buf.buf
 	obj.window = win_buf.win

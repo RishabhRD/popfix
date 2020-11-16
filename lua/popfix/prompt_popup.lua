@@ -1,6 +1,7 @@
 local M = {}
 
 local api = vim.api
+local promptHandler = require'popfix.prompt_handler'
 local autocmd = require'popfix.autocmd'
 local mappings = require'popfix.mappings'
 local action = require'popfix.action'
@@ -10,9 +11,31 @@ local list = require'popfix.list'
 local Job = require'popfix.job'
 local util = require'popfix.util'
 local listNamespace = api.nvim_create_namespace('popfix.prompt_popup')
+local identifier = api.nvim_create_namespace('popfix.identifier')
 
-local function plainSearchHandler(str)
-	print(str)
+local function textChanged(self, str)
+	if self.promptHandler.currentPromptText == '' then
+		self.list:clear()
+		self.list:addData(self.promptHandler.originalEntry)
+		return
+	end
+	local sortedEntry = self.promptHandler:setPromptText(str)
+	local highlightedPositions = self.promptHandler:getHighlightPositions()
+	local data = {}
+	for _, v in pairs(sortedEntry) do
+		data[#data + 1] = v.string
+	end
+	local localList = self.list
+	vim.schedule(function()
+		localList:clear()
+		localList:setData(data)
+		api.nvim_buf_clear_namespace(localList.buffer, identifier, 0, -1)
+		for k, v in pairs(highlightedPositions) do
+			for _, col in pairs(v) do
+				api.nvim_buf_add_highlight(localList.buffer, identifier, "Identifier", k-1, col-1, col)
+			end
+		end
+	end)
 end
 
 local function close(self, bool)
@@ -201,10 +224,12 @@ function M:new(opts)
 		print 'nil data'
 		return false
 	end
+	obj.promptHandler = promptHandler:new({ caseSensitive = true })
 	opts.list = opts.list or {}
 	opts.prompt.search_type = opts.prompt.search_type or 'plain'
+	opts.prompt.handlerInstance = obj
 	if opts.prompt.search_type == 'plain' then
-		opts.prompt.callback = plainSearchHandler
+		opts.prompt.callback = textChanged
 	end
 	obj.originalWindow = api.nvim_get_current_win()
 	if opts.mode == 'split' then
@@ -240,7 +265,24 @@ function M:new(opts)
 			cwd = vim.fn.getcwd(),
 			on_stdout = vim.schedule_wrap(function(_, line)
 				if obj.list then
-					obj.list:addData({line}, listNamespace, obj.action)
+					if obj.currentPromptText == '' then
+						obj.list:clear()
+						obj.list:addData(obj.promptHandler.originalEntry)
+						if not obj.first_added then
+							obj.first_added = true
+							autocmd.addCommand(obj.list.buffer, nested_autocmds, obj)
+							autocmd.addCommand(obj.list.buffer, non_nested_autocmd, obj)
+							selectionHandler(obj)
+						end
+						return
+					end
+					local sortedEntry = obj.promptHandler:addEntry(line)
+					local data = {}
+					for _, v in pairs(sortedEntry) do
+						data[#data + 1] = v.string
+					end
+					obj.list:clear()
+					obj.list:addData(data)
 					if not obj.first_added then
 						obj.first_added = true
 						autocmd.addCommand(obj.list.buffer, nested_autocmds, obj)
@@ -256,6 +298,9 @@ function M:new(opts)
 		}
 		obj.job:start()
 	else
+		for _, str in pairs(opts.data) do
+			obj.promptHandler:addEntry(str)
+		end
 		obj.list:setData(opts.data, 0, -1)
 		autocmd.addCommand(obj.list.buffer, nested_autocmds, obj)
 		autocmd.addCommand(obj.list.buffer, non_nested_autocmd, obj)
