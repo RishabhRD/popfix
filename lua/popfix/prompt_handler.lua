@@ -42,12 +42,11 @@ function M:addEntry(str)
 	table.sort(self.sortedEntry, function(a, b)
 		return a.score > b.score
 	end)
-	return self.sortedEntry
 end
 
 function M:setPromptText(prompt)
-	if self.currentPromptText '' then return end
 	self.currentPromptText = prompt
+	if self.currentPromptText == '' then return end
 	clear(self.sortedEntry)
 	for k, matcher in pairs(self.originalEntry) do
 		if fzy.has_match(self.currentPromptText, matcher, self.caseSensitive) then
@@ -64,7 +63,6 @@ function M:setPromptText(prompt)
 	table.sort(self.sortedEntry, function(a, b)
 		return a.score > b.score
 	end)
-	return self.sortedEntry
 end
 
 function M:getHighlightPositions()

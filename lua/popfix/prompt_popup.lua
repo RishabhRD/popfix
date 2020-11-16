@@ -14,15 +14,14 @@ local listNamespace = api.nvim_create_namespace('popfix.prompt_popup')
 local identifier = api.nvim_create_namespace('popfix.identifier')
 
 local function textChanged(self, str)
+	self.promptHandler:setPromptText(str)
 	if self.promptHandler.currentPromptText == '' then
-		self.list:clear()
-		self.list:addData(self.promptHandler.originalEntry)
+		self.list:setData(self.promptHandler.originalEntry)
 		return
 	end
-	local sortedEntry = self.promptHandler:setPromptText(str)
 	local highlightedPositions = self.promptHandler:getHighlightPositions()
 	local data = {}
-	for _, v in pairs(sortedEntry) do
+	for _, v in pairs(self.promptHandler.sortedEntry) do
 		data[#data + 1] = v.string
 	end
 	local localList = self.list
@@ -265,9 +264,9 @@ function M:new(opts)
 			cwd = vim.fn.getcwd(),
 			on_stdout = vim.schedule_wrap(function(_, line)
 				if obj.list then
-					if obj.currentPromptText == '' then
-						obj.list:clear()
-						obj.list:addData(obj.promptHandler.originalEntry)
+					obj.promptHandler:addEntry(line)
+					if obj.promptHandler.currentPromptText == '' then
+						obj.list:setData(obj.promptHandler.originalEntry)
 						if not obj.first_added then
 							obj.first_added = true
 							autocmd.addCommand(obj.list.buffer, nested_autocmds, obj)
@@ -276,9 +275,8 @@ function M:new(opts)
 						end
 						return
 					end
-					local sortedEntry = obj.promptHandler:addEntry(line)
 					local data = {}
-					for _, v in pairs(sortedEntry) do
+					for _, v in pairs(obj.promptHandler.sortedEntry) do
 						data[#data + 1] = v.string
 					end
 					obj.list:clear()
