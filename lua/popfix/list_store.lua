@@ -2,6 +2,8 @@ local M = {}
 local Job = require'popfix.job'
 local uv = vim.loop
 M.__index = M
+M.timeInterval = 50
+M.maxJob = 100
 
 -- @class List store stores all the job output.
 -- It also maintains job output itself and prompt event.
@@ -17,9 +19,8 @@ function M:new(opts)
 		prompt = opts.prompt,
 		cmd = opts.cmd,
 		args = opts.args,
-		maxJob = 100,
 		list = {},
-		sortedList = {}
+		sortedList = {},
 	}
 	setmetatable(obj, self)
 	return obj
@@ -46,15 +47,15 @@ function M:run()
 			-- fits with respect to its score with current prompt
 			-- Time complextity : O(n)
 
-			if self:filterFunction(line, self.currentPromptText) then
-				local score = self:scoringFunction(line, self.currentPromptTextprompt)
+			if self.filterFunction(self.currentPromptText, line) then
+				local score = self.scoringFunction(self.currentPromptText, line)
 				for k,v in ipairs(self.sortedList) do
 					if score > v.score then
 						table.insert(self.sortedList, k, {
 							score = score,
 							index = #self.list
 						})
-						self.manager:add(line, k, k)
+						self.manager:add(line, k-1, k-1)
 						return
 					end
 				end
@@ -68,29 +69,35 @@ function M:run()
 	local function appendAggregateData(itrStart, itrEnd)
 		for cur = itrStart, itrEnd do
 			local line = self.list[cur]
-			if self:filterFunction(line, self.currentPromptText) then
-				local score = self:scoringFunction(line, self.currentPromptTextprompt)
+			if self.filterFunction(self.currentPromptText, line) then
+				local score = self.scoringFunction(self.currentPromptText, line)
 				local found = false
 				for k,v in ipairs(self.sortedList) do
 					if score > v.score then
 						found = true
 						table.insert(self.sortedList, k, {
 							score = score,
-							index = #self.list
+							index = cur
 						})
-						self.manager:add(line, k, k)
+						self.manager:add(line, k-1, k-1)
 						break
 					end
 				end
 				if not found then
 					table.insert(self.sortedList, {
 						score = score,
-						index = #self.list
+						index = cur
 					})
 					self.manager:add(line)
 				end
 			end
 		end
+		-- print('{')
+		-- for _, v in ipairs(self.sortedList) do
+		-- 	print(self.list[v.index])
+		-- end
+		-- print('}')
+
 	end
 	local function fillPartialPromptData()
 		self.promptTimer:stop()
@@ -122,6 +129,7 @@ function M:run()
 			self.promptTimer = nil
 		end
 		self.startingIndex = 1
+		self.manager:clear()
 		clear(self.sortedList)
 		if #self.list > self.maxJob then
 			appendAggregateData(self.startingIndex, self.startingIndex +
@@ -139,6 +147,9 @@ function M:run()
 		args = self.args,
 		cwd = vim.fn.getcwd(),
 		on_stdout = vim.schedule_wrap(addData),
+		on_exit = function()
+			self.job = nil
+		end,
 	}
 	self.job:start()
 	self.prompt:registerTextChanged(textChanged)
@@ -157,6 +168,8 @@ function M:close()
 			self.job = nil
 		end
 	end
+	self.sortedList = nil
+	self.list = nil
 end
 
 return M

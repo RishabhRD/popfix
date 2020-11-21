@@ -14,10 +14,20 @@ end
 
 function M:add(line, starting, ending)
 	if ((not starting) or (not ending)) then
-		self.list:appendLine(line)
+		vim.schedule(function()
+			self.list:appendLine(line)
+		end)
 		return
 	end
-	self.list:addLine(line, starting, ending)
+	vim.schedule(function()
+		self.list:addLine(line, starting, ending)
+	end)
+end
+
+function M:clear()
+	vim.schedule(function()
+		self.list:clear()
+	end)
 end
 
 

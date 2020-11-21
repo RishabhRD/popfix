@@ -16,10 +16,7 @@ local listNamespace = api.nvim_create_namespace('popfix.prompt_popup')
 local identifier = api.nvim_create_namespace('popfix.identifier')
 
 local function close(self, bool)
-	if self.job then
-		self.job:shutdown()
-		self.job = nil
-	end
+	self.listStore:close()
 	local line = self.action:getCurrentLine()
 	local index = self.action:getCurrentIndex()
 	mappings.free(self.list.buffer)
@@ -31,6 +28,7 @@ local function close(self, bool)
 	self.originalWindow = nil
 	self.action:close(index, line, bool)
 	self.list = nil
+	self.listStore = nil
 	self.prompt = nil
 	self.action = nil
 end
