@@ -2,8 +2,8 @@ local M = {}
 local Job = require'popfix.job'
 local uv = vim.loop
 M.__index = M
-M.timeInterval = 50
-M.maxJob = 100
+M.timeInterval = 35
+M.maxJob = 800
 
 -- @class List store stores all the job output.
 -- It also maintains job output itself and prompt event.
@@ -41,7 +41,9 @@ function M:run()
 		if self.currentPromptText == '' then
 			self.sortedList[#self.sortedList + 1] = line
 			-- Put the line in last of UI list
-			self.manager:add(line)
+			self.manager:add(line, nil ,nil,
+			self.highlightingFunction(self.currentPromptText, line),
+			#self.sortedList - 1)
 		else
 			-- Traverse sorted list and get the location where output text
 			-- fits with respect to its score with current prompt
@@ -55,7 +57,9 @@ function M:run()
 							score = score,
 							index = #self.list
 						})
-						self.manager:add(line, k-1, k-1)
+						self.manager:add(line, k-1, k-1,
+						self.highlightingFunction(self.currentPromptText,
+						line), k-1)
 						return
 					end
 				end
@@ -79,7 +83,9 @@ function M:run()
 							score = score,
 							index = cur
 						})
-						self.manager:add(line, k-1, k-1)
+						self.manager:add(line, k-1, k-1,
+						self.highlightingFunction(self.currentPromptText,
+						line), k-1)
 						break
 					end
 				end
@@ -88,16 +94,12 @@ function M:run()
 						score = score,
 						index = cur
 					})
-					self.manager:add(line)
+					self.manager:add(line, nil ,nil,
+					self.highlightingFunction(self.currentPromptText,
+					line),#self.sortedList - 1)
 				end
 			end
 		end
-		-- print('{')
-		-- for _, v in ipairs(self.sortedList) do
-		-- 	print(self.list[v.index])
-		-- end
-		-- print('}')
-
 	end
 	local function fillPartialPromptData()
 		self.promptTimer:stop()

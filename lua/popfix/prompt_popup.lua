@@ -13,7 +13,6 @@ local prompt = require'popfix.prompt'
 local list = require'popfix.list'
 local util = require'popfix.util'
 local listNamespace = api.nvim_create_namespace('popfix.prompt_popup')
-local identifier = api.nvim_create_namespace('popfix.identifier')
 
 local function close(self, bool)
 	self.listStore:close()
@@ -228,12 +227,16 @@ function M:new(opts)
 	autocmd.addCommand(obj.list.buffer, nested_autocmds, obj)
 	if type(opts.data) == 'string' then
 		local cmd, args = util.getArgs(opts.data)
-		obj.manager = manager:new({list = obj.list})
+		obj.manager = manager:new({
+			list = obj.list,
+			action = obj.action
+		})
 		obj.listStore = ListStore:new({
 			cmd = cmd,
 			args = args,
 			scoringFunction = fzy.score,
 			filterFunction = fzy.has_match,
+			highlightingFunction = fzy.positions,
 			prompt = obj.prompt,
 			manager = obj.manager,
 		})
