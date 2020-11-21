@@ -1,41 +1,19 @@
 local M = {}
 
+
 local api = vim.api
-local promptHandler = require'popfix.prompt_handler'
+local fzy = require'popfix.fzy'
+local manager = require'popfix.list_manager'
+local ListStore = require'popfix.list_store'
 local autocmd = require'popfix.autocmd'
 local mappings = require'popfix.mappings'
 local action = require'popfix.action'
 
 local prompt = require'popfix.prompt'
 local list = require'popfix.list'
-local Job = require'popfix.job'
 local util = require'popfix.util'
 local listNamespace = api.nvim_create_namespace('popfix.prompt_popup')
 local identifier = api.nvim_create_namespace('popfix.identifier')
-
-local function textChanged(self, str)
-	self.promptHandler:setPromptText(str)
-	if self.promptHandler.currentPromptText == '' then
-		self.list:setData(self.promptHandler.originalEntry)
-		return
-	end
-	local highlightedPositions = self.promptHandler:getHighlightPositions()
-	local data = {}
-	for _, v in pairs(self.promptHandler.sortedEntry) do
-		data[#data + 1] = v.string
-	end
-	local localList = self.list
-	vim.schedule(function()
-		localList:clear()
-		localList:setData(data)
-		api.nvim_buf_clear_namespace(localList.buffer, identifier, 0, -1)
-		for k, v in pairs(highlightedPositions) do
-			for _, col in pairs(v) do
-				api.nvim_buf_add_highlight(localList.buffer, identifier, "Identifier", k-1, col-1, col)
-			end
-		end
-	end)
-end
 
 local function close(self, bool)
 	if self.job then
@@ -223,13 +201,9 @@ function M:new(opts)
 		print 'nil data'
 		return false
 	end
-	obj.promptHandler = promptHandler:new({ caseSensitive = true })
 	opts.list = opts.list or {}
 	opts.prompt.search_type = opts.prompt.search_type or 'plain'
 	opts.prompt.handlerInstance = obj
-	if opts.prompt.search_type == 'plain' then
-		opts.prompt.callback = textChanged
-	end
 	obj.originalWindow = api.nvim_get_current_win()
 	if opts.mode == 'split' then
 		if not popup_split(obj, opts) then
@@ -253,55 +227,26 @@ function M:new(opts)
 		['once'] = true,
 		['nested'] = true
 	}
-	local non_nested_autocmd = {
-		['CursorMoved'] = selectionHandler,
-	}
+	autocmd.addCommand(obj.list.buffer, nested_autocmds, obj)
 	if type(opts.data) == 'string' then
 		local cmd, args = util.getArgs(opts.data)
-		obj.job = Job:new{
-			command = cmd,
+		obj.manager = manager:new({list = obj.list})
+		obj.listStore = ListStore:new({
+			cmd = cmd,
 			args = args,
-			cwd = vim.fn.getcwd(),
-			on_stdout = vim.schedule_wrap(function(_, line)
-				if obj.list then
-					obj.promptHandler:addEntry(line)
-					if obj.promptHandler.currentPromptText == '' then
-						obj.list:setData(obj.promptHandler.originalEntry)
-						if not obj.first_added then
-							obj.first_added = true
-							autocmd.addCommand(obj.list.buffer, nested_autocmds, obj)
-							autocmd.addCommand(obj.list.buffer, non_nested_autocmd, obj)
-							selectionHandler(obj)
-						end
-						return
-					end
-					local data = {}
-					for _, v in pairs(obj.promptHandler.sortedEntry) do
-						data[#data + 1] = v.string
-					end
-					obj.list:clear()
-					obj.list:addData(data)
-					if not obj.first_added then
-						obj.first_added = true
-						autocmd.addCommand(obj.list.buffer, nested_autocmds, obj)
-						autocmd.addCommand(obj.list.buffer, non_nested_autocmd, obj)
-						selectionHandler(obj)
-					end
-				end
-			end),
-			on_exit = function()
-				--TODO: is doing nil doesn't leak resources
-				obj.job = nil
-			end,
-		}
-		obj.job:start()
+			scoringFunction = fzy.score,
+			filterFunction = fzy.has_match,
+			prompt = obj.prompt,
+			manager = obj.manager,
+		})
+		obj.listStore:run()
 	else
-		for _, str in pairs(opts.data) do
-			obj.promptHandler:addEntry(str)
-		end
-		obj.list:setData(opts.data, 0, -1)
-		autocmd.addCommand(obj.list.buffer, nested_autocmds, obj)
-		autocmd.addCommand(obj.list.buffer, non_nested_autocmd, obj)
+		-- for _, str in pairs(opts.data) do
+		-- 	obj.promptHandler:addEntry(str)
+		-- end
+		-- obj.list:setData(opts.data, 0, -1)
+		-- autocmd.addCommand(obj.list.buffer, nested_autocmds, obj)
+		-- autocmd.addCommand(obj.list.buffer, non_nested_autocmd, obj)
 	end
 	local default_keymaps = {
 		n = {

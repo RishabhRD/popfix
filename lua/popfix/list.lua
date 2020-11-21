@@ -80,6 +80,27 @@ function list:newSplit(opts)
 	return obj
 end
 
+function list:addLine(data, starting, ending)
+	self.numData = self.numData + 1
+	local buf = self.buffer
+	if vim.fn.bufexists(buf) then
+		api.nvim_buf_set_option(buf, 'modifiable', true)
+		api.nvim_buf_set_lines(buf, starting, ending, false, {data})
+		api.nvim_buf_set_option(buf, 'modifiable', false)
+	end
+end
+
+function list:appendLine(data)
+	local numData = self.numData
+	local buf = self.buffer
+	if vim.fn.bufexists(buf) then
+		api.nvim_buf_set_option(buf, 'modifiable', true)
+		api.nvim_buf_set_lines(buf, numData, -1, false, {data})
+		api.nvim_buf_set_option(buf, 'modifiable', false)
+	end
+	self.numData = self.numData + 1
+end
+
 
 function list:setData(data, starting, ending)
 	if not starting then starting = 0 end
