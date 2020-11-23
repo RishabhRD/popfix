@@ -112,6 +112,9 @@ local function popup_split(self, opts)
 	end
 	api.nvim_set_current_win(self.list.window)
 	vim.cmd('vnew')
+	if not api.nvim_get_option('splitright') then
+		vim.cmd('wincmd r')
+	end
 	self.splitWindow = api.nvim_get_current_win()
 	local splitBuffer = api.nvim_get_current_buf()
 	api.nvim_buf_set_option(splitBuffer, 'bufhidden', 'wipe')
