@@ -2,7 +2,7 @@ local M = {}
 local Job = require'popfix.job'
 local uv = vim.loop
 M.__index = M
-M.timeInterval = 5
+M.timeInterval = 1
 M.maxJob = 20
 
 -- @class List store stores all the job output.
