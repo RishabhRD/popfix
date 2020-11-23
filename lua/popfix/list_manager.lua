@@ -12,15 +12,23 @@ local listNamespace = api.nvim_create_namespace('popfix.prompt_popup')
 function M:new(opts)
 	local obj = {
 		list = opts.list,
-		action = opts.action
+		action = opts.action,
+		renderLimit = opts.renderLimit,
+		linesRendered = 0
 	}
 	setmetatable(obj, self)
 	return obj
 end
 
 function M:add(line, starting, ending, highlightTable, highlightLine)
+	local add = false
+	if self.linesRendered < self.renderLimit then
+		add = true
+	end
 	local selection = self.action.selection.index
 	if ((not starting) or (not ending)) then
+		if not add then return end
+		self.linesRendered = self.linesRendered + 1
 		vim.schedule(function()
 			self.list:appendLine(line)
 			if not selection then
@@ -37,7 +45,16 @@ function M:add(line, starting, ending, highlightTable, highlightLine)
 		end)
 		return
 	end
+	if starting >= self.renderLimit then
+		return
+	end
+	if add then
+		self.linesRendered = self.linesRendered + 1
+	end
 	vim.schedule(function()
+		if not add then
+			self.list:clearLast()
+		end
 		self.list:addLine(line, starting, ending)
 		if not selection then
 			api.nvim_buf_clear_namespace(self.list.buffer, listNamespace, 0,
@@ -52,8 +69,8 @@ function M:add(line, starting, ending, highlightTable, highlightLine)
 		end
 	end)
 end
-
 function M:clear()
+	self.linesRendered = 0
 	vim.schedule(function()
 		self.list:clear()
 	end)

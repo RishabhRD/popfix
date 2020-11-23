@@ -2,8 +2,8 @@ local M = {}
 local Job = require'popfix.job'
 local uv = vim.loop
 M.__index = M
-M.timeInterval = 35
-M.maxJob = 800
+M.timeInterval = 5
+M.maxJob = 20
 
 -- @class List store stores all the job output.
 -- It also maintains job output itself and prompt event.
@@ -15,7 +15,7 @@ function M:new(opts)
 		highlightingFunction = opts.highlightingFunction,
 		filterFunction = opts.filterFunction,
 		caseSensitive = opts.caseSensitive,
-		currentPromptText = opts.currentPromptText,
+		currentPromptText = '',
 		prompt = opts.prompt,
 		cmd = opts.cmd,
 		args = opts.args,
@@ -37,6 +37,11 @@ function M:run()
 	local function addData(_, line)
 		if not self.list then return end
 		self.list[#self.list + 1] = line
+		-- if there is any existing timer then it will do your job.
+		-- Don't worry then.
+		if self.promptTimer then
+			return
+		end
 		-- If there is no text in prompt then just add the things in sortedList
 		if self.currentPromptText == '' then
 			self.sortedList[#self.sortedList + 1] = line
@@ -101,6 +106,10 @@ function M:run()
 			end
 		end
 	end
+	-- this function fills start filling the data in sorted table
+	-- from where it was left off. From there it tries fill remaining data.
+	-- if remaining is still not sufficient then it tries to again schedule a
+	-- timer.
 	local function fillPartialPromptData()
 		self.promptTimer:stop()
 		self.promptTimer:close()
@@ -148,7 +157,7 @@ function M:run()
 		command = self.cmd,
 		args = self.args,
 		cwd = vim.fn.getcwd(),
-		on_stdout = vim.schedule_wrap(addData),
+		on_stdout = addData,
 		on_exit = function()
 			self.job = nil
 		end,

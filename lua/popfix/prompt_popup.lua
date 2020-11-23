@@ -229,7 +229,8 @@ function M:new(opts)
 		local cmd, args = util.getArgs(opts.data)
 		obj.manager = manager:new({
 			list = obj.list,
-			action = obj.action
+			action = obj.action,
+			renderLimit = 100
 		})
 		obj.listStore = ListStore:new({
 			cmd = cmd,

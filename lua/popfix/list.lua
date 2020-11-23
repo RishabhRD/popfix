@@ -146,6 +146,15 @@ function list:close()
 	self.window = nil
 end
 
+function list:clearLast()
+	local numData = api.nvim_buf_line_count(self.buffer)
+	if vim.fn.bufexists(self.buffer) then
+		api.nvim_buf_set_option(self.buffer, 'modifiable', true)
+		api.nvim_buf_set_lines(self.buffer, numData - 1, numData, false, {})
+		api.nvim_buf_set_option(self.buffer, 'modifiable', false)
+	end
+end
+
 function list:getCurrentLineNumber()
 	return api.nvim_win_get_cursor(self.window)[1]
 end
@@ -167,6 +176,10 @@ function list:select_prev()
 		api.nvim_win_set_cursor(self.window, {lineNumber - 1, 0})
 	end
 	vim.cmd('redraw')
+end
+
+function list:getSize()
+	return api.nvim_buf_line_count(self.buffer)
 end
 
 return list
