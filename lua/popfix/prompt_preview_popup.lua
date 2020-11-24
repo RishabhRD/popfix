@@ -2,7 +2,7 @@ local M = {}
 
 local fzy = require'popfix.fzy'
 local manager = require'popfix.list_manager'
-local FuzzyEngine = require'popfix.list_store'
+local FuzzyEngine = require'popfix.fuzzy_engine'
 local api = vim.api
 local autocmd = require'popfix.autocmd'
 local mappings = require'popfix.mappings'

@@ -4,7 +4,7 @@ local M = {}
 local api = vim.api
 local fzy = require'popfix.fzy'
 local manager = require'popfix.list_manager'
-local ListStore = require'popfix.list_store'
+local FuzzyEngine = require'popfix.fuzzy_engine'
 local autocmd = require'popfix.autocmd'
 local mappings = require'popfix.mappings'
 local action = require'popfix.action'
@@ -14,7 +14,7 @@ local list = require'popfix.list'
 local util = require'popfix.util'
 
 local function close(self, bool)
-	self.listStore:close()
+	self.fuzzyEngine:close()
 	local line = self.action:getCurrentLine()
 	local index = self.action:getCurrentIndex()
 	mappings.free(self.prompt.buffer)
@@ -26,7 +26,7 @@ local function close(self, bool)
 	self.originalWindow = nil
 	self.action:close(index, line, bool)
 	self.list = nil
-	self.listStore = nil
+	self.fuzzyEngine = nil
 	self.prompt = nil
 	self.action = nil
 end
@@ -219,7 +219,7 @@ function M:new(opts)
 			renderLimit = 5,
 			highlightingFunction = fzy.positions,
 		})
-		obj.listStore = ListStore:new({
+		obj.fuzzyEngine = FuzzyEngine:new({
 			cmd = cmd,
 			args = args,
 			scoringFunction = fzy.score,
@@ -227,9 +227,9 @@ function M:new(opts)
 			prompt = obj.prompt,
 			manager = obj.manager,
 		})
-		obj.manager.sortedList = obj.listStore.sortedList
-		obj.manager.originalList = obj.listStore.list
-		obj.listStore:run()
+		obj.manager.sortedList = obj.fuzzyEngine.sortedList
+		obj.manager.originalList = obj.fuzzyEngine.list
+		obj.fuzzyEngine:run()
 	else
 		obj.manager = manager:new({
 			list = obj.list,
@@ -237,16 +237,16 @@ function M:new(opts)
 			renderLimit = 5,
 			highlightingFunction = fzy.positions,
 		})
-		obj.listStore = ListStore:new({
+		obj.fuzzyEngine = FuzzyEngine:new({
 			luaTable = opts.data,
 			scoringFunction = fzy.score,
 			filterFunction = fzy.has_match,
 			prompt = obj.prompt,
 			manager = obj.manager,
 		})
-		obj.manager.sortedList = obj.listStore.sortedList
-		obj.manager.originalList = obj.listStore.list
-		obj.listStore:run()
+		obj.manager.sortedList = obj.fuzzyEngine.sortedList
+		obj.manager.originalList = obj.fuzzyEngine.list
+		obj.fuzzyEngine:run()
 	end
 	local default_keymaps = {
 		n = {

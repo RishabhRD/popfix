@@ -5,7 +5,7 @@ M.__index = M
 M.timeInterval = 1
 M.maxJob = 15
 
--- @class List store stores all the job output.
+-- @class Fuzzy engine stores all the output
 -- It also maintains job output itself and prompt event.
 -- It also maintains a sorted list with respect to current prompt text
 function M:new(opts)
