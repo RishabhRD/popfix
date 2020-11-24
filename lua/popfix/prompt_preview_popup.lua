@@ -1,5 +1,8 @@
 local M = {}
 
+local fzy = require'popfix.fzy'
+local manager = require'popfix.list_manager'
+local FuzzyEngine = require'popfix.list_store'
 local api = vim.api
 local autocmd = require'popfix.autocmd'
 local mappings = require'popfix.mappings'
@@ -8,13 +11,6 @@ local prompt = require'popfix.prompt'
 local list = require'popfix.list'
 local preview = require'popfix.preview'
 local util = require'popfix.util'
-local Job = require'popfix.job'
-
-local listNamespace = api.nvim_create_namespace('popfix.prompt_preview_popup')
-
-local function plainSearchHandler(str)
-	print(str)
-end
 
 local function close(self, bool)
 	if self.job then
@@ -50,28 +46,12 @@ function M:close_cancelled()
 	close(self, false)
 end
 
-local function selectionHandler(self)
-	local oldIndex = self.action:getCurrentIndex()
-	local line = self.list:getCurrentLineNumber()
-	if oldIndex ~= line then
-		api.nvim_buf_clear_namespace(self.list.buffer, listNamespace, 0, -1)
-		api.nvim_buf_add_highlight(self.list.buffer, listNamespace, "Visual", line -
-		1, 0, -1)
-		local data = self.action:select(line, self.list:getCurrentLine())
-		if data ~= nil then
-			self.preview:writePreview(data)
-		end
-	end
-end
-
 function M:select_next()
-	self.list:select_next()
-	selectionHandler(self)
+	self.manager:select_next()
 end
 
 function M:select_prev()
-	self.list:select_prev()
-	selectionHandler(self)
+	self.manager:select_prev()
 end
 
 local function popup_editor(self, opts)
@@ -197,9 +177,6 @@ function M:new(opts)
 	end
 	opts.list = opts.list or {}
 	opts.prompt.search_type = opts.prompt.search_type or 'plain'
-	if opts.prompt.search_type == 'plain' then
-		opts.prompt.callback = plainSearchHandler
-	end
 	obj.originalWindow = api.nvim_get_current_win()
 	if opts.mode == 'split' then
 		if not popup_split(obj, opts) then
@@ -218,36 +195,45 @@ function M:new(opts)
 		['nested'] = true,
 		['once'] = true
 	}
-	local non_nested_autocmd = {
-		['CursorMoved'] = selectionHandler,
-	}
+	autocmd.addCommand(obj.list.buffer, nested_autocmds, obj)
 	if type(opts.data) == 'string' then
 		local cmd, args = util.getArgs(opts.data)
-		obj.job = Job:new{
-			command = cmd,
+		obj.manager = manager:new({
+			preview = obj.preview,
+			list = obj.list,
+			action = obj.action,
+			renderLimit = 45,
+			highlightingFunction = fzy.positions,
+		})
+		obj.fuzzyEngine = FuzzyEngine:new({
+			cmd = cmd,
 			args = args,
-			cwd = vim.fn.getcwd(),
-			on_stdout = vim.schedule_wrap(function(_, line)
-				if obj.list then
-					obj.list:addData({line}, listNamespace, obj.action)
-					if not obj.first_added then
-						obj.first_added = true
-						autocmd.addCommand(obj.list.buffer, nested_autocmds, obj)
-						autocmd.addCommand(obj.list.buffer, non_nested_autocmd, obj)
-						selectionHandler(obj)
-					end
-				end
-			end),
-			on_exit = function()
-				--TODO: is doing nil doesn't leak resources
-				obj.job = nil
-			end,
-		}
-		obj.job:start()
+			scoringFunction = fzy.score,
+			filterFunction = fzy.has_match,
+			prompt = obj.prompt,
+			manager = obj.manager,
+		})
+		obj.manager.sortedList = obj.fuzzyEngine.sortedList
+		obj.manager.originalList = obj.fuzzyEngine.list
+		obj.fuzzyEngine:run()
 	else
-		obj.list:setData(opts.data, 0, -1)
-		autocmd.addCommand(obj.list.buffer, nested_autocmds, obj)
-		autocmd.addCommand(obj.list.buffer, non_nested_autocmd, obj)
+		obj.manager = manager:new({
+			preview = obj.preview,
+			list = obj.list,
+			action = obj.action,
+			renderLimit = 5,
+			highlightingFunction = fzy.positions,
+		})
+		obj.fuzzyEngine = FuzzyEngine:new({
+			luaTable = opts.data,
+			scoringFunction = fzy.score,
+			filterFunction = fzy.has_match,
+			prompt = obj.prompt,
+			manager = obj.manager,
+		})
+		obj.manager.sortedList = obj.fuzzyEngine.sortedList
+		obj.manager.originalList = obj.fuzzyEngine.list
+		obj.fuzzyEngine:run()
 	end
 	local default_keymaps = {
 		n = {

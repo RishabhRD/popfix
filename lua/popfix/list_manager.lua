@@ -12,6 +12,7 @@ local listNamespace = api.nvim_create_namespace('popfix.listManager')
 function M:new(opts)
 	local obj = {
 		list = opts.list,
+		preview = opts.preview,
 		action = opts.action,
 		renderLimit = opts.renderLimit,
 		linesRendered = 0,
@@ -27,8 +28,20 @@ function M:select(lineNumber)
 	0, -1)
 	api.nvim_buf_add_highlight(self.list.buffer, listNamespace,
 	"Visual", lineNumber - 1, 0, -1)
-	self.action:select(self.sortedList[lineNumber].index,
-	self.list:get(lineNumber - 1))
+	local data
+	if self.sortedList[lineNumber] then
+		data = self.action:select(self.sortedList[lineNumber].index,
+		self.list:get(lineNumber - 1))
+	end
+	if data then
+		vim.schedule(function()
+			if self.preview then
+				if data ~= nil then
+					self.preview:writePreview(data)
+				end
+			end
+		end)
+	end
 end
 
 -- lazy rendering while next selection
@@ -113,6 +126,7 @@ end
 
 function M:clear()
 	self.linesRendered = 0
+	self.action:select(nil, nil)
 	vim.schedule(function()
 		self.list:clear()
 	end)
