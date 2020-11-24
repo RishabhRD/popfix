@@ -3,7 +3,7 @@ local Job = require'popfix.job'
 local uv = vim.loop
 M.__index = M
 M.timeInterval = 1
-M.maxJob = 20
+M.maxJob = 40
 
 -- @class List store stores all the job output.
 -- It also maintains job output itself and prompt event.
@@ -12,7 +12,6 @@ function M:new(opts)
 	local obj = {
 		manager = opts.manager,
 		scoringFunction = opts.scoringFunction,
-		highlightingFunction = opts.highlightingFunction,
 		filterFunction = opts.filterFunction,
 		caseSensitive = opts.caseSensitive,
 		currentPromptText = '',
@@ -44,11 +43,12 @@ function M:run()
 		end
 		-- If there is no text in prompt then just add the things in sortedList
 		if self.currentPromptText == '' then
-			self.sortedList[#self.sortedList + 1] = line
+			self.sortedList[#self.sortedList + 1] = {
+				score = 0,
+				index = #self.list
+			}
 			-- Put the line in last of UI list
-			self.manager:add(line, nil ,nil,
-			self.highlightingFunction(self.currentPromptText, line),
-			#self.sortedList - 1)
+			self.manager:add(line, nil ,nil, #self.sortedList - 1)
 		else
 			-- Traverse sorted list and get the location where output text
 			-- fits with respect to its score with current prompt
@@ -62,9 +62,7 @@ function M:run()
 							score = score,
 							index = #self.list
 						})
-						self.manager:add(line, k-1, k-1,
-						self.highlightingFunction(self.currentPromptText,
-						line), k-1)
+						self.manager:add(line, k-1, k-1, k-1)
 						return
 					end
 				end
@@ -88,9 +86,7 @@ function M:run()
 							score = score,
 							index = cur
 						})
-						self.manager:add(line, k-1, k-1,
-						self.highlightingFunction(self.currentPromptText,
-						line), k-1)
+						self.manager:add(line, k-1, k-1, k-1)
 						break
 					end
 				end
@@ -99,9 +95,7 @@ function M:run()
 						score = score,
 						index = cur
 					})
-					self.manager:add(line, nil ,nil,
-					self.highlightingFunction(self.currentPromptText,
-					line),#self.sortedList - 1)
+					self.manager:add(line, nil ,nil, #self.sortedList - 1)
 				end
 			end
 		end
@@ -134,6 +128,7 @@ function M:run()
 			return
 		end
 		self.currentPromptText = prompt
+		self.manager.currentPromptText = prompt
 		if self.promptTimer then
 			self.promptTimer:stop()
 			self.promptTimer:close()

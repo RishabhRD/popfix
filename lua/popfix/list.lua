@@ -92,6 +92,7 @@ function list:addLine(data, starting, ending)
 end
 
 function list:appendLine(data)
+	print(vim.inspect(data))
 	local numData = self.numData
 	local buf = self.buffer
 	if buf == 0 then return end
@@ -180,6 +181,10 @@ end
 
 function list:getSize()
 	return api.nvim_buf_line_count(self.buffer)
+end
+
+function list:get(index)
+	return api.nvim_buf_get_lines(self.buffer, index, index + 1, false)[1]
 end
 
 return list
