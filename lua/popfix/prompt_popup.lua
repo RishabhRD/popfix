@@ -6,17 +6,18 @@ local fzy = require'popfix.fzy'
 local manager = require'popfix.list_manager'
 local ListStore = require'popfix.list_store'
 local autocmd = require'popfix.autocmd'
+local mappings = require'popfix.mappings'
 local action = require'popfix.action'
 
 local prompt = require'popfix.prompt'
 local list = require'popfix.list'
 local util = require'popfix.util'
-local listNamespace = api.nvim_create_namespace('popfix.prompt_popup')
 
 local function close(self, bool)
 	self.listStore:close()
 	local line = self.action:getCurrentLine()
 	local index = self.action:getCurrentIndex()
+	mappings.free(self.list.buffer)
 	self.list:close()
 	self.prompt:close()
 	if api.nvim_win_is_valid(self.originalWindow) then
@@ -38,25 +39,12 @@ function M:close_cancelled()
 	close(self, false)
 end
 
-local function selectionHandler(self)
-	local oldIndex = self.action:getCurrentIndex()
-	local line = self.list:getCurrentLineNumber()
-	if oldIndex ~= line then
-		api.nvim_buf_clear_namespace(self.list.buffer, listNamespace, 0, -1)
-		api.nvim_buf_add_highlight(self.list.buffer, listNamespace, "Visual", line - 1,
-		0, -1)
-		self.action:select(line, self.list:getCurrentLine())
-	end
-end
-
 function M:select_next()
-	self.list:select_next()
-	selectionHandler(self)
+	self.manager:select_next()
 end
 
 function M:select_prev()
-	self.list:select_prev()
-	selectionHandler(self)
+	self.manager:select_prev()
 end
 
 local function popup_cursor(self, opts)
@@ -227,12 +215,9 @@ function M:new(opts)
 		local cmd, args = util.getArgs(opts.data)
 		obj.manager = manager:new({
 			list = obj.list,
-			prompt = obj.prompt,
 			action = obj.action,
 			renderLimit = 5,
 			highlightingFunction = fzy.positions,
-			keymaps = opts.keymaps,
-			additionalKeymaps = opts.additionalKeymaps
 		})
 		obj.listStore = ListStore:new({
 			cmd = cmd,
@@ -244,7 +229,6 @@ function M:new(opts)
 		})
 		obj.manager.sortedList = obj.listStore.sortedList
 		obj.manager.originalList = obj.listStore.list
-		obj.manager:setupKeymaps()
 		obj.listStore:run()
 	else
 		-- for _, str in pairs(opts.data) do
@@ -254,7 +238,45 @@ function M:new(opts)
 		-- autocmd.addCommand(obj.list.buffer, nested_autocmds, obj)
 		-- autocmd.addCommand(obj.list.buffer, non_nested_autocmd, obj)
 	end
+	local default_keymaps = {
+		n = {
+			['q'] = obj.close_cancelled,
+			['<Esc>'] = obj.close_cancelled,
+			['j'] = obj.select_next,
+			['k'] = obj.select_prev,
+			['<CR>'] = obj.close_selected
+		},
+		i = {
+			['<C-c>'] = obj.close_cancelled,
+			['<C-n>'] = obj.select_next,
+			['<C-p>'] = obj.select_prev,
+			['<CR>'] = obj.close_selected,
+		}
+	}
+	opts.keymaps = opts.keymaps or default_keymaps
+	if opts.additional_keymaps then
+		local i_maps = opts.additional_keymaps.i
+		if i_maps then
+			if not opts.keymaps.i then
+				opts.keymaps.i = {}
+			end
+			for k, v in pairs(i_maps) do
+				opts.keymaps.i[k] = v
+			end
+		end
+		local n_maps = opts.additional_keymaps.n
+		if n_maps then
+			if not opts.keymaps.n then
+				opts.keymaps.n = {}
+			end
+			for k, v in pairs(n_maps) do
+				opts.keymaps.n[k] = v
+			end
+		end
+	end
 	api.nvim_set_current_win(obj.prompt.window)
+	mappings.add_keymap(obj.prompt.buffer, opts.keymaps, obj)
+	obj.closed = false
 	return obj
 end
 

@@ -18,52 +18,10 @@ function M:new(opts)
 		renderLimit = opts.renderLimit,
 		linesRendered = 0,
 		currentPromptText = '',
-		keymaps = opts.keymaps,
-		additionalKeymaps = opts.additionalKeymaps,
 		highlightingFunction = opts.highlightingFunction,
 	}
 	setmetatable(obj, self)
 	return obj
-end
-
-function M:setupKeymaps()
-	local default_keymaps = {
-		n = {
-			['q'] = self.close_cancelled,
-			['<Esc>'] = self.close_cancelled,
-			['j'] = self.select_next,
-			['k'] = self.select_prev,
-			['<CR>'] = self.close_selected
-		},
-		i = {
-			['<C-c>'] = self.close_cancelled,
-			['<C-n>'] = self.select_next,
-			['<C-p>'] = self.select_prev,
-			['<CR>'] = self.close_selected,
-		}
-	}
-	self.keymaps = self.keymaps or default_keymaps
-	if self.additional_keymaps then
-		local i_maps = self.additional_keymaps.i
-		if i_maps then
-			if not self.keymaps.i then
-				self.keymaps.i = {}
-			end
-			for k, v in pairs(i_maps) do
-				self.keymaps.i[k] = v
-			end
-		end
-		local n_maps = self.additional_keymaps.n
-		if n_maps then
-			if not self.keymaps.n then
-				self.keymaps.n = {}
-			end
-			for k, v in pairs(n_maps) do
-				self.keymaps.n[k] = v
-			end
-		end
-	end
-	mappings.add_keymap(self.prompt.buffer, self.keymaps, self)
 end
 
 function M:select(lineNumber)
@@ -75,6 +33,7 @@ function M:select(lineNumber)
 	self.list:get(lineNumber - 1))
 end
 
+-- lazy rendering while next selection
 function M:select_next()
 	if self.currentLineNumber == #self.sortedList then
 		return
@@ -84,8 +43,6 @@ function M:select_next()
 		self.renderLimit = self.renderLimit + 1
 		local string =
 		self.originalList[self.sortedList[self.currentLineNumber].index]
-		-- print(vim.inspect(self.sortedList))
-		-- print(vim.inspect(self.sortedList[self.currentLineNumber]))
 		vim.schedule(function()
 			self.list:appendLine(string)
 			self:select(self.currentLineNumber)
