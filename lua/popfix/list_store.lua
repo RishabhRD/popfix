@@ -3,13 +3,14 @@ local Job = require'popfix.job'
 local uv = vim.loop
 M.__index = M
 M.timeInterval = 1
-M.maxJob = 40
+M.maxJob = 20
 
 -- @class List store stores all the job output.
 -- It also maintains job output itself and prompt event.
 -- It also maintains a sorted list with respect to current prompt text
 function M:new(opts)
 	local obj = {
+		luaTable = opts.luaTable,
 		manager = opts.manager,
 		scoringFunction = opts.scoringFunction,
 		filterFunction = opts.filterFunction,
@@ -148,16 +149,27 @@ function M:run()
 			self.startingIndex = #self.list + 1
 		end
 	end
-	self.job = Job:new{
-		command = self.cmd,
-		args = self.args,
-		cwd = vim.fn.getcwd(),
-		on_stdout = addData,
-		on_exit = function()
-			self.job = nil
-		end,
-	}
-	self.job:start()
+	if self.cmd then
+		self.job = Job:new{
+			command = self.cmd,
+			args = self.args,
+			cwd = vim.fn.getcwd(),
+			on_stdout = addData,
+			on_exit = function()
+				self.job = nil
+			end,
+		}
+		self.job:start()
+	else
+		for k,v in ipairs(self.luaTable) do
+			self.list[k] = v
+			self.sortedList[k] = {
+				score = 0,
+				index = k
+			}
+			self.manager:add(v, nil, nil, k)
+		end
+	end
 	self.prompt:registerTextChanged(textChanged)
 end
 

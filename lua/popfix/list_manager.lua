@@ -2,10 +2,9 @@ local M = {}
 M.__index = M
 
 local api = vim.api
-local mappings = require'popfix.mappings'
 
 local identifier = api.nvim_create_namespace('popfix.identifier')
-local listNamespace = api.nvim_create_namespace('popfix.prompt_popup')
+local listNamespace = api.nvim_create_namespace('popfix.listManager')
 
 
 -- @class ListManager manages list UI and selection on various
@@ -13,7 +12,6 @@ local listNamespace = api.nvim_create_namespace('popfix.prompt_popup')
 function M:new(opts)
 	local obj = {
 		list = opts.list,
-		prompt = opts.prompt,
 		action = opts.action,
 		renderLimit = opts.renderLimit,
 		linesRendered = 0,
@@ -118,10 +116,6 @@ function M:clear()
 	vim.schedule(function()
 		self.list:clear()
 	end)
-end
-
-function M:close()
-	mappings.free(self.prompt.buffer)
 end
 
 return M

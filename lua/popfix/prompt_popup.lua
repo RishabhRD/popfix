@@ -17,7 +17,7 @@ local function close(self, bool)
 	self.listStore:close()
 	local line = self.action:getCurrentLine()
 	local index = self.action:getCurrentIndex()
-	mappings.free(self.list.buffer)
+	mappings.free(self.prompt.buffer)
 	self.list:close()
 	self.prompt:close()
 	if api.nvim_win_is_valid(self.originalWindow) then
@@ -231,12 +231,22 @@ function M:new(opts)
 		obj.manager.originalList = obj.listStore.list
 		obj.listStore:run()
 	else
-		-- for _, str in pairs(opts.data) do
-		-- 	obj.promptHandler:addEntry(str)
-		-- end
-		-- obj.list:setData(opts.data, 0, -1)
-		-- autocmd.addCommand(obj.list.buffer, nested_autocmds, obj)
-		-- autocmd.addCommand(obj.list.buffer, non_nested_autocmd, obj)
+		obj.manager = manager:new({
+			list = obj.list,
+			action = obj.action,
+			renderLimit = 5,
+			highlightingFunction = fzy.positions,
+		})
+		obj.listStore = ListStore:new({
+			luaTable = opts.data,
+			scoringFunction = fzy.score,
+			filterFunction = fzy.has_match,
+			prompt = obj.prompt,
+			manager = obj.manager,
+		})
+		obj.manager.sortedList = obj.listStore.sortedList
+		obj.manager.originalList = obj.listStore.list
+		obj.listStore:run()
 	end
 	local default_keymaps = {
 		n = {
