@@ -26,6 +26,7 @@ local function close(self, bool)
 		if api.nvim_win_is_valid(self.originalWindow) then
 			api.nvim_set_current_win(self.originalWindow)
 		end
+		vim.cmd('stopinsert')
 		self.action:close(index, line, bool)
 	end)
 end
