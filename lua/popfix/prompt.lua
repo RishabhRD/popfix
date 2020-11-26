@@ -51,14 +51,7 @@ function prompt:new(opts)
 end
 
 function prompt:close()
-    if self.buffer ~= nil then
-	if api.nvim_buf_is_loaded(self.buffer) then
-	    local buf = self.buffer
-	    vim.schedule(function()
-		vim.cmd(string.format('bwipeout! %s', buf))
-	    end)
-	end
-    end
+    vim.cmd(string.format('bwipeout! %s', self.buffer))
     autocmd.free(self.buffer)
     self.buffer = nil
     self.window = nil

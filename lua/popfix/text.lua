@@ -7,17 +7,18 @@ local autocmd = require'popfix.autocmd'
 
 
 local function close(self, bool)
+	if self.closed then return end
+	self.closed = true
 	local line = self.prompt:getCurrentPromptText()
 	mappings.free(self.prompt.buffer)
 	autocmd.free(self.prompt.buffer)
-	if api.nvim_win_is_valid(self.originalWindow) then
-		api.nvim_set_current_win(self.originalWindow)
-	end
-	self.prompt:close()
-	self.originalWindow = nil
-	self.action:close(0, line, bool)
-	self.prompt = nil
-	self.action = nil
+	vim.schedule(function()
+		if api.nvim_win_is_valid(self.originalWindow) then
+			api.nvim_set_current_win(self.originalWindow)
+		end
+		self.prompt:close()
+		self.action:close(0, line, bool)
+	end)
 end
 
 function M:close_cancelled()

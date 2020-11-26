@@ -29,18 +29,25 @@ function M:select(lineNumber)
 	api.nvim_buf_add_highlight(self.list.buffer, listNamespace,
 	"Visual", lineNumber - 1, 0, -1)
 	local data
+	local preview = true
+	local currentIndex = self.action:getCurrentIndex()
+	if currrentIndex and currentIndex == self.sortedList[lineNumber].index then
+		preview = false
+	end
 	if self.sortedList[lineNumber] then
 		data = self.action:select(self.sortedList[lineNumber].index,
 		self.list:get(lineNumber - 1))
 	end
-	if data then
-		vim.schedule(function()
-			if self.preview then
-				if data ~= nil then
-					self.preview:writePreview(data)
+	if preview then
+		if data then
+			vim.schedule(function()
+				if self.preview then
+					if data ~= nil then
+						self.preview:writePreview(data)
+					end
 				end
-			end
-		end)
+			end)
+		end
 	end
 end
 

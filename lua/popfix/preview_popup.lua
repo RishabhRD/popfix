@@ -12,6 +12,8 @@ local M = {}
 local listNamespace = api.nvim_create_namespace('popfix.preview_popup')
 
 local function close(self, bool)
+	if self.closed then return end
+	self.closed = true
 	if self.job then
 		self.job:shutdown()
 		self.job = nil
@@ -20,20 +22,18 @@ local function close(self, bool)
 	local index = self.action:getCurrentIndex()
 	mappings.free(self.list.buffer)
 	autocmd.free(self.list.buffer)
-	self.list:close()
-	self.preview:close()
-	if self.splitWindow then
-		api.nvim_win_close(self.splitWindow, true)
-		self.splitWindow = nil
-	end
-	if api.nvim_win_is_valid(self.originalWindow) then
-		api.nvim_set_current_win(self.originalWindow)
-	end
-	self.originalWindow = nil
-	self.action:close(index, line, bool)
-	self.list = nil
-	self.preview = nil
-	self.action = nil
+	vim.schedule(function()
+		self.list:close()
+		self.preview:close()
+		if self.splitWindow then
+			api.nvim_win_close(self.splitWindow, true)
+			self.splitWindow = nil
+		end
+		if api.nvim_win_is_valid(self.originalWindow) then
+			api.nvim_set_current_win(self.originalWindow)
+		end
+		self.action:close(index, line, bool)
+	end)
 end
 
 function M:close_selected()

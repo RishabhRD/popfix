@@ -14,21 +14,20 @@ local list = require'popfix.list'
 local util = require'popfix.util'
 
 local function close(self, bool)
+	if self.closed then return end
+	self.closed = true
 	self.fuzzyEngine:close()
 	local line = self.action:getCurrentLine()
 	local index = self.action:getCurrentIndex()
 	mappings.free(self.prompt.buffer)
-	self.list:close()
-	self.prompt:close()
-	if api.nvim_win_is_valid(self.originalWindow) then
-		api.nvim_set_current_win(self.originalWindow)
-	end
-	self.originalWindow = nil
-	self.action:close(index, line, bool)
-	self.list = nil
-	self.fuzzyEngine = nil
-	self.prompt = nil
-	self.action = nil
+	vim.schedule(function()
+		self.list:close()
+		self.prompt:close()
+		if api.nvim_win_is_valid(self.originalWindow) then
+			api.nvim_set_current_win(self.originalWindow)
+		end
+		self.action:close(index, line, bool)
+	end)
 end
 
 function M:close_selected()
@@ -210,7 +209,7 @@ function M:new(opts)
 		['once'] = true,
 		['nested'] = true
 	}
-	autocmd.addCommand(obj.list.buffer, nested_autocmds, obj)
+	autocmd.addCommand(obj.prompt.buffer, nested_autocmds, obj)
 	if type(opts.data) == 'string' then
 		local cmd, args = util.getArgs(opts.data)
 		obj.manager = manager:new({

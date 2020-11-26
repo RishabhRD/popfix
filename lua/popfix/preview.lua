@@ -141,9 +141,7 @@ end
 function preview:close()
 	if self.buffer ~= nil then
 		local buf = self.buffer
-		vim.schedule(function()
-			vim.cmd(string.format('bwipeout! %s', buf))
-		end)
+		vim.cmd(string.format('bwipeout! %s', buf))
 	end
 	self.buffer = nil
 	self.window = nil

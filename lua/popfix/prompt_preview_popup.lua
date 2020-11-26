@@ -13,6 +13,8 @@ local preview = require'popfix.preview'
 local util = require'popfix.util'
 
 local function close(self, bool)
+	if self.closed then return end
+	self.closed = true
 	if self.job then
 		self.job:shutdown()
 		self.job = nil
@@ -20,22 +22,19 @@ local function close(self, bool)
 	local line = self.action:getCurrentLine()
 	local index = self.action:getCurrentIndex()
 	mappings.free(self.list.buffer)
-	self.list:close()
-	self.prompt:close()
-	self.preview:close()
-	if self.splitWindow then
-		api.nvim_win_close(self.splitWindow, true)
-		self.splitWindow = nil
-	end
-	if api.nvim_win_is_valid(self.originalWindow) then
-		api.nvim_set_current_win(self.originalWindow)
-	end
-	self.originalWindow = nil
-	self.action:close(index, line, bool)
-	self.action = nil
-	self.preview = nil
-	self.list = nil
-	self.prompt = nil
+	vim.schedule(function()
+		self.list:close()
+		self.prompt:close()
+		self.preview:close()
+		if self.splitWindow then
+			api.nvim_win_close(self.splitWindow, true)
+			self.splitWindow = nil
+		end
+		if api.nvim_win_is_valid(self.originalWindow) then
+			api.nvim_set_current_win(self.originalWindow)
+		end
+		self.action:close(index, line, bool)
+	end)
 end
 
 function M:close_selected()
@@ -195,7 +194,7 @@ function M:new(opts)
 		['nested'] = true,
 		['once'] = true
 	}
-	autocmd.addCommand(obj.list.buffer, nested_autocmds, obj)
+	autocmd.addCommand(obj.prompt.buffer, nested_autocmds, obj)
 	if type(opts.data) == 'string' then
 		local cmd, args = util.getArgs(opts.data)
 		obj.manager = manager:new({
@@ -221,7 +220,7 @@ function M:new(opts)
 			preview = obj.preview,
 			list = obj.list,
 			action = obj.action,
-			renderLimit = 5,
+			renderLimit = 45,
 			highlightingFunction = fzy.positions,
 		})
 		obj.fuzzyEngine = FuzzyEngine:new({

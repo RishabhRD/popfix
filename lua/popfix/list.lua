@@ -147,9 +147,7 @@ end
 
 function list:close()
 	local buf = self.buffer
-	vim.schedule(function()
-		vim.cmd('bwipeout! '..buf)
-	end)
+	vim.cmd('bwipeout! '..buf)
 	self.buffer = nil
 	self.window = nil
 end

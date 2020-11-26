@@ -57,7 +57,7 @@ local function fill_border_data(buf, width, height, title, border_chars)
 	border_chars.TOP_RIGHT}
 	local middle_line = border_chars.MID_VERTICAL.. string.rep(' ', width)
 	..border_chars.MID_VERTICAL
-	for i=1, height do
+	for _=1, height do
 		table.insert(border_lines, middle_line)
 	end
 	table.insert(border_lines, border_chars.BOTTOM_LEFT..
