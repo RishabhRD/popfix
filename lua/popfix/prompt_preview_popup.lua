@@ -202,7 +202,7 @@ function M:new(opts)
 			preview = obj.preview,
 			list = obj.list,
 			action = obj.action,
-			renderLimit = 45,
+			renderLimit = opts.list.height,
 			highlightingFunction = fzy.positions,
 		})
 		obj.fuzzyEngine = FuzzyEngine:new({
@@ -221,7 +221,7 @@ function M:new(opts)
 			preview = obj.preview,
 			list = obj.list,
 			action = obj.action,
-			renderLimit = 45,
+			renderLimit = opts.list.height,
 			highlightingFunction = fzy.positions,
 		})
 		obj.fuzzyEngine = FuzzyEngine:new({
