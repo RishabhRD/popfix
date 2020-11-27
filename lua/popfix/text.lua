@@ -63,9 +63,9 @@ function M.new(self, opts)
 		end
 	end
 	obj.closed = false
-	obj.action = action:new()
+	obj.action = action:new(opts.callbacks)
 	local nested_autocmds = {
-		['BufLeave'] = obj.close_cancelled,
+		['BufLeave'] = obj.close,
 		['nested'] = true,
 		['once'] = true
 	}

@@ -45,20 +45,4 @@ function M:new(opts)
 	end
 end
 
-function M.close_cancelled(self)
-	self:close_cancelled()
-end
-
-function M.close_selected(self)
-	self:close_selected()
-end
-
-function M.select_next(self)
-	self:select_next()
-end
-
-function M.select_prev(self)
-	self:select_prev()
-end
-
 return M

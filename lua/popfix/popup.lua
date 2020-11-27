@@ -144,9 +144,9 @@ function M:new(opts)
 			return false
 		end
 	end
-	obj.action = action:new()
+	obj.action = action:new(opts.callbacks)
 	local nested_autocmds = {
-		['BufWipeout,BufDelete,BufLeave'] = self.close_cancelled,
+		['BufWipeout,BufDelete,BufLeave'] = obj.close,
 		['nested'] = true,
 		['once'] = true
 	}

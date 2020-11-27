@@ -128,7 +128,7 @@ function M:new(opts)
 	self.__index = self
 	local obj = {}
 	setmetatable(obj, self)
-	obj.action = action:new()
+	obj.action = action:new(opts.callbacks)
 	if opts.data == nil then
 		print "nil data"
 		return false
@@ -155,7 +155,7 @@ function M:new(opts)
 		end
 	end
 	local nested_autocmds = {
-		['BufWipeout,BufDelete,BufLeave'] = obj.close_cancelled,
+		['BufWipeout,BufDelete,BufLeave'] = obj.close,
 		['nested'] = true,
 		['once'] = true
 	}
