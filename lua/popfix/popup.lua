@@ -11,7 +11,7 @@ local listNamespace = api.nvim_create_namespace('popfix.popup')
 
 --TODO: handle self.originalWindow in a more robust way.
 
-local function close(self, bool)
+function M:close(callback)
 	if self.closed then return end
 	self.closed = true
 	if self.job then
@@ -27,26 +27,18 @@ local function close(self, bool)
 		self.list:close()
 		local line = self.action:getCurrentLine()
 		local index = self.action:getCurrentIndex()
-		self.action:close(index, line, bool)
+		self.action:close(index, line, callback)
 	end)
 end
 
-function M:close_selected()
-	close(self, true)
-end
-
-function M:close_cancelled()
-	close(self, false)
-end
-
-local function selectionHandler(self)
+local function selectionHandler(self, callback)
 	local oldIndex = self.action:getCurrentIndex()
 	local line = self.list:getCurrentLineNumber()
 	if oldIndex ~= line then
 		api.nvim_buf_clear_namespace(self.list.buffer, listNamespace, 0, -1)
 		api.nvim_buf_add_highlight(self.list.buffer, listNamespace, "Visual", line - 1,
 		0, -1)
-		self.action:select(line, self.list:getCurrentLine())
+		self.action:select(line, self.list:getCurrentLine(), callback)
 	end
 end
 
@@ -152,7 +144,7 @@ function M:new(opts)
 			return false
 		end
 	end
-	obj.action = action:register(opts.callbacks)
+	obj.action = action:new()
 	local nested_autocmds = {
 		['BufWipeout,BufDelete,BufLeave'] = self.close_cancelled,
 		['nested'] = true,
@@ -188,35 +180,9 @@ function M:new(opts)
 		autocmd.addCommand(obj.list.buffer, nested_autocmds, obj)
 		autocmd.addCommand(obj.list.buffer, non_nested_autocmds, obj)
 	end
-	local default_keymaps = {
-		n = {
-			['q'] = self.close_cancelled,
-			['<Esc>'] = self.close_cancelled,
-			['<CR>'] = self.close_selected
-		}
-	}
-	opts.keymaps = opts.keymaps or default_keymaps
-	if opts.additional_keymaps then
-		local i_maps = opts.additional_keymaps.i
-		if i_maps then
-			if not opts.keymaps.i then
-				opts.keymaps.i = {}
-			end
-			for k, v in pairs(i_maps) do
-				opts.keymaps.i[k] = v
-			end
-		end
-		local n_maps = opts.additional_keymaps.n
-		if n_maps then
-			if not opts.keymaps.n then
-				opts.keymaps.n = {}
-			end
-			for k, v in pairs(n_maps) do
-				opts.keymaps.n[k] = v
-			end
-		end
+	if opts.keymaps then
+		mappings.add_keymap(obj.list.buffer, opts.keymaps, obj)
 	end
-	mappings.add_keymap(obj.list.buffer, opts.keymaps, obj)
 	api.nvim_set_current_win(obj.list.window)
 	obj.closed = false
 	return obj

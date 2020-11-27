@@ -23,7 +23,7 @@ function M:new(opts)
 	return obj
 end
 
-function M:select(lineNumber)
+function M:select(lineNumber, callback)
 	api.nvim_buf_clear_namespace(self.list.buffer, listNamespace,
 	0, -1)
 	api.nvim_buf_add_highlight(self.list.buffer, listNamespace,
@@ -31,12 +31,12 @@ function M:select(lineNumber)
 	local data
 	local preview = true
 	local currentIndex = self.action:getCurrentIndex()
-	if currrentIndex and currentIndex == self.sortedList[lineNumber].index then
+	if currentIndex and currentIndex == self.sortedList[lineNumber].index then
 		preview = false
 	end
 	if self.sortedList[lineNumber] then
 		data = self.action:select(self.sortedList[lineNumber].index,
-		self.list:get(lineNumber - 1))
+		self.list:get(lineNumber - 1), callback)
 	end
 	if preview then
 		if data then
@@ -52,7 +52,7 @@ function M:select(lineNumber)
 end
 
 -- lazy rendering while next selection
-function M:select_next()
+function M:select_next(callback)
 	if self.currentLineNumber == #self.sortedList then
 		return
 	end
@@ -63,20 +63,20 @@ function M:select_next()
 		self.originalList[self.sortedList[self.currentLineNumber].index]
 		vim.schedule(function()
 			self.list:appendLine(string)
-			self:select(self.currentLineNumber)
+			self:select(self.currentLineNumber, callback)
 		end)
 	else
 		self.currentLineNumber = self.currentLineNumber + 1
 		vim.schedule(function()
-			self:select(self.currentLineNumber)
+			self:select(self.currentLineNumber, callback)
 		end)
 	end
 end
 
-function M:select_prev()
+function M:select_prev(callback)
 	if self.currentLineNumber == 1 then return end
 	self.currentLineNumber = self.currentLineNumber - 1
-	self:select(self.currentLineNumber)
+	self:select(self.currentLineNumber, callback)
 end
 
 function M:add(line, starting, ending, highlightLine)

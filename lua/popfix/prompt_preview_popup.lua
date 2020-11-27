@@ -12,7 +12,7 @@ local list = require'popfix.list'
 local preview = require'popfix.preview'
 local util = require'popfix.util'
 
-local function close(self, bool)
+function M:close(callback)
 	if self.closed then return end
 	self.closed = true
 	if self.job then
@@ -34,24 +34,16 @@ local function close(self, bool)
 			api.nvim_set_current_win(self.originalWindow)
 		end
 		vim.cmd('stopinsert')
-		self.action:close(index, line, bool)
+		self.action:close(index, line, callback)
 	end)
 end
 
-function M:close_selected()
-	close(self, true)
+function M:select_next(callback)
+	self.manager:select_next(callback)
 end
 
-function M:close_cancelled()
-	close(self, false)
-end
-
-function M:select_next()
-	self.manager:select_next()
-end
-
-function M:select_prev()
-	self.manager:select_prev()
+function M:select_prev(callback)
+	self.manager:select_prev(callback)
 end
 
 local function popup_editor(self, opts)
@@ -189,7 +181,7 @@ function M:new(opts)
 			return false
 		end
 	end
-	obj.action = action:register(opts.callbacks)
+	obj.action = action:new()
 	local nested_autocmds = {
 		['BufLeave'] = obj.close_cancelled,
 		['nested'] = true,
@@ -235,45 +227,10 @@ function M:new(opts)
 		obj.manager.originalList = obj.fuzzyEngine.list
 		obj.fuzzyEngine:run()
 	end
-	local default_keymaps = {
-		n = {
-			['q'] = obj.close_cancelled,
-			['<Esc>'] = obj.close_cancelled,
-			['j'] = obj.select_next,
-			['k'] = obj.select_prev,
-			['<CR>'] = obj.close_selected
-		},
-		i = {
-			['<C-c>'] = obj.close_cancelled,
-			['<C-n>'] = obj.select_next,
-			['<C-p>'] = obj.select_prev,
-			['<CR>'] = obj.close_selected,
-		}
-	}
-	opts.keymaps = opts.keymaps or default_keymaps
-	if opts.additional_keymaps then
-		local i_maps = opts.additional_keymaps.i
-		if i_maps then
-			if not opts.keymaps.i then
-				opts.keymaps.i = {}
-			end
-			for k, v in pairs(i_maps) do
-				opts.keymaps.i[k] = v
-			end
-		end
-		local n_maps = opts.additional_keymaps.n
-		if n_maps then
-			if not opts.keymaps.n then
-				opts.keymaps.n = {}
-			end
-			for k, v in pairs(n_maps) do
-				opts.keymaps.n[k] = v
-			end
-		end
-	end
 	api.nvim_set_current_win(obj.prompt.window)
-	mappings.add_keymap(obj.prompt.buffer, opts.keymaps, obj)
-	obj.closed = false
+	if opts.keymaps then
+		mappings.add_keymap(obj.prompt.buffer, opts.keymaps, obj)
+	end
 	return obj
 end
 

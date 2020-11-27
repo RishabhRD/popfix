@@ -6,7 +6,7 @@ local mappings = require'popfix.mappings'
 local autocmd = require'popfix.autocmd'
 
 
-local function close(self, bool)
+function M:close(callback)
 	if self.closed then return end
 	self.closed = true
 	local line = self.prompt:getCurrentPromptText()
@@ -17,16 +17,8 @@ local function close(self, bool)
 			api.nvim_set_current_win(self.originalWindow)
 		end
 		self.prompt:close()
-		self.action:close(0, line, bool)
+		self.action:close(0, line, callback)
 	end)
-end
-
-function M:close_cancelled()
-	close(self, false)
-end
-
-function M:close_selected()
-	close(self, true)
 end
 
 local function popup_editor(self, opts)
@@ -71,46 +63,16 @@ function M.new(self, opts)
 		end
 	end
 	obj.closed = false
-	obj.action = action:register(opts.callbacks)
-	local default_keymaps = {
-		n = {
-			['q'] = obj.close_cancelled,
-			['<Esc>'] = obj.close_cancelled,
-			['<CR>'] = obj.close_selected
-		},
-		i = {
-			['<C-c>'] = obj.close_cancelled,
-			['<CR>'] = obj.close_selected,
-		}
-	}
-	opts.keymaps = opts.keymaps or default_keymaps
-	if opts.additional_keymaps then
-		local i_maps = opts.additional_keymaps.i
-		if i_maps then
-			if not opts.keymaps.i then
-				opts.keymaps.i = {}
-			end
-			for k, v in pairs(i_maps) do
-				opts.keymaps.i[k] = v
-			end
-		end
-		local n_maps = opts.additional_keymaps.n
-		if n_maps then
-			if not opts.keymaps.n then
-				opts.keymaps.n = {}
-			end
-			for k, v in pairs(n_maps) do
-				opts.keymaps.n[k] = v
-			end
-		end
-	end
+	obj.action = action:new()
 	local nested_autocmds = {
 		['BufLeave'] = obj.close_cancelled,
 		['nested'] = true,
 		['once'] = true
 	}
+	if opts.keymaps then
+		mappings.add_keymap(obj.prompt.buffer, opts.keymaps, obj)
+	end
 	autocmd.addCommand(obj.prompt.buffer, nested_autocmds, obj)
-	mappings.add_keymap(obj.prompt.buffer, opts.keymaps, obj)
 	api.nvim_set_current_win(obj.prompt.window)
 	return true
 end
