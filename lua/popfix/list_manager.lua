@@ -99,6 +99,8 @@ function M:add(line, starting, ending, highlightLine)
 		self.currentLineNumber = 1
 		vim.schedule(function()
 			self.list:appendLine(line)
+			-- TODO: don't select 1 only. because it can be distracting to users.
+			-- Try to select the indicies as it is.
 			self:select(1)
 			if highlight then
 				for _, col in pairs(highlightTable) do
@@ -123,6 +125,8 @@ function M:add(line, starting, ending, highlightLine)
 			self.list:clearLast()
 		end
 		self.list:addLine(line, starting, ending)
+		-- TODO: don't select 1 only. because it can be distracting to users.
+		-- Try to select the indicies as it is.
 		self:select(1)
 		for _, col in pairs(highlightTable) do
 			api.nvim_buf_add_highlight(self.list.buffer, identifier,
@@ -136,6 +140,8 @@ function M:clear()
 	self.action:select(nil, nil)
 	vim.schedule(function()
 		self.list:clear()
+		api.nvim_buf_clear_namespace(self.list.buffer, identifier,
+		0, -1)
 	end)
 end
 

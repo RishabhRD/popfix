@@ -107,6 +107,7 @@ end
 
 
 function list:setData(data, starting, ending)
+	self:clear()
 	if not starting then starting = 0 end
 	if not ending then ending = -1 end
 	self.numData = #data
@@ -138,7 +139,7 @@ function list:clear()
 	local buf = self.buffer
 	if not buf then return end
 	if buf == 0 then return end
-	if vim.fn.bufexists(buf) then
+	if api.nvim_buf_is_loaded(buf) then
 		api.nvim_buf_set_option(buf, 'modifiable', true)
 		api.nvim_buf_set_lines(buf, 0, -1, false, {})
 		api.nvim_buf_set_option(buf, 'modifiable', false)
@@ -180,13 +181,14 @@ end
 function list:select_prev()
 	local lineNumber = self:getCurrentLineNumber()
 	if lineNumber - 1 > 0 then
+		--TODO: show the cursor if hidden
 		api.nvim_win_set_cursor(self.window, {lineNumber - 1, 0})
 	end
 	vim.cmd('redraw')
 end
 
 function list:getSize()
-	return api.nvim_buf_line_count(self.buffer)
+	return self.numData
 end
 
 function list:get(index)

@@ -32,6 +32,12 @@ function M:close(callback)
 end
 
 local function selectionHandler(self, callback)
+	local listSize = self.list:getSize()
+	-- handle the situation where no element is there in list
+	-- and the callback is triggered.
+	if listSize == 0 then
+		return
+	end
 	local oldIndex = self.action:getCurrentIndex()
 	local line = self.list:getCurrentLineNumber()
 	if oldIndex ~= line then
@@ -153,33 +159,9 @@ function M:new(opts)
 	local non_nested_autocmds = {
 		['CursorMoved'] = selectionHandler,
 	}
-	if type(opts.data) == 'string' then
-		local cmd, args = util.getArgs(opts.data)
-		obj.job = Job:new{
-			command = cmd,
-			args = args,
-			cwd = vim.fn.getcwd(),
-			on_stdout = vim.schedule_wrap(function(_, line)
-				if obj.list then
-					obj.list:addData({line}, listNamespace, obj.action)
-					if not obj.first_added then
-						obj.first_added = true
-						autocmd.addCommand(obj.list.buffer, nested_autocmds, obj)
-						autocmd.addCommand(obj.list.buffer, non_nested_autocmds, obj)
-					end
-				end
-			end),
-			on_exit = function()
-				--TODO: is doing nil doesn't leak resources
-				obj.job = nil
-			end,
-		}
-		obj.job:start()
-	else
-		obj.list:setData(opts.data)
-		autocmd.addCommand(obj.list.buffer, nested_autocmds, obj)
-		autocmd.addCommand(obj.list.buffer, non_nested_autocmds, obj)
-	end
+	autocmd.addCommand(obj.list.buffer, nested_autocmds, obj)
+	autocmd.addCommand(obj.list.buffer, non_nested_autocmds, obj)
+	obj:set_data(opts.data)
 	if opts.keymaps then
 		mappings.add_keymap(obj.list.buffer, opts.keymaps, obj)
 	end
@@ -194,6 +176,43 @@ end
 
 function M:select_prev()
 	self.list:select_prev()
+end
+
+function M:set_data(data)
+	-- reset about any selection
+	self.action.selection.index = nil
+	self.action.selection.line = nil
+	-- cancel any job running
+	if self.job then
+		self.job:shutdown()
+		self.job = nil
+	end
+	if data.cmd then
+		local cmd, args = util.getArgs(data.cmd)
+		vim.schedule(function()
+			self.list:clear()
+		end)
+		self.job = Job:new{
+			command = cmd,
+			args = args,
+			cwd = data.cwd or vim.fn.getcwd(),
+			on_stdout = vim.schedule_wrap(function(_, line)
+				if self.list then
+					print(line)
+					self.list:addData({line}, listNamespace, self.action)
+				end
+			end),
+			on_exit = function()
+				--TODO: is doing nil doesn't leak resources
+				self.job = nil
+			end,
+		}
+		self.job:start()
+	else
+		vim.schedule(function()
+			self.list:setData(data)
+		end)
+	end
 end
 
 return M

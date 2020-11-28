@@ -60,6 +60,9 @@ function prompt:close()
 end
 
 function prompt:registerTextChanged(func)
+    autocmd.remove(self.buffer, 'TextChangedI,TextChangedP,TextChanged', {
+	nested = true,
+    })
     local nested_autocmds = {
 	['TextChangedI,TextChangedP,TextChanged'] = triggerTextChanged,
 	['nested'] = true

@@ -16,7 +16,9 @@ local util = require'popfix.util'
 function M:close(callback)
 	if self.closed then return end
 	self.closed = true
-	self.fuzzyEngine:close()
+	if self.fuzzyEngine then
+		self.fuzzyEngine:close()
+	end
 	local line = self.action:getCurrentLine()
 	local index = self.action:getCurrentIndex()
 	mappings.free(self.prompt.buffer)
@@ -172,7 +174,7 @@ function M:new(opts)
 	self.__index = self
 	local obj = {}
 	setmetatable(obj, self)
-	if opts.data == nil or #opts.data == 0 then
+	if opts.data == nil then
 		print 'nil data'
 		return false
 	end
@@ -203,49 +205,52 @@ function M:new(opts)
 		['nested'] = true
 	}
 	autocmd.addCommand(obj.prompt.buffer, nested_autocmds, obj)
-	if type(opts.data) == 'string' then
-		local cmd, args = util.getArgs(opts.data)
-		obj.manager = manager:new({
-			list = obj.list,
-			action = obj.action,
-			renderLimit = opts.list.height,
-			highlightingFunction = fzy.positions,
-		})
-		obj.fuzzyEngine = FuzzyEngine:new({
-			cmd = cmd,
-			args = args,
-			scoringFunction = fzy.score,
-			filterFunction = fzy.has_match,
-			prompt = obj.prompt,
-			manager = obj.manager,
-		})
-		obj.manager.sortedList = obj.fuzzyEngine.sortedList
-		obj.manager.originalList = obj.fuzzyEngine.list
-		obj.fuzzyEngine:run()
-	else
-		obj.manager = manager:new({
-			list = obj.list,
-			action = obj.action,
-			renderLimit = opts.list.height,
-			highlightingFunction = fzy.positions,
-		})
-		obj.fuzzyEngine = FuzzyEngine:new({
-			luaTable = opts.data,
-			scoringFunction = fzy.score,
-			filterFunction = fzy.has_match,
-			prompt = obj.prompt,
-			manager = obj.manager,
-		})
-		obj.manager.sortedList = obj.fuzzyEngine.sortedList
-		obj.manager.originalList = obj.fuzzyEngine.list
-		obj.fuzzyEngine:run()
-	end
+	obj.manager = manager:new({
+		list = obj.list,
+		action = obj.action,
+		renderLimit = opts.list.height,
+		highlightingFunction = fzy.positions,
+	})
+	obj:set_data(opts.data)
 	api.nvim_set_current_win(obj.prompt.window)
 	if opts.keymaps then
 		mappings.add_keymap(obj.prompt.buffer, opts.keymaps, obj)
 	end
 	obj.closed = false
 	return obj
+end
+
+function M:set_data(data)
+	if self.fuzzyEngine then
+		self.fuzzyEngine:close()
+		self.fuzzyEngine = nil
+	end
+	self.manager:clear()
+	if data.cmd then
+		local cmd, args = util.getArgs(data.cmd)
+		self.fuzzyEngine = FuzzyEngine:new({
+			cmd = cmd,
+			args = args,
+			prompt = self.prompt,
+			scoringFunction = fzy.score,
+			filterFunction = fzy.has_match,
+			manager = self.manager,
+		})
+		self.manager.sortedList = self.fuzzyEngine.sortedList
+		self.manager.originalList = self.fuzzyEngine.list
+		self.fuzzyEngine:run()
+	else
+		self.fuzzyEngine = FuzzyEngine:new({
+			luaTable = data,
+			scoringFunction = fzy.score,
+			filterFunction = fzy.has_match,
+			prompt = self.prompt,
+			manager = self.manager,
+		})
+		self.manager.sortedList = self.fuzzyEngine.sortedList
+		self.manager.originalList = self.fuzzyEngine.list
+		self.fuzzyEngine:run()
+	end
 end
 
 return M

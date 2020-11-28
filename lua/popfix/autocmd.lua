@@ -75,4 +75,17 @@ function autocmd.free(buf)
 	param_map[buf] = nil
 end
 
+function autocmd.remove(buf, str, opts)
+	--TODO: free the memory at this stage
+	local nested = ''
+	local once = ''
+	if opts.nested then
+		nested = '++nested'
+	end
+	if opts.once then
+		once = '++once'
+	end
+	vim.cmd(string.format('autocmd! %s <buffer=%s> %s %s', str, buf, nested, once))
+end
+
 return autocmd

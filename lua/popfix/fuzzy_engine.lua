@@ -15,13 +15,13 @@ function M:new(opts)
 		scoringFunction = opts.scoringFunction,
 		filterFunction = opts.filterFunction,
 		caseSensitive = opts.caseSensitive,
-		currentPromptText = '',
 		prompt = opts.prompt,
 		cmd = opts.cmd,
 		args = opts.args,
 		list = {},
 		sortedList = {},
 	}
+	obj.currentPromptText = obj.prompt:getCurrentPromptText()
 	setmetatable(obj, self)
 	return obj
 end
@@ -71,6 +71,7 @@ function M:run()
 					score = score,
 					index = #self.list
 				})
+				self.manager:add(line, nil, nil, #self.sortedList - 1)
 			end
 		end
 	end
