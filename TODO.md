@@ -2,7 +2,6 @@
 
 ### To implement
 
-[ ] Add setPromptCommand function for prompt resources.
 [ ] Add setPromptText function for prompt resources.
 [ ] Handle lazy rendering selection well.
 [ ] Add sorter class to provide choice over fuzzy algorithm.
@@ -16,7 +15,9 @@
 
 ### To test
 
-[ ] Add setData function for every resource.
+[ ] Add set_data function for every resource.
+[ ] Add get_current_selection function for prompt resources.
+[ ] Add set_prompt function for prompt resources.
+[ ] Add get_prompt function for prompt resources.
 
 ### Currently working
-[ ] Add getCurrentSelection function for prompt resources.

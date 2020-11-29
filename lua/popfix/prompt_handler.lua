@@ -70,7 +70,6 @@ function M:addEntry(str)
 		}
 		local len = #self.sortedEntry
 		if len == 0 then
-			print('Was there')
 			self.sortedEntry[1] = entry
 			return
 		end

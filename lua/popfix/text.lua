@@ -77,4 +77,14 @@ function M.new(self, opts)
 	return true
 end
 
+function M:set_prompt(str)
+	vim.schedule(function()
+		self.prompt:setPrompt(str)
+	end)
+end
+
+function M:get_prompt()
+	return self.prompt:getPrompt()
+end
+
 return M

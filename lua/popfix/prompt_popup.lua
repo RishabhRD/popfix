@@ -257,5 +257,14 @@ function M:get_current_selection()
 	return self.action:getCurrentIndex(), self.action:getCurrentLine()
 end
 
+function M:set_prompt(str)
+	vim.schedule(function()
+		self.prompt:setPrompt(str)
+	end)
+end
+
+function M:get_prompt()
+	return self.prompt:getPrompt()
+end
 
 return M

@@ -37,6 +37,7 @@ function prompt:new(opts)
     api.nvim_win_set_option(obj.window, 'number', false)
     api.nvim_win_set_option(obj.window, 'relativenumber', false)
     api.nvim_buf_set_option(obj.buffer, 'buftype', 'prompt')
+    self.returningPrefix = opts.prompt_text
     vim.fn.prompt_setprompt(obj.buffer, opts.prompt_text..'> ')
     if opts.callback then
 	local nested_autocmds = {
@@ -71,9 +72,16 @@ function prompt:registerTextChanged(func)
     self.textChanged = func
 end
 
-function prompt:setPromptText(text)
+function prompt:setPrompt(text)
+    -- TODO: I guess there is a bug in neovim here.
+    -- Prompt text is being updated here but neovim
+    -- nvim_buf_get_line is not giving updated response.
+    self.returningPrefix = text
     vim.fn.prompt_setprompt(self.buffer, text..'> ')
-    self.prefix = text..'> '
+end
+
+function prompt:getPrompt()
+    return self.returningPrefix
 end
 
 return prompt
