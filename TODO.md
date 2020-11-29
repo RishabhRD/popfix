@@ -2,7 +2,7 @@
 
 ### To implement
 
-[ ] Add setPromptText function for prompt resources.
+[ ] get an init\_prompt\_text for prompt initials
 [ ] Handle lazy rendering selection well.
 [ ] Add sorter class to provide choice over fuzzy algorithm.
 [ ] Add possibilities for different type of fuzzy engines.
@@ -15,9 +15,14 @@
 
 ### To test
 
-[ ] Add set_data function for every resource.
-[ ] Add get_current_selection function for prompt resources.
-[ ] Add set_prompt function for prompt resources.
-[ ] Add get_prompt function for prompt resources.
+[ ] Add set\_data function for every resource.
+[ ] Add get\_current\_selection function for prompt resources.
 
 ### Currently working
+[ ] Add setPromptText function for prompt resources.
+
+
+### Seems hard
+[ ] Add set\_prompt function for prompt resources.
+[ ] Add get\_prompt function for prompt resources. (Easy but waste if set\_prompt
+is hard)
