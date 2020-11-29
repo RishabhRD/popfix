@@ -22,6 +22,7 @@ function M:new(opts)
 		sortedList = {},
 	}
 	obj.currentPromptText = obj.prompt:getCurrentPromptText()
+	obj.manager.currentPromptText = obj.currentPromptText
 	setmetatable(obj, self)
 	return obj
 end

@@ -32,9 +32,18 @@ function prompt:new(opts)
     api.nvim_win_set_option(obj.window, 'number', false)
     api.nvim_win_set_option(obj.window, 'relativenumber', false)
     api.nvim_buf_set_option(obj.buffer, 'buftype', 'prompt')
-    self.returningPrefix = opts.prompt_text
-    vim.fn.prompt_setprompt(obj.buffer, opts.prompt_text..'> ')
-    vim.cmd(string.format('autocmd BufEnter,WinEnter <buffer=%s>  startinsert', obj.buffer))
+    vim.fn.prompt_setprompt(obj.buffer, obj.prefix)
+    if opts.init_text then
+	obj:setPromptText(opts.init_text)
+	obj.insertStarted = true
+    end
+    local function startInsert()
+	if not obj.insertStarted then
+	    vim.cmd('startinsert')
+	    obj.insertStarted = true
+	end
+    end
+    autocmd.addCommand(obj.buffer, {['BufEnter,WinEnter'] = startInsert})
     return obj
 end
 
@@ -64,8 +73,10 @@ function prompt:registerTextChanged(func)
 end
 
 function prompt:setPromptText(line)
-    api.nvim_buf_set_lines(self.buffer, 0, -1, false, {self.prefix..line})
-    vim.cmd('stopinsert')
+    local setLine = self.prefix..line
+    api.nvim_buf_set_lines(self.buffer, 0, -1, false, {setLine})
+    vim.cmd('startinsert')
+    api.nvim_win_set_cursor(self.window, {1, #setLine})
 end
 
 return prompt

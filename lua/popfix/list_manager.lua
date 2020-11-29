@@ -16,7 +16,6 @@ function M:new(opts)
 		action = opts.action,
 		renderLimit = opts.renderLimit,
 		linesRendered = 0,
-		currentPromptText = '',
 		highlightingFunction = opts.highlightingFunction,
 	}
 	setmetatable(obj, self)
@@ -83,7 +82,7 @@ function M:add(line, starting, ending, highlightLine)
 	local add = false
 	local highlight = true
 	if self.currentPromptText == '' then
-		highlight = true
+		highlight = false
 	end
 	if self.linesRendered < self.renderLimit then
 		add = true
