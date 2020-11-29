@@ -198,7 +198,6 @@ function M:set_data(data)
 			cwd = data.cwd or vim.fn.getcwd(),
 			on_stdout = vim.schedule_wrap(function(_, line)
 				if self.list then
-					print(line)
 					self.list:addData({line}, listNamespace, self.action)
 				end
 			end),
@@ -213,6 +212,10 @@ function M:set_data(data)
 			self.list:setData(data)
 		end)
 	end
+end
+
+function M:get_current_selection()
+	return self.action:getCurrentIndex(), self.action:getCurrentLine()
 end
 
 return M

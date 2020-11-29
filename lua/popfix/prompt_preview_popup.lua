@@ -208,6 +208,7 @@ function M:set_data(data)
 		self.fuzzyEngine:close()
 		self.fuzzyEngine = nil
 	end
+	self.manager:clear()
 	if data.cmd then
 		local cmd, args = util.getArgs(data.cmd)
 		self.fuzzyEngine = FuzzyEngine:new({
@@ -233,6 +234,10 @@ function M:set_data(data)
 		self.manager.originalList = self.fuzzyEngine.list
 		self.fuzzyEngine:run()
 	end
+end
+
+function M:get_current_selection()
+	return self.action:getCurrentIndex(), self.action:getCurrentLine()
 end
 
 return M

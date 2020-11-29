@@ -225,4 +225,9 @@ function M:set_data(data)
 	end
 end
 
+function M:get_current_selection()
+	return self.action:getCurrentIndex(), self.action:getCurrentLine()
+end
+
+
 return M
