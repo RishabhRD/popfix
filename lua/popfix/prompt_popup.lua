@@ -199,11 +199,20 @@ function M:new(opts)
 		end
 	end
 	obj.action = action:new(opts.callbacks)
-	local nested_autocmds = {
-		['BufLeave'] = obj.close,
-		['once'] = true,
-		['nested'] = true
-	}
+	local nested_autocmds
+	if opts.close_on_bufleave then
+		nested_autocmds = {
+			['BufUnload,BufLeave'] = obj.close,
+			['once'] = true,
+			['nested'] = true
+		}
+	else
+		nested_autocmds = {
+			['BufUnload'] = obj.close,
+			['once'] = true,
+			['nested'] = true
+		}
+	end
 	autocmd.addCommand(obj.prompt.buffer, nested_autocmds, obj)
 	obj.manager = manager:new({
 		list = obj.list,

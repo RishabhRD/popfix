@@ -8,7 +8,7 @@
      (like execute job on each click)
 - Preview scrolling
 - Async fuzzy engine if possible.
-- Add option for close on buffer leave to be optional
+- better selection strategy in manager
 
 
 ### To test
@@ -17,6 +17,7 @@
 - Add get\_current\_selection function for prompt resources.
 - Add setPromptText function for prompt resources.
 - get an init\_text for prompt initials
+- Add option for close on buffer leave to be optional
 
 ### Currently working
 

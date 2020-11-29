@@ -64,11 +64,20 @@ function M.new(self, opts)
 	end
 	obj.closed = false
 	obj.action = action:new(opts.callbacks)
-	local nested_autocmds = {
-		['BufLeave'] = obj.close,
-		['nested'] = true,
-		['once'] = true
-	}
+	local nested_autocmds
+	if nested_autocmds then
+		nested_autocmds = {
+			['BufUnload,BufLeave'] = obj.close,
+			['nested'] = true,
+			['once'] = true
+		}
+	else
+		nested_autocmds = {
+			['BufUnload'] = obj.close,
+			['nested'] = true,
+			['once'] = true
+		}
+	end
 	if opts.keymaps then
 		mappings.add_keymap(obj.prompt.buffer, opts.keymaps, obj)
 	end

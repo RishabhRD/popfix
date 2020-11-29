@@ -151,11 +151,20 @@ function M:new(opts)
 		end
 	end
 	obj.action = action:new(opts.callbacks)
-	local nested_autocmds = {
-		['BufWipeout,BufDelete,BufLeave'] = obj.close,
-		['nested'] = true,
-		['once'] = true
-	}
+	local nested_autocmds
+	if opts.close_on_bufleave then
+		nested_autocmds = {
+			['BufUnload,BufLeave'] = obj.close,
+			['nested'] = true,
+			['once'] = true
+		}
+	else
+		nested_autocmds = {
+			['BufUnload'] = obj.close,
+			['nested'] = true,
+			['once'] = true
+		}
+	end
 	local non_nested_autocmds = {
 		['CursorMoved'] = selectionHandler,
 	}
