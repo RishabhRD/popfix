@@ -308,9 +308,6 @@ function M:run_RepeatedExecutionEngine(opts)
 		self.manager:clear()
 		self.currentPromptText = str
 		self.manager.currentPromptText = str
-		if str == '' then
-			str = self.blank_char
-		end
 		local command = string.format(self.base_cmd, str)
 		local cmd, args = util.getArgs(command)
 		self.currentJob = Job:new{
@@ -350,14 +347,10 @@ function M:close_RepeatedExecutionEngine()
 	collectgarbage()
 end
 
-function M:new_RepeatedExecutionEngine(opts)
-	if opts.blank_char then
-		opts.blank_char = ''
-	end
+function M:new_RepeatedExecutionEngine()
 	return self:new({
 		run = self.run_RepeatedExecutionEngine,
 		close = self.close_RepeatedExecutionEngine,
-		blank_char = opts.blank_char
 	})
 end
 
