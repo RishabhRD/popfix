@@ -23,6 +23,9 @@ function M:new(opts)
 end
 
 function M:select(lineNumber, callback)
+	if self.list.buffer == 0 or self.list.buffer == nil then
+		return
+	end
 	api.nvim_buf_clear_namespace(self.list.buffer, listNamespace,
 	0, -1)
 	api.nvim_buf_add_highlight(self.list.buffer, listNamespace,
@@ -80,6 +83,11 @@ end
 function M:add(line, starting, ending, highlightLine)
 	local add = false
 	local highlight = true
+	local select = false
+	if self.currentLineNumber == nil then
+		self.currentLineNumber = 1
+		select = true
+	end
 	if self.currentPromptText == '' then
 		highlight = false
 	end
@@ -94,12 +102,12 @@ function M:add(line, starting, ending, highlightLine)
 			highlightTable = self.highlightingFunction(self.currentPromptText,
 			line)
 		end
-		self.currentLineNumber = 1
+		local currentLineNumber = self.currentLineNumber
 		vim.schedule(function()
 			self.list:appendLine(line)
-			-- TODO: don't select 1 only. because it can be distracting to users.
-			-- Try to select the indicies as it is.
-			self:select(1)
+			if select then
+				self:select(currentLineNumber)
+			end
 			if highlight then
 				for _, col in pairs(highlightTable) do
 					api.nvim_buf_add_highlight(self.list.buffer, identifier,
@@ -117,15 +125,23 @@ function M:add(line, starting, ending, highlightLine)
 	end
 	local highlightTable =
 	self.highlightingFunction(self.currentPromptText, line)
-	self.currentLineNumber = 1
+	if self.currentLineNumber == nil then
+		self.currentLineNumber = 1
+		select = true
+	elseif self.currentLineNumber >= starting then
+		select = false
+	else
+		select = true
+	end
+	local currentLineNumber = self.currentLineNumber
 	vim.schedule(function()
 		if not add then
 			self.list:clearLast()
 		end
 		self.list:addLine(line, starting, ending)
-		-- TODO: don't select 1 only. because it can be distracting to users.
-		-- Try to select the indicies as it is.
-		self:select(1)
+		if select then
+			self:select(currentLineNumber)
+		end
 		for _, col in pairs(highlightTable) do
 			api.nvim_buf_add_highlight(self.list.buffer, identifier,
 			"Identifier", highlightLine, col - 1, col)
@@ -134,6 +150,7 @@ function M:add(line, starting, ending, highlightLine)
 end
 
 function M:clear()
+	self.currentLineNumber = nil
 	self.linesRendered = 0
 	self.action:select(nil, nil)
 	vim.schedule(function()
@@ -141,6 +158,9 @@ function M:clear()
 		api.nvim_buf_clear_namespace(self.list.buffer, identifier,
 		0, -1)
 	end)
+end
+
+function M:close()
 end
 
 return M

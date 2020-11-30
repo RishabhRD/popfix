@@ -15,9 +15,9 @@ local util = require'popfix.util'
 function M:close(callback)
 	if self.closed then return end
 	self.closed = true
-	if self.job then
-		self.job:shutdown()
-		self.job = nil
+	if self.fuzzyEngine then
+		self.fuzzyEngine:close()
+		self.fuzzyEngine = nil
 	end
 	local line = self.action:getCurrentLine()
 	local index = self.action:getCurrentIndex()

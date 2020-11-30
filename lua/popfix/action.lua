@@ -7,10 +7,16 @@ local function free(self)
 end
 
 function action:getCurrentLine()
+	if not self.selection then
+		return nil
+	end
 	return self.selection.line
 end
 
 function action:getCurrentIndex()
+	if not self.selection then
+		return nil
+	end
 	return self.selection.index
 end
 

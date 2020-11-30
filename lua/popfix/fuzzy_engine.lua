@@ -188,8 +188,6 @@ function M:close()
 			self.job = nil
 		end
 	end
-	self.sortedList = nil
-	self.list = nil
 end
 
 return M
