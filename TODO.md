@@ -6,7 +6,8 @@
 - Async fuzzy engine if possible.
 - add handler for user to listen to prompt change event
 - update readme.md
--- memory investigation
+- memory investigation
+- maxJob dynamically change over time
 
 
 ### To test
@@ -27,9 +28,15 @@
 	because single execution fuzzy engine is not fully async)
 
 ### Currently working on
+- check if preview is working fine. I guess there are some edge cases for
+  prompt preview while typing I guess it is not behaving well.
+  - It seems that >= in add function of  manager is wrong and this needs to be
+    corrected.  Check that once when working in this problem.
 
 
 ### Seems hard
 - Add set\_prompt function for prompt resources.
 - Add get\_prompt function for prompt resources. (Easy but waste if set\_prompt
 is hard)
+
+
