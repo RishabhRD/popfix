@@ -3,30 +3,46 @@ local M = {}
 local Job = require'popfix.job'
 local uv = vim.loop
 M.__index = M
-M.timeInterval = 1
-M.maxJob = 15
 
--- @class Fuzzy engine stores all the output
--- It also maintains job output itself and prompt event.
--- It also maintains a sorted list with respect to current prompt text
+
+--- @class FuzzyEngine
+--- FuzzyEngine actually sorts the data obtained from job/data submitted to it
+--- using the sorter's function. It is the class that submits the data
+--- to manager to actually render it.
+---
+--- Internally FuzzyEngine should have a list and sortedList array.
+--- list should contain the original data obtained from submitted job / data
+--- sortedList should contain the array of {index, score} where index
+--- represents the position of element in list and score represents the score
+--- of that element wrt to prompt. This array is expected to be sorted wrt to
+--- score. However, this behaviour is totally defined by FuzzyEngine and would
+--- not impact working of other classes.
+--- @field run function Function that has interface:
+---     (opts): function,function
+--- @field close function
+--- Shuts down the fuzzy engine
+--
+--  Return value for run
+--  @return textChagned : function(str), setData(data) : function
+--  - textChanged would be invoked when there is any text change in prompt.
+--    It accepts the string as parameter.
+--  - setData would be called when user explicitly calls the setData function
+--  It accepts data that has same spec as other classes.
+--
+--  Specification for opts:
+--  Field for opts:
+--  data (data provided by lua function)
+--  manager (list manger)
+--  sorter (sorter class)
+--  currentPromptText: currentPromptText during intialisation
 function M:new(opts)
-	local obj = {
-		luaTable = opts.luaTable,
-		manager = opts.manager,
-		scoringFunction = opts.scoringFunction,
-		filterFunction = opts.filterFunction,
-		caseSensitive = opts.caseSensitive,
-		currentPromptText = opts.currentPromptText,
-		prompt = opts.prompt,
-		cmd = opts.cmd,
-		cwd = opts.cwd or vim.fn.getcwd(),
-		args = opts.args,
+	opts = opts or {}
+	return setmetatable({
+		run = opts.run,
+		close = opts.close,
 		list = {},
-		sortedList = {},
-	}
-	obj.manager.currentPromptText = obj.currentPromptText
-	setmetatable(obj, self)
-	return obj
+		sortedList = {}
+	}, self)
 end
 
 local function clear(t)
@@ -35,9 +51,31 @@ local function clear(t)
 	end
 end
 
+function M:run_SingleExecutionEngine(opts)
+	-- initilaization
+	self.data = opts.data
+	self.manager = opts.manager
+	self.currentPromptText = opts.currentPromptText
+	self.sorter = opts.sorter
 
-function M:run()
-	print(self.caseSensitive)
+
+	-- Additional initilaization job
+	self.scoringFunction = self.sorter.scoringFunction
+	self.filterFunction = self.sorter.filterFunction
+	self.sorter = nil
+	if self.data.cmd then
+		local cmd, args = util.getArgs(self.data.cmd)
+		self.cmd = cmd
+		self.args = args
+		self.cwd = self.data.cwd or vim.fn.getcwd()
+		self.data = nil
+	end
+
+	-- Our requirements
+	self.timeInterval = 1
+	self.maxJob = 15
+	self.manager.currentPromptText = self.currentPromptText
+
 	local function addData(_, line)
 		if not self.list then return end
 		self.list[#self.list + 1] = line
@@ -182,7 +220,7 @@ function M:run()
 			}
 			self.job:start()
 		else
-			for k,v in ipairs(self.luaTable) do
+			for k,v in ipairs(self.data) do
 				self.list[k] = v
 				self.sortedList[k] = {
 					score = 0,
@@ -204,7 +242,7 @@ function M:run()
 		}
 		self.job:start()
 	else
-		for k,v in ipairs(self.luaTable) do
+		for k,v in ipairs(self.data) do
 			self.list[k] = v
 			self.sortedList[k] = {
 				score = 0,
@@ -216,8 +254,14 @@ function M:run()
 	return textChanged, setData
 end
 
+function M:newSingleExecutionEngine()
+	return self:new({
+		run = self.run_SingleExecutionEngine,
+		close = self.close_SingleExecutionEngine
+	})
+end
 
-function M:close()
+function M:close_SingleExecutionEngine()
 	if self.promptTimer then
 		self.promptTimer:stop()
 		self.promptTimer:close()

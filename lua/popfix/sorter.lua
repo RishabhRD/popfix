@@ -3,15 +3,15 @@ local M = {}
 
 M.__index = M
 
--- @class sorter
--- sorter provides the corresponding scoring function,
--- filter function and highlighting function.
--- This function helps fuzzy engine to sort in desired way.
---
--- scoringFunction: function(needle, heystack, case_sensitive)
--- filterFunction: function(needle, heystack, case_sensitive)
--- highlightingFunction: function(needle, heystack, case_sensitive)
--- caseSensitive : boolean
+--- @class sorter
+--- sorter provides the corresponding scoring function,
+--- filter function and highlighting function.
+--- This function helps fuzzy engine to sort in desired way.
+---
+--- @field scoringFunction function(needle, heystack, case_sensitive)
+--- @field filterFunction function(needle, heystack, case_sensitive)
+--- @field highlightingFunction function(needle, heystack, case_sensitive)
+--- @field caseSensitive boolean
 function M:new(opts)
 	return setmetatable({
 		scoringFunction = opts.scoring_function,

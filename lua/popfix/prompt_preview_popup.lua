@@ -10,7 +10,6 @@ local action = require'popfix.action'
 local prompt = require'popfix.prompt'
 local list = require'popfix.list'
 local preview = require'popfix.preview'
-local util = require'popfix.util'
 
 function M:close(callback)
 	if self.closed then return end
@@ -210,30 +209,19 @@ function M:new(opts)
 		highlightingFunction = obj.sorter.highlightingFunction,
 		caseSensitive = obj.sorter.caseSensitive
 	})
-	if opts.data.cmd then
-		local cmd, args = util.getArgs(opts.data.cmd)
-		obj.fuzzyEngine = FuzzyEngine:new({
-			cmd = cmd,
-			args = args,
-			scoringFunction = obj.sorter.scoringFunction,
-			filterFunction = obj.sorter.filterFunction,
-			manager = obj.manager,
-			currentPromptText = obj.prompt:getCurrentPromptText(),
-			caseSensitive = obj.sorter.caseSensitive
-		})
+	if opts.fuzzyEngine then
+		self.fuzzyEngine = opts.fuzzyEngine
 	else
-		obj.fuzzyEngine = FuzzyEngine:new({
-			luaTable = opts.data,
-			scoringFunction = obj.sorter.scoringFunction,
-			filterFunction = obj.sorter.filterFunction,
-			manager = obj.manager,
-			currentPromptText = obj.prompt:getCurrentPromptText(),
-			caseSensitive = obj.sorter.caseSensitive
-		})
+		self.fuzzyEngine = FuzzyEngine:newSingleExecutionEngine()
 	end
 	obj.manager.sortedList = obj.fuzzyEngine.sortedList
 	obj.manager.originalList = obj.fuzzyEngine.list
-	local textChanged, setData = obj.fuzzyEngine:run()
+	local textChanged, setData = obj.fuzzyEngine:run({
+		data = opts.data,
+		sorter = obj.sorter,
+		manager = obj.manager,
+		currentPromptText = obj.prompt:getCurrentPromptText()
+	})
 	obj._set_data = setData
 	obj.prompt:registerTextChanged(textChanged)
 	api.nvim_set_current_win(obj.prompt.window)
