@@ -1,6 +1,6 @@
 local M = {}
 
-local fzy = require'popfix.fzy'
+local sorter = require'popfix.sorter'
 local manager = require'popfix.list_manager'
 local FuzzyEngine = require'popfix.fuzzy_engine'
 local api = vim.api
@@ -197,12 +197,18 @@ function M:new(opts)
 		}
 	end
 	autocmd.addCommand(obj.prompt.buffer, nested_autocmds, obj)
+	if opts.sorter then
+		self.sorter = opts.sorter
+	else
+		self.sorter = sorter:new_fzy_sorter()
+	end
 	obj.manager = manager:new({
 		preview = obj.preview,
 		list = obj.list,
 		action = obj.action,
 		renderLimit = opts.list.height,
-		highlightingFunction = fzy.positions,
+		highlightingFunction = self.sorter.highlightingFunction,
+		caseSensitive = self.sorter.caseSensitive
 	})
 	obj:set_data(opts.data)
 	api.nvim_set_current_win(obj.prompt.window)
@@ -223,10 +229,11 @@ function M:set_data(data)
 		self.fuzzyEngine = FuzzyEngine:new({
 			cmd = cmd,
 			args = args,
-			scoringFunction = fzy.score,
-			filterFunction = fzy.has_match,
+			scoringFunction = self.sorter.scoringFunction,
+			filterFunction = self.sorter.filterFunction,
 			prompt = self.prompt,
 			manager = self.manager,
+			caseSensitive = self.sorter.caseSensitive
 		})
 		self.manager.sortedList = self.fuzzyEngine.sortedList
 		self.manager.originalList = self.fuzzyEngine.list
@@ -234,10 +241,11 @@ function M:set_data(data)
 	else
 		self.fuzzyEngine = FuzzyEngine:new({
 			luaTable = data,
-			scoringFunction = fzy.score,
-			filterFunction = fzy.has_match,
+			scoringFunction = self.sorter.scoringFunction,
+			filterFunction = self.sorter.filterFunction,
 			prompt = self.prompt,
 			manager = self.manager,
+			caseSensitive = self.sorter.caseSensitive
 		})
 		self.manager.sortedList = self.fuzzyEngine.sortedList
 		self.manager.originalList = self.fuzzyEngine.list

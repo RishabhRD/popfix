@@ -17,6 +17,7 @@ function M:new(opts)
 		renderLimit = opts.renderLimit,
 		linesRendered = 0,
 		highlightingFunction = opts.highlightingFunction,
+		caseSensitive = opts.caseSensitive
 	}
 	setmetatable(obj, self)
 	return obj
@@ -100,7 +101,7 @@ function M:add(line, starting, ending, highlightLine)
 		local highlightTable
 		if highlight then
 			highlightTable = self.highlightingFunction(self.currentPromptText,
-			line)
+			line, self.caseSensitive)
 		end
 		local currentLineNumber = self.currentLineNumber
 		vim.schedule(function()
@@ -124,7 +125,7 @@ function M:add(line, starting, ending, highlightLine)
 		self.linesRendered = self.linesRendered + 1
 	end
 	local highlightTable =
-	self.highlightingFunction(self.currentPromptText, line)
+	self.highlightingFunction(self.currentPromptText, line, self.caseSensitive)
 	if self.currentLineNumber == nil then
 		self.currentLineNumber = 1
 		select = true

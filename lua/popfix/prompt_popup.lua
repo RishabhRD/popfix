@@ -1,8 +1,8 @@
 local M = {}
 
 
+local sorter = require'popfix.sorter'
 local api = vim.api
-local fzy = require'popfix.fzy'
 local manager = require'popfix.list_manager'
 local FuzzyEngine = require'popfix.fuzzy_engine'
 local autocmd = require'popfix.autocmd'
@@ -213,12 +213,18 @@ function M:new(opts)
 			['nested'] = true
 		}
 	end
+	if opts.sorter then
+		self.sorter = opts.sorter
+	else
+		self.sorter = sorter:new_fzy_sorter()
+	end
 	autocmd.addCommand(obj.prompt.buffer, nested_autocmds, obj)
 	obj.manager = manager:new({
 		list = obj.list,
 		action = obj.action,
 		renderLimit = opts.list.height,
-		highlightingFunction = fzy.positions,
+		highlightingFunction = self.sorter.highlightingFunction,
+		caseSensitive = self.sorter.caseSensitive
 	})
 	obj:set_data(opts.data)
 	api.nvim_set_current_win(obj.prompt.window)
@@ -241,8 +247,8 @@ function M:set_data(data)
 			cmd = cmd,
 			args = args,
 			prompt = self.prompt,
-			scoringFunction = fzy.score,
-			filterFunction = fzy.has_match,
+			scoringFunction = self.sorter.scoringFunction,
+			filterFunction = self.sorter.filterFunction,
 			manager = self.manager,
 		})
 		self.manager.sortedList = self.fuzzyEngine.sortedList
@@ -251,8 +257,8 @@ function M:set_data(data)
 	else
 		self.fuzzyEngine = FuzzyEngine:new({
 			luaTable = data,
-			scoringFunction = fzy.score,
-			filterFunction = fzy.has_match,
+			scoringFunction = self.scoringFunction,
+			filterFunction = self.filterFunction,
 			prompt = self.prompt,
 			manager = self.manager,
 		})

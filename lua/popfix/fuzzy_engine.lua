@@ -35,6 +35,7 @@ end
 
 
 function M:run()
+	print(self.caseSensitive)
 	local function addData(_, line)
 		if not self.list then return end
 		self.list[#self.list + 1] = line
@@ -56,8 +57,10 @@ function M:run()
 			-- fits with respect to its score with current prompt
 			-- Time complextity : O(n)
 
-			if self.filterFunction(self.currentPromptText, line) then
-				local score = self.scoringFunction(self.currentPromptText, line)
+			if self.filterFunction(self.currentPromptText, line,
+				self.caseSensitive) then
+				local score = self.scoringFunction(self.currentPromptText,
+				line, self.caseSensitive)
 				for k,v in ipairs(self.sortedList) do
 					if score > v.score then
 						table.insert(self.sortedList, k, {
@@ -79,8 +82,10 @@ function M:run()
 	local function appendAggregateData(itrStart, itrEnd)
 		for cur = itrStart, itrEnd do
 			local line = self.list[cur]
-			if self.filterFunction(self.currentPromptText, line) then
-				local score = self.scoringFunction(self.currentPromptText, line)
+			if self.filterFunction(self.currentPromptText, line,
+				self.caseSensitive) then
+				local score = self.scoringFunction(self.currentPromptText,
+				line, self.caseSensitive)
 				local found = false
 				for k,v in ipairs(self.sortedList) do
 					if score > v.score then
