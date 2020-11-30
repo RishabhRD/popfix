@@ -216,7 +216,7 @@ function M:new(opts)
 	if opts.sorter then
 		self.sorter = opts.sorter
 	else
-		self.sorter = sorter:new_fzy_sorter()
+		self.sorter = sorter:new_fzy_sorter(false)
 	end
 	autocmd.addCommand(obj.prompt.buffer, nested_autocmds, obj)
 	obj.manager = manager:new({

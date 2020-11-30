@@ -18,9 +18,9 @@
 - Add option for close on buffer leave to be optional
 - Handle lazy rendering selection well.
 - Add sorter class to provide choice over fuzzy algorithm.
+- better selection strategy in manager
 
 ### Currently working
-- better selection strategy in manager [buggy]
 
 
 ### Seems hard

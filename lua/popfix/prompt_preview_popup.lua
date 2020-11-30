@@ -200,7 +200,7 @@ function M:new(opts)
 	if opts.sorter then
 		self.sorter = opts.sorter
 	else
-		self.sorter = sorter:new_fzy_sorter()
+		self.sorter = sorter:new_fzy_sorter(false)
 	end
 	obj.manager = manager:new({
 		preview = obj.preview,

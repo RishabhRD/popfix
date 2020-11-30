@@ -23,7 +23,7 @@ function M:new(opts)
 	return obj
 end
 
-function M:select(lineNumber, callback)
+function M:select(lineNumber, callback, onlyRefresh)
 	if self.list.buffer == 0 or self.list.buffer == nil then
 		return
 	end
@@ -31,6 +31,9 @@ function M:select(lineNumber, callback)
 	0, -1)
 	api.nvim_buf_add_highlight(self.list.buffer, listNamespace,
 	"Visual", lineNumber - 1, 0, -1)
+	if onlyRefresh then
+		return
+	end
 	self.list:select(lineNumber)
 	local data
 	local preview = true
@@ -108,6 +111,8 @@ function M:add(line, starting, ending, highlightLine)
 			self.list:appendLine(line)
 			if select then
 				self:select(currentLineNumber)
+			else
+				self:select(currentLineNumber, nil, true)
 			end
 			if highlight then
 				for _, col in pairs(highlightTable) do
@@ -142,6 +147,8 @@ function M:add(line, starting, ending, highlightLine)
 		self.list:addLine(line, starting, ending)
 		if select then
 			self:select(currentLineNumber)
+		else
+			self:select(currentLineNumber, nil ,true)
 		end
 		for _, col in pairs(highlightTable) do
 			api.nvim_buf_add_highlight(self.list.buffer, identifier,
