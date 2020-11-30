@@ -214,56 +214,51 @@ function M:new(opts)
 		}
 	end
 	if opts.sorter then
-		self.sorter = opts.sorter
+		obj.sorter = opts.sorter
 	else
-		self.sorter = sorter:new_fzy_sorter(false)
+		obj.sorter = sorter:new_fzy_sorter(false)
 	end
 	autocmd.addCommand(obj.prompt.buffer, nested_autocmds, obj)
 	obj.manager = manager:new({
 		list = obj.list,
 		action = obj.action,
 		renderLimit = opts.list.height,
-		highlightingFunction = self.sorter.highlightingFunction,
-		caseSensitive = self.sorter.caseSensitive
+		highlightingFunction = obj.sorter.highlightingFunction,
+		caseSensitive = obj.sorter.caseSensitive
 	})
-	obj:set_data(opts.data)
+	if opts.data.cmd then
+		local cmd, args = util.getArgs(opts.data.cmd)
+		obj.fuzzyEngine = FuzzyEngine:new({
+			cmd = cmd,
+			args = args,
+			scoringFunction = obj.sorter.scoringFunction,
+			filterFunction = obj.sorter.filterFunction,
+			currentPromptText = obj.prompt:getCurrentPromptText(),
+			manager = obj.manager,
+		})
+	else
+		obj.fuzzyEngine = FuzzyEngine:new({
+			luaTable = opts.data,
+			scoringFunction = obj.scoringFunction,
+			filterFunction = obj.filterFunction,
+			currentPromptText = obj.prompt:getCurrentPromptText(),
+			manager = obj.manager,
+		})
+	end
+	obj.manager.sortedList = obj.fuzzyEngine.sortedList
+	obj.manager.originalList = obj.fuzzyEngine.list
+	local textChanged, setData = obj.fuzzyEngine:run()
+	obj._set_data = setData
+	obj.prompt:registerTextChanged(textChanged)
 	api.nvim_set_current_win(obj.prompt.window)
 	if opts.keymaps then
 		mappings.add_keymap(obj.prompt.buffer, opts.keymaps, obj)
 	end
-	obj.closed = false
 	return obj
 end
 
 function M:set_data(data)
-	if self.fuzzyEngine then
-		self.fuzzyEngine:close()
-		self.fuzzyEngine = nil
-	end
-	self.manager:clear()
-	if data.cmd then
-		local cmd, args = util.getArgs(data.cmd)
-		self.fuzzyEngine = FuzzyEngine:new({
-			cmd = cmd,
-			args = args,
-			scoringFunction = self.sorter.scoringFunction,
-			filterFunction = self.sorter.filterFunction,
-			currentPromptText = self.prompt:getCurrentPromptText(),
-			manager = self.manager,
-		})
-	else
-		self.fuzzyEngine = FuzzyEngine:new({
-			luaTable = data,
-			scoringFunction = self.scoringFunction,
-			filterFunction = self.filterFunction,
-			currentPromptText = self.prompt:getCurrentPromptText(),
-			manager = self.manager,
-		})
-	end
-	self.manager.sortedList = self.fuzzyEngine.sortedList
-	self.manager.originalList = self.fuzzyEngine.list
-	local textChanged = self.fuzzyEngine:run()
-	self.prompt:registerTextChanged(textChanged)
+	self._set_data(data)
 end
 
 function M:get_current_selection()

@@ -1,3 +1,4 @@
+local util = require'popfix.util'
 local M = {}
 local Job = require'popfix.job'
 local uv = vim.loop
@@ -18,6 +19,7 @@ function M:new(opts)
 		currentPromptText = opts.currentPromptText,
 		prompt = opts.prompt,
 		cmd = opts.cmd,
+		cwd = opts.cwd or vim.fn.getcwd(),
 		args = opts.args,
 		list = {},
 		sortedList = {},
@@ -156,11 +158,45 @@ function M:run()
 			self.startingIndex = #self.list + 1
 		end
 	end
+	local function setData(data)
+		if self.job then
+			self.job:shutdown()
+			self.job = nil
+		end
+		self.manager:clear()
+		clear(self.list)
+		clear(self.sortedList)
+		if data.cmd then
+			local cmd, args = util.getArgs(data.cmd)
+			self.cmd = cmd
+			self.cwd = data.cwd or vim.fn.getcwd()
+			self.args = args
+			self.job = Job:new{
+				command = self.cmd,
+				args = self.args,
+				cwd = self.cwd,
+				on_stdout = addData,
+				on_exit = function()
+					self.job = nil
+				end,
+			}
+			self.job:start()
+		else
+			for k,v in ipairs(self.luaTable) do
+				self.list[k] = v
+				self.sortedList[k] = {
+					score = 0,
+					index = k
+				}
+				self.manager:add(v, nil, nil, k)
+			end
+		end
+	end
 	if self.cmd then
 		self.job = Job:new{
 			command = self.cmd,
 			args = self.args,
-			cwd = vim.fn.getcwd(),
+			cwd = self.cwd,
 			on_stdout = addData,
 			on_exit = function()
 				self.job = nil
@@ -177,7 +213,7 @@ function M:run()
 			self.manager:add(v, nil, nil, k)
 		end
 	end
-	return textChanged
+	return textChanged, setData
 end
 
 
