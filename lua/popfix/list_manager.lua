@@ -27,6 +27,7 @@ function M:select(lineNumber, callback)
 	0, -1)
 	api.nvim_buf_add_highlight(self.list.buffer, listNamespace,
 	"Visual", lineNumber - 1, 0, -1)
+	self.list:select(lineNumber)
 	local data
 	local preview = true
 	local currentIndex = self.action:getCurrentIndex()
@@ -39,13 +40,11 @@ function M:select(lineNumber, callback)
 	end
 	if preview then
 		if data then
-			vim.schedule(function()
-				if self.preview then
-					if data ~= nil then
-						self.preview:writePreview(data)
-					end
+			if self.preview then
+				if data ~= nil then
+					self.preview:writePreview(data)
 				end
-			end)
+			end
 		end
 	end
 end

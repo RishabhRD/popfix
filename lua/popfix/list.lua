@@ -187,6 +187,11 @@ function list:select_prev()
 	vim.cmd('redraw')
 end
 
+function list:select(lineNumber)
+	pcall(api.nvim_win_set_cursor, self.window, {lineNumber, 0})
+	vim.cmd('redraw')
+end
+
 function list:getSize()
 	return self.numData
 end
