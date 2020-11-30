@@ -5,8 +5,6 @@
 - Preview scrolling
 - Async fuzzy engine if possible.
 - add handler for user to listen to prompt change event
-- Add a repeated execution handler(good for very large and intense process
-	because single execution fuzzy engine is not fully async)
 - update readme.md
 
 
@@ -24,8 +22,10 @@
 - better strategy for set\_data function for fuzzy engines.
 - Add possibilities for different type of fuzzy engines.
      (like execute job on each click)
+- Add a repeated execution handler(good for very large and intense process
+	because single execution fuzzy engine is not fully async)
 
-### Currently working
+### Currently working on
 
 
 ### Seems hard

@@ -254,7 +254,7 @@ function M:run_SingleExecutionEngine(opts)
 	return textChanged, setData
 end
 
-function M:newSingleExecutionEngine()
+function M:new_SingleExecutionEngine()
 	return self:new({
 		run = self.run_SingleExecutionEngine,
 		close = self.close_SingleExecutionEngine
@@ -273,6 +273,92 @@ function M:close_SingleExecutionEngine()
 			self.job = nil
 		end
 	end
+end
+
+-- Every time a new character is entered in prompt, this engine executes
+-- the given command after formatting that with currentPromptText like
+-- string.format(cmd, currentPromptText). It then outputs the result in
+-- sortedList.
+-- Currently this function only supports job from outside string of arrays are
+-- not being supported by this function currently.
+-- TODO: I need to think what should be the behaviour is someone uses this
+-- engine with string array
+function M:run_RepeatedExecutionEngine(opts)
+	self.manager = opts.manager
+	self.currentPromptText = opts.currentPromptText
+	opts.sorter = nil
+	self.base_cmd = opts.data.cmd
+	self.cwd = opts.data.cwd or vim.fn.getcwd()
+	local function addData(_, line)
+		self.list[#self.list + 1] = line
+		self.sortedList[#self.list] = {
+			score = 0,
+			index = #self.list
+		}
+		self.manager:add(line, nil, nil, #self.list - 1)
+	end
+	local function textChanged(str)
+		if self.currentJob then
+			self.currentJob:shutdown()
+			self.currentJob = nil
+		end
+		clear(self.sortedList)
+		clear(self.list)
+		if self.base_cmd == nil then return end
+		self.manager:clear()
+		self.currentPromptText = str
+		self.manager.currentPromptText = str
+		if str == '' then
+			str = self.blank_char
+		end
+		local command = string.format(self.base_cmd, str)
+		local cmd, args = util.getArgs(command)
+		self.currentJob = Job:new{
+			command = cmd,
+			args = args,
+			cwd = self.cwd,
+			on_stdout = addData,
+			on_exit = function()
+				self.currentJob = nil
+			end
+		}
+		self.currentJob:start()
+	end
+	local function setData(data)
+		self.base_cmd = data.cmd
+		if not self.base_cmd then return end
+		self.cwd = data.cwd or vim.fn.getcwd()
+		textChanged(self.currentPromptText)
+	end
+	return textChanged, setData
+end
+
+function M:close_RepeatedExecutionEngine()
+	if self.currentJob then
+		self.currentJob:shutdown()
+		self.currentJob = nil
+	end
+	clear(self.list)
+	clear(self.sortedList)
+	self.list = nil
+	self.sortedList = nil
+	-- TODO: I don't know why, but this is freeing the memory
+	-- I have also seen this in a potential fuzzy finder implementation
+	-- telescope.nvim. After exploring their source I realised they are also
+	-- doing the same hack.
+	collectgarbage()
+	collectgarbage()
+end
+
+function M:new_RepeatedExecutionEngine(opts)
+	if opts.blank_char then
+		opts.blank_char = ''
+	end
+	return self:new({
+		run = self.run_RepeatedExecutionEngine,
+		close = self.close_RepeatedExecutionEngine,
+		blank_char = opts.blank_char
+	})
 end
 
 return M
