@@ -175,7 +175,6 @@ end
 function list:select_next()
 	local lineNumber = self:getCurrentLineNumber()
 	pcall(api.nvim_win_set_cursor, self.window, {lineNumber +1, 0})
-	vim.cmd('redraw')
 end
 
 function list:select_prev()
@@ -184,12 +183,10 @@ function list:select_prev()
 		--TODO: show the cursor if hidden
 		api.nvim_win_set_cursor(self.window, {lineNumber - 1, 0})
 	end
-	vim.cmd('redraw')
 end
 
 function list:select(lineNumber)
 	pcall(api.nvim_win_set_cursor, self.window, {lineNumber, 0})
-	vim.cmd('redraw')
 end
 
 function list:getSize()

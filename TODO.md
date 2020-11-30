@@ -6,6 +6,7 @@
 - Async fuzzy engine if possible.
 - add handler for user to listen to prompt change event
 - update readme.md
+-- memory investigation
 
 
 ### To test

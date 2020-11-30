@@ -139,10 +139,12 @@ end
 
 
 function preview:close()
-	if self.buffer ~= nil then
-		local buf = self.buffer
+	stopCurrentJob(self)
+	local buf = self.buffer
+	-- TODO: I can't believe it but it is taking one more tick to close.
+	vim.schedule(function()
 		vim.cmd(string.format('bwipeout! %s', buf))
-	end
+	end)
 	self.buffer = nil
 	self.window = nil
 	self.type = nil
@@ -154,7 +156,6 @@ function preview:close()
 		end
 		self.buffers = nil
 	end
-	stopCurrentJob(self)
 end
 
 return preview

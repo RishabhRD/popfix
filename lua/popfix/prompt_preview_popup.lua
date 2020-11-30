@@ -22,6 +22,7 @@ function M:close(callback)
 	local line = self.action:getCurrentLine()
 	local index = self.action:getCurrentIndex()
 	mappings.free(self.list.buffer)
+	self.manager = nil
 	vim.schedule(function()
 		self.list:close()
 		self.prompt:close()
@@ -199,7 +200,7 @@ function M:new(opts)
 	if opts.sorter then
 		obj.sorter = opts.sorter
 	else
-		obj.sorter = sorter:new_fzy_sorter(false)
+		obj.sorter = sorter:new_fzy_native_sorter(false)
 	end
 	obj.manager = manager:new({
 		preview = obj.preview,

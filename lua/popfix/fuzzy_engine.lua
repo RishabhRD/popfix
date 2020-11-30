@@ -62,6 +62,10 @@ function M:run_SingleExecutionEngine(opts)
 	-- Additional initilaization job
 	self.scoringFunction = self.sorter.scoringFunction
 	self.filterFunction = self.sorter.filterFunction
+	self.maxJob = self.sorter.maxJob
+	if self.maxJob == nil then
+		self.maxJob = 50
+	end
 	self.sorter = nil
 	if self.data.cmd then
 		local cmd, args = util.getArgs(self.data.cmd)
@@ -73,7 +77,6 @@ function M:run_SingleExecutionEngine(opts)
 
 	-- Our requirements
 	self.timeInterval = 1
-	self.maxJob = 15
 	self.manager.currentPromptText = self.currentPromptText
 
 	local function addData(_, line)
@@ -273,6 +276,12 @@ function M:close_SingleExecutionEngine()
 			self.job = nil
 		end
 	end
+	clear(self.list)
+	clear(self.sortedList)
+	self.list = nil
+	self.sortedList = nil
+	collectgarbage()
+	collectgarbage()
 end
 
 -- Every time a new character is entered in prompt, this engine executes
