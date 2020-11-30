@@ -1,4 +1,5 @@
 local M = {}
+M.__index = M
 
 
 local sorter = require'popfix.sorter'
@@ -170,7 +171,6 @@ local function popup_split(self, opts)
 end
 
 function M:new(opts)
-	self.__index = self
 	local obj = {}
 	setmetatable(obj, self)
 	if opts.data == nil then
@@ -226,9 +226,9 @@ function M:new(opts)
 		caseSensitive = obj.sorter.caseSensitive
 	})
 	if opts.fuzzyEngine then
-		self.fuzzyEngine = opts.fuzzyEngine
+		obj.fuzzyEngine = opts.fuzzyEngine
 	else
-		self.fuzzyEngine = FuzzyEngine:newSingleExecutionEngine()
+		obj.fuzzyEngine = FuzzyEngine:newSingleExecutionEngine()
 	end
 	obj.manager.sortedList = obj.fuzzyEngine.sortedList
 	obj.manager.originalList = obj.fuzzyEngine.list
