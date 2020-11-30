@@ -231,26 +231,24 @@ function M:set_data(data)
 			args = args,
 			scoringFunction = self.sorter.scoringFunction,
 			filterFunction = self.sorter.filterFunction,
-			prompt = self.prompt,
 			manager = self.manager,
+			currentPromptText = self.prompt:getCurrentPromptText(),
 			caseSensitive = self.sorter.caseSensitive
 		})
-		self.manager.sortedList = self.fuzzyEngine.sortedList
-		self.manager.originalList = self.fuzzyEngine.list
-		self.fuzzyEngine:run()
 	else
 		self.fuzzyEngine = FuzzyEngine:new({
 			luaTable = data,
 			scoringFunction = self.sorter.scoringFunction,
 			filterFunction = self.sorter.filterFunction,
-			prompt = self.prompt,
 			manager = self.manager,
+			currentPromptText = self.prompt:getCurrentPromptText(),
 			caseSensitive = self.sorter.caseSensitive
 		})
-		self.manager.sortedList = self.fuzzyEngine.sortedList
-		self.manager.originalList = self.fuzzyEngine.list
-		self.fuzzyEngine:run()
 	end
+	self.manager.sortedList = self.fuzzyEngine.sortedList
+	self.manager.originalList = self.fuzzyEngine.list
+	local textChanged = self.fuzzyEngine:run()
+	self.prompt:registerTextChanged(textChanged)
 end
 
 function M:get_current_selection()

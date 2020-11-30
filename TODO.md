@@ -2,6 +2,7 @@
 
 ### To implement
 
+- better strategy for set\_data function for fuzzy engines.
 - Add possibilities for different type of fuzzy engines.
      (like execute job on each click)
 - Preview scrolling
@@ -19,6 +20,7 @@
 - Handle lazy rendering selection well.
 - Add sorter class to provide choice over fuzzy algorithm.
 - better selection strategy in manager
+- fuzzy engine should not contain prompt
 
 ### Currently working
 
