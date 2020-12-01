@@ -442,8 +442,128 @@ PR:smiley:.
 	```lua
 	function(index, line)
 	```
+### Sorter
 
-## Some plugins based on this API
+Sorter provides the sorting algorithm, filter algorithm and highlighting
+algorithm.
+
+For using builtin sorters:
+- fzy-native (default)
+
+	```lua
+	require'popfix.sorter'.new_fzy_native_sorter(case_sensitive)
+	```
+
+- fzy
+
+	```lua
+	require'popfix.sorter'.new_fzy_sorter(case_sensitive)
+	```
+
+case_sensitive is boolean that indicates if sorting algorithm is case_sensitive
+or not.
+
+You can also create new sorters:
+```lua
+local sorter = require'popfix.sorter'.new{
+	sorting_function = function(prompt_text, comparing_text, case_sensitive)
+		-- scoring logic here
+	end,
+	filter_function = function(prompt_text, comparing_text, case_sensitive)
+		-- scoring logic here
+	end,
+	highlighting_function = function(prompt_text, comparing_text, case_sensitive)
+		-- scoring logic here
+	end
+}
+```
+
+filter_function should return a boolean indicating comparing_text should be
+listed in results or not.
+
+sorting_function should return a score. Higher score value means better score.
+
+highlighting_function should return array of integers representing columns need
+to be highlighted for comparing_text. Column should be 0 indexed.
+eg: {0, 3, 5, 9}
+
+### Fuzzy Engine
+Fuzzy Engine schedules the job for fuzzy search. This actually sorts the
+result according to sorter's algorithm and then send it to a manager using
+add method of manager.
+
+Popfix provides 2 built-in fuzzy engines:
+
+- SingleExecutionEngine (default)
+
+	Executes submitted job one time and sorts the whole thing when prompt
+	change.
+	```lua
+	require'popfix.fuzzy_enigne'.new_SingleExecutionEngine()
+	```
+
+- RepeatedExecutionEngine
+	
+	Executes the submitted job (with formatted command) everytime prompt is
+	changed and displays the output as result. It only uses the highlighting
+	part of sorter.
+
+	Because command need to be formatted, it should be given in special format
+	string. For example: ``rg --vimgrep %s`` . This %s will be replaced with
+	current prompt text while running the job. So, be careful while entering
+	data in opts.
+	```lua
+	require'popfix.fuzzy_enigne'.new_RepeatedExecutionEngine()
+	```
+
+You can also create new fuzzy engines. Fuzzy engines have 2 tables:
+- list : Fuzzy engines are expected to fill this array with strings obtained
+  from submitted job.
+- sortedList : Fuzzy engines are expected to fill this array with a table with
+  synatx:
+	```lua
+	{
+		score = <score : int>,
+		index = <index of element in list : int>
+	}
+	```
+UI manager use these table to render UI efficiently. However, this is not
+necessary that fuzzy engine follow the expectation, i.e., until unless fuzzy
+engine is filling the table with proper syntax that means ``list`` with string
+array and ``sortedList`` with example table, UI manager would work properly
+till the index part of sortedList table entry is valid in list.
+You can fill data smartly to create different behaviour you may want to have.
+
+To create a new fuzzy engine:
+
+```lua
+require'popfix.fuzzy_engine'.new{
+	run = function(opts)
+	end,
+	close = function()
+	end
+}
+```
+
+run is the function that will start fuzzy engine. It accepts an opts parameter
+that has 4 fields
+- data (data provided while calling new function of popfix)
+- manager (render manger)
+- sorter (sorter class)
+- currentPromptText: currentPromptText during intialisation
+
+manager is the utility that takes cares of actual rendering.
+It has 2 methods:
+- add(line, first, last, index) : add the line to UI list at first index,
+ending on last index (replacing first to last, i.e, first = last if no
+replacement is needed). index represents the index of line in sorted list.
+
+- clear() : clear the list's UI.
+	
+
+
+
+## Some plugins built upon popfix
 
 - https://github.com/RishabhRD/nvim-lsputils
 	This plugin provides comfortable UI for LSP actions(code fix, references)
