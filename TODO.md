@@ -8,6 +8,7 @@
 - update readme.md
 - memory investigation
 - maxJob dynamically change over time
+- export write preview method for resources
 
 
 ### To test

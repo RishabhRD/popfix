@@ -1,41 +1,21 @@
 # popfix
 
-popfix is neovim lua API for highly extensible quickfix or popup window.
-Any neovim plugin in lua can make use of it to reduce efforts to manage
-underlying buffer and window.
+popfix is a neovim API that helps plugin developers to write UI for their
+plugins easily.
+popfix internally handles UI rendering and its lifetime and makes plugin
+developers to focus much on plugin logic and less on UI.
 
-**NOTE: neovim 0.5 is required for using this API.**
+popfix targets UI where either user have to give some input or user have to
+select something from a list of elements. Because these are most common
+operations most plugins need to do. However, popfix is very customizable and
+extensible that many of its default behaviour can be changed.
 
-**WARNING: This API is still being developed for new features. Hence, changes
-are possible with API which would not be compatible with old API syntax.**
+Also normal users can use this API to provide fancy UI for some common tasks.
 
-
-## Where this can be helpful?
-
-If your plugin doesn't require highly customized window popups and things,
-and you want to focus most on data to be displayed and actions upon events,
-then this plugin is what you want.
-
-This plugin is intended to provide sensible window templates with highly
-extensible event-driven programming capability.
-
-Plugin writers can configure events using lua callbacks and passing keymap
-tables. They can directly map lua functions to keymap with underlying
-architecture.
 
 ## Screenshots
-![](https://user-images.githubusercontent.com/26287448/93617774-076ad600-f9f4-11ea-9c4e-d37019241320.gif)
-![](https://user-images.githubusercontent.com/26287448/93930985-d3691b00-fd3b-11ea-9053-b699e4d36558.gif)
-
-
-## Features
-
-- Floating popup
-- Navigable preview window (syntax coloring possible)
-
-## Future goals
-
-- Fuzzy search
+<!-- ![](https://user-images.githubusercontent.com/26287448/93617774-076ad600-f9f4-11ea-9c4e-d37019241320.gif) -->
+<!-- ![](https://user-images.githubusercontent.com/26287448/93930985-d3691b00-fd3b-11ea-9053-b699e4d36558.gif) -->
 
 ## Prerequisites
 
@@ -47,231 +27,386 @@ Install with any plugin manager. For example with vim-plug
 
 	Plug 'RishabhRD/popfix'
 
+
+## UI possible with popfix
+
+- **Popup**
+
+	A simple popup list of elements.
+
+	Rendering modes:
+	- Split (In a down split)
+	- Editor (Relative to neovim editor window)
+	- Cursor (On the cursor itself)
+
+- **Preview Popup**
+	
+	A popup list of elements with a preview window that can be configured by
+	user.
+
+	Rendering modes:
+	- Split (In a down split)
+	- Editor (Relative to neovim editor window)
+
+	(Preview window doesn't have cursor mode currently. This is because I don't
+	have great idea about what it should look like. Make a PR if you have any
+	good idea.)
+
+- **Text**
+
+	A simple prompt window where user can enter some text as input.
+
+	Rendering modes:
+	- Editor (Relative to neovim editor window)
+	- Cursor (On cursor itself)
+
+	(Currently working on split mode)
+
+- **Prompt Popup**
+
+	A popup list of elements with a prompt having fuzzy finding capabilities by
+	default.
+
+	Rendering modes:
+	- Split (In a down split)
+	- Editor (Relative to neovim editor window)
+	- Cursor (On the cursor itself)
+
+- **Prompt Preview Popup**
+
+	A popup list of elements with a prompt and preview window having fuzzy
+	finding capabilities by default.
+
+	Rendering modes:
+	- Split (In a down split)
+	- Editor (Relative to neovim editor window)
+
+	(Preview window doesn't have cursor mode currently. This is because I don't
+	have great idea about what it should look like. Make a PR if you have any
+	good idea.)
+
+## Components
+
+Popfix contains following components to build the UI:
+
+- List
+- Preview
+- Prompt
+- Sorter
+- Fuzzy Engine
+
+
+Because sorter and fuzzy engine defines how prompt popup and prompt preview
+popup would behave and hence are very extensible and customizable. Infact users
+can provide their own sorter and fuzzy engine.
+
+Other components are UI components and their working is quite obvious and
+are very customizable in terms of look and behaviour.
+
 ## API Description
-
-Popfix UI has 2 major components:
- - List
- - Preview
-
- List displays the menu.
-
- Preview displays the preview.
 
 ### How to invoke plugin
 
-Example:
-	local border_chars = {
-		TOP_LEFT = '┌',
-		TOP_RIGHT = '┐',
-		MID_HORIZONTAL = '─',
-		MID_VERTICAL = '│',
-		BOTTOM_LEFT = '└',
-		BOTTOM_RIGHT = '┘',
-	}
+Example (in most descriptive way, infact many of these options are optional):
 
-	local opts = {
-		height = 40,
-		mode = 'split',
-		data = <data-table>,
-		keymaps = <keymaps>,
-		additional_keymaps = <additional-keymaps>,
-		callbacks = {
-			select = <select-callback>,
-			close = <close-callback>
-		}
-		list = {
-			border = true,
-			numbering = true,
-			coloring = true,
-			title = 'MyTitle',
-			border_chars = border_chars
+```lua
+local border_chars = {
+	TOP_LEFT = '┌',
+	TOP_RIGHT = '┐',
+	MID_HORIZONTAL = '─',
+	MID_VERTICAL = '│',
+	BOTTOM_LEFT = '└',
+	BOTTOM_RIGHT = '┘',
+}
+
+local function select_callback(index, line)
+	-- function job here
+end
+
+local function close_callback(index, line)
+	-- function job here
+end
+
+local opts = {
+	height = 40,
+	width = 120,
+	mode = 'editor',
+	close_on_bufleave = true,
+	data = <data-table>, -- Read below how to provide this.
+	keymaps = {
+		i = {
+			['<Cr>'] = function(popup)
+				popup:close(select_callback)
+			end
 		},
-		preview = {
-			type = 'terminal'
-			border = true,
-			numbering = true,
-			coloring = true,
-			title = 'MyTitle'
+		n = {
+			['<Cr>'] = function(popup)
+				popup:close(select_callback)
+			end
 		}
 	}
+	callbacks = {
+		select = select_callback, -- automatically calls it when selection changes
+		close = close_callback, -- automatically calls it when window closes.
+	}
+	list = {
+		border = true,
+		numbering = true,
+		coloring = true,
+		title = 'MyTitle',
+		border_chars = border_chars
+	},
+	preview = {
+		type = 'terminal'
+		border = true,
+		numbering = true,
+		coloring = true,
+		title = 'MyTitle',
+		border_chars = border_chars
+	},
+	prompt = {
+		border = true,
+		numbering = true,
+		coloring = true,
+		title = 'MyTitle',
+		border_chars = border_chars
+	},
+	sorter = require'popfix.sorter'.new_fzy_native_sorter(true),
+	fuzzyEngine = require'popfix.fuzzy_engine'.new_SingleExecutionEngine()
+}
 
-	local popup = require'popfix':new(opts)
+local popup = require'popfix':new(opts)
+```
 
-### Return value
+``popup`` returned by the new function is the resource created by popfix.
+If everything works well, it returns the resource otherwise false.
 
-It returns the popup resource if popup was created successfully otherwise
-returns false.
+### Options description
 
-### Height [optional]
+list, preview, prompt, sorter, fuzzyEngine describes the components to render
+UI. (See Components section)
 
-Number of results to display in window at a time(window height).
+If sorter and fuzzyEngine is not provided, popfix provides a suitable defaults
+for it.
 
-### Mode
+Popfix manipulates the UI on basis of list, preview and prompt options. So, for
+example, if only list is provided then a Popup would render. If list and
+preview both are provided then Preview Popup would render. Similarily, if list,
+preview and prompt are provided then a Prompt Preview Popup would render.
 
-Plugin can operate in 3 modes:
+See UI possible with popfix section for reasonable combinations possible with
+popfix. Naming convention and options are non surprising.
+
+list, preview and prompt have some common attributes (all of them are optional):
+- **border** (boolean): If border should be there around corresponding window.
+- **border_chars** (table): border chars to be used for borders. See example
+	for border_chars syntax.
+- **coloring** (boolean): a different color for background window than normal.
+- **title** (string): title of window.
+- **numbering** (boolean): whether vim line number should be displayed.
+
+preview also provides an additional attribute (this is mendatory):
+- **type** (string): Defines the type of preview window to render.
+	Supported types:
+	- terminal: Preview window would be a terminal window.
+	- text: Preview window would display some text.
+	- buffer: Preview window is an existing neovim buffer.
+
+prompt also provides some additional attributes (these are optional):
+- **prompt_text** (string): Prompt command text
+- **init_text** (string): Initial text that is written in prompt when window
+	is opened.
+
+#### height [optional] [int]
+
+Height of rendered window. (Height would be divided for components internally)
+
+#### width [optional] [int]
+
+Overall width of rendered window. (Width would be divided for components
+internally)
+
+#### close_on_bufleave [optional] [boolean]
+
+Window should be closed when user leaves the buffer.
+(Default: false)
+
+#### mode [string]
+
+Defines the rendering mode:
 
 - Split
 - Editor
 - Cursor
 
-Split mode opens menu in a bottom split
+#### data [table]
 
-Editor mode opens menu in a floating window relative to editor.
+If you wanna display some list of string from lua itself then this table is an
+array of strings.
 
-Cursor mode opens menu in a floating window relative to current cursor position.
+Example: ``data = {"Hello", "World"}``
 
-### Data
+If you want to display the output of some command then, this table should be of
+format:
+```lua
+data = {
+	cmd = 'command here',
+	cwd = 'directory from which this command should be launched.',
+}
+```
 
-Data to be displayed in menu. (String table)
+#### keymaps [optional] [table]
 
+Keymaps are expressed as lua tables. Currently only normal mode and insert mode
+keymappings are supported. n represents normal mode, i represents the insert
+mode.
 
+Any lua function or string can be provided as value to key.
+Lua function have syntax:
+```lua
+function(popup)
+end
+```
+where popup is the resource that was created by new function.
 
-### Keymaps [optional]
-
-Keymaps are expressed as lua tables. Currently normal mode and insert mode
-keymappings are supported.
-
-Keymap table example:
-
-	{
-		n = {
-			['<C-q>'] = <lua-function>
-			['<C-n>'] = 'j'
-		},
-		i = {
-			['<C-c>'] = require'popfix'.close_cancelled
-		}
+For example:
+```lua
+{
+	i = {
+		['<C-n>'] = function(popup)
+			popup:select_next()
+		end
+	},
+	n = {
+		['q'] = ':q!'
 	}
-
-Any lua function or string can be provided as value
-
-Keymaps field replaces the default keymaps. (Default keymaps are used if this is
-not provided)
-
-### Additional keymaps [optional]
-
-These are also same type as keymaps. However, these are appended in keymaps list.
-i.e., After applying this resultant keymaps = original keymaps + additional keymaps
-
-### Special actions
-
-4 special lua functions are shipped for easily managing lifetime of
-popup window. These can be used to pass as keymapping value.
-
-- require'popfix'.close_cancelled
-- require'popfix'.close_selected
-- require'popfix'.select_next
-- require'popfix'.select_prev
-
-close_cancelled closes the current preview with invoking close callback as
-cancelled.
-
-close_selected closes the current preview with invoking close callback as
-selected.
-
-select_next selects the next item in list.
-
-select_prev selects the previous item in list.
+}
+```
 
 
-### Callbacks [optional]
+#### callbacks [optional]
 
 API provides 2 callbacks on which plugins can react:
 
-- select callback [optional]
-- close callback  [optional]
+- select [optional]
+- close  [optional]
 
-select callback is called after selection change event occurs.
-(i.e., cursor moves to different line)
+See example for callbacks syntax.
 
-close callback is called after popup is closed.
+The values for these callbacks are a function with syntax:
 
-Plugins can map any functions to callback with this syntax:
+```lua
+function(index, line)
+	-- process and return data for preview if there.
+end
+```
 
-	selection_changed(line_num, line_string)
-	popup_closed(line_num, line_string, selected)
+index represents the index of currently selected element, i.e., its position
+while adding.
 
-line_num is line number which is currently selected.
+line represents the string of line of currently selected element.
 
-line_string is string on line_num.
+If preview is enabled then these function should return value for preview based
+on preview type.
 
-selected is for close callback if current selection was confirmed or cancelled.
+For different preview types return value should be:
+- **terminal**
 
-### List
+	Lua table with format:
+	```lua
+	{
+		cmd = 'command here',
+		cwd = 'directory from which this command should be launched.'
+	}
+	```
+- **text**
+	```lua
+	{
+		data = {'string', 'array'}, -- A string array
+		line = 4 -- Line to be highlighted [optional]
+	}
+	```
 
-List supports 3 attributes:
+- **buffer**
+	```lua
+	{
+		filename = '/home/user/file', -- Filename of buffer
+		line = 4 -- Line to be highlighted [optional]
+	}
+	```
 
-- border [optional]
-- numbering [optional]
-- coloring [optional]
-- title [optional]
-- border_chars [optional]
+### Methods exported by popfix resource
+Every resource of popfix created by ``require'popfix'.new(opts)`` exports some
+methods that can be called with syntax: ``resource:func(param)``
 
-If border is true then list is displayed with border. [only for floating window]
+where resource is the resource returned by new function, func is the method
+which is being called and param is parameter to the function.
 
-Numbering is true then numbers are also displayed in list.
+The table shows the function exported by different resources:
 
-Coloring is true then special color(different than normal background) is
-displayed for list. [only for floating window]
+|Function|Popup|Preview Popup|Text |Prompt Popup|Prompt Preview Popup|
+|--------|:---:|:-----------:|:---:|:----------:|:------------------:|
+|**set_data**|:heavy_check_mark:|:heavy_check_mark:||:heavy_check_mark:|:heavy_check_mark:|
+|**get_current_selection**|:heavy_check_mark:|:heavy_check_mark:||:heavy_check_mark:|:heavy_check_mark:|
+|**set_prompt_text**|||:heavy_check_mark:|:heavy_check_mark:|:heavy_check_mark:|
+|**select_next**|:heavy_check_mark:|:heavy_check_mark:||:heavy_check_mark:|:heavy_check_mark:|
+|**select_prev**|:heavy_check_mark:|:heavy_check_mark:||:heavy_check_mark:|:heavy_check_mark:|
+|**close**|:heavy_check_mark:|:heavy_check_mark:|:heavy_check_mark:|:heavy_check_mark:|:heavy_check_mark:|
 
-Title represents title of list window. It would be displayed iff borders are
-active.
+If you feel any useful method is missing here, please raise a issue or submit a
+PR:smiley:.
 
-border_chars is a table that represents characters used for borders.
-If not provided then popfix provide a default single line border.
-If any of the component is missing in table if provided then it is replaced
-by a space by popfix.
+#### Method description
 
-border_char needs to have 6 components:
-- TOP_LEFT
-- TOP_RIGHT
-- MID_HORIZONTAL
-- MID_VERTICAL
-- BOTTOM_LEFT
-- BOTTOM_RIGHT
+- **set_data**
 
-All these components represents border character at location these components
-represent.
+	Syntax: ``set_data(data)``
 
+	@param data -> table : new data for resource.
 
-### Preview [optional]
+- **get_current_selection**
 
-If preview option is not provided then preview window is not displayed.
+	Syntax: ``get_current_selection() : index, line``
 
-Preview supports 4 attributes:
+	@return index -> integer : represents currently selected index
 
-- border [optional]
-- numbering [optional]
-- coloring [optional]
-- title [optional]
-- border_chars [optional]
-- type
+	@return line -> string : represents currently selected string
 
-border, numbering, coloring, title and border_chars are similar to list
-attributes and apply in similar way to preview window also. However, border and
-colors are also applied even if list is in split mode.
+- **set_prompt_text**
 
-type field can have 3 values:
-- terminal
-- text
-- buffer [Still experimental]
+	Syntax: ``set_prompt_text(text)``
 
-Return value of select callback determines the content of preview window.
+	@param text -> string : text to set to new prompt
 
-If preview type is terminal then function provided as select callback should
-return a table with attributes:
-- cmd : Command to be executed in terminal
-- cwd [optional] : Working directory in which terminal should be opened.
+- **select_next**
 
-If preview type is text then function provided as select callback should return
-a table with attributes:
-- data : text to be displayed (list(table) of strings)
-- line : line to be highlighted with different color
+	Syntax: ``select_next(callback)``
 
-If preview type is buffer then function provided as select callback should return
-a table with attributes:
-- filename : filename that should be displayed in preview.
-- line : line number that should be highlighted in file.
+	@param callback -> function : callback is called after selection change is
+	done. Callback is a function with syntax:
+	```lua
+	function(index, line)
+	end
+	```
+	If preview is enabled callback is expected to return appropriate data for
+	preview according to preview type.
+	(See callbacks section for appropriate data for preview)
+
+- **select_prev**
+
+	Syntax: ``select_prev(callabck)``
+
+	@param callback -> function : same as select_next's callback
+
+- **close**
+
+	Syntax: ``close(callback)``
+
+	@param callback -> function : callback is called when window is closed
+	properly. Callback is a function with syntax:
+	```lua
+	function(index, line)
+	```
 
 ## Some plugins based on this API
 
