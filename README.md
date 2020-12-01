@@ -113,8 +113,8 @@ Install with any plugin manager. For example with vim-plug
 	<summary>Click to see all screenshots</summary>
 	<br>
 	<img src="https://user-images.githubusercontent.com/26287448/100769832-964b9400-3422-11eb-934c-db1e7ecada08.gif">
-	</details>
 	<img src="https://user-images.githubusercontent.com/26287448/100771655-ae241780-3424-11eb-8d82-65b097bbfbbb.gif">
+	</details>
 
 	(Preview window doesn't have cursor mode currently. This is because I don't
 	have great idea about what it should look like. Make a PR if you have any
