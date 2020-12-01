@@ -12,10 +12,8 @@ extensible that many of its default behaviour can be changed.
 
 Also normal users can use this API to provide fancy UI for some common tasks.
 
+![](https://user-images.githubusercontent.com/26287448/100769832-964b9400-3422-11eb-934c-db1e7ecada08.gif)
 
-## Screenshots
-<!-- ![](https://user-images.githubusercontent.com/26287448/93617774-076ad600-f9f4-11ea-9c4e-d37019241320.gif) -->
-<!-- ![](https://user-images.githubusercontent.com/26287448/93930985-d3691b00-fd3b-11ea-9053-b699e4d36558.gif) -->
 
 ## Prerequisites
 
@@ -39,6 +37,14 @@ Install with any plugin manager. For example with vim-plug
 	- Editor (Relative to neovim editor window)
 	- Cursor (On the cursor itself)
 
+	<details>
+	<summary>Click to see all screenshots</summary>
+	<br>
+	<img src="https://user-images.githubusercontent.com/26287448/100777730-33f79100-342c-11eb-904e-9df3786e4c84.gif">
+	<img src="https://user-images.githubusercontent.com/26287448/100777113-65bc2800-342b-11eb-8d28-28a191aa2ae0.gif">
+	<img src="https://user-images.githubusercontent.com/26287448/100777492-e4b16080-342b-11eb-8f8b-16ab647bba64.gif">
+	</details>
+
 - **Preview Popup**
 	
 	A popup list of elements with a preview window that can be configured by
@@ -47,6 +53,13 @@ Install with any plugin manager. For example with vim-plug
 	Rendering modes:
 	- Split (In a down split)
 	- Editor (Relative to neovim editor window)
+
+	<details>
+	<summary>Click to see all screenshots</summary>
+	<br>
+	<img src="https://user-images.githubusercontent.com/26287448/100772505-add84c00-3425-11eb-9288-671eaf8d89ff.gif">
+	<img src="https://user-images.githubusercontent.com/26287448/100772166-49b58800-3425-11eb-95da-49e883df8d40.gif">
+	</details>
 
 	(Preview window doesn't have cursor mode currently. This is because I don't
 	have great idea about what it should look like. Make a PR if you have any
@@ -60,6 +73,13 @@ Install with any plugin manager. For example with vim-plug
 	- Editor (Relative to neovim editor window)
 	- Cursor (On cursor itself)
 
+	<details>
+	<summary>Click to see all screenshots</summary>
+	<br>
+	<img src="https://user-images.githubusercontent.com/26287448/100778573-30183e80-342d-11eb-9665-3bc8bf45a921.gif">
+	<img src="https://user-images.githubusercontent.com/26287448/100778387-f810fb80-342c-11eb-8744-474ab8996ff5.gif">
+	</details>
+
 	(Currently working on split mode)
 
 - **Prompt Popup**
@@ -72,6 +92,14 @@ Install with any plugin manager. For example with vim-plug
 	- Editor (Relative to neovim editor window)
 	- Cursor (On the cursor itself)
 
+	<details>
+	<summary>Click to see all screenshots</summary>
+	<br>
+	<img src="https://user-images.githubusercontent.com/26287448/100773857-6e126400-3427-11eb-8241-5504615ac700.gif">
+	<img src="https://user-images.githubusercontent.com/26287448/100774175-d06b6480-3427-11eb-89b2-b98d24ed4209.gif">
+	<img src="https://user-images.githubusercontent.com/26287448/100775103-d0b82f80-3428-11eb-9aae-23582a21faec.gif">
+	</details>
+
 - **Prompt Preview Popup**
 
 	A popup list of elements with a prompt and preview window having fuzzy
@@ -80,6 +108,13 @@ Install with any plugin manager. For example with vim-plug
 	Rendering modes:
 	- Split (In a down split)
 	- Editor (Relative to neovim editor window)
+
+	<details>
+	<summary>Click to see all screenshots</summary>
+	<br>
+	<img src="https://user-images.githubusercontent.com/26287448/100769832-964b9400-3422-11eb-934c-db1e7ecada08.gif">
+	</details>
+	<img src="https://user-images.githubusercontent.com/26287448/100771655-ae241780-3424-11eb-8d82-65b097bbfbbb.gif">
 
 	(Preview window doesn't have cursor mode currently. This is because I don't
 	have great idea about what it should look like. Make a PR if you have any
