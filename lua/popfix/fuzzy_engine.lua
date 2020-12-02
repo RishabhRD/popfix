@@ -94,7 +94,7 @@ function M:run_SingleExecutionEngine(opts)
 				index = #self.list
 			}
 			-- Put the line in last of UI list
-			self.manager:add(line, nil ,nil, #self.sortedList - 1)
+			self.manager:add(line, #self.sortedList)
 		else
 			-- Traverse sorted list and get the location where output text
 			-- fits with respect to its score with current prompt
@@ -110,7 +110,7 @@ function M:run_SingleExecutionEngine(opts)
 							score = score,
 							index = #self.list
 						})
-						self.manager:add(line, k-1, k-1, k-1)
+						self.manager:add(line, k)
 						return
 					end
 				end
@@ -118,7 +118,7 @@ function M:run_SingleExecutionEngine(opts)
 					score = score,
 					index = #self.list
 				})
-				self.manager:add(line, nil, nil, #self.sortedList - 1)
+				self.manager:add(line, #self.sortedList)
 			end
 		end
 	end
@@ -137,7 +137,7 @@ function M:run_SingleExecutionEngine(opts)
 							score = score,
 							index = cur
 						})
-						self.manager:add(line, k-1, k-1, k-1)
+						self.manager:add(line, k)
 						break
 					end
 				end
@@ -146,7 +146,7 @@ function M:run_SingleExecutionEngine(opts)
 						score = score,
 						index = cur
 					})
-					self.manager:add(line, nil ,nil, #self.sortedList - 1)
+					self.manager:add(line, #self.sortedList)
 				end
 			end
 		end
@@ -229,7 +229,7 @@ function M:run_SingleExecutionEngine(opts)
 					score = 0,
 					index = k
 				}
-				self.manager:add(v, nil, nil, k)
+				self.manager:add(v,k)
 			end
 		end
 	end
@@ -251,7 +251,7 @@ function M:run_SingleExecutionEngine(opts)
 				score = 0,
 				index = k
 			}
-			self.manager:add(v, nil, nil, k)
+			self.manager:add(v,k)
 		end
 	end
 	return textChanged, setData
@@ -304,7 +304,7 @@ function M:run_RepeatedExecutionEngine(opts)
 			score = 0,
 			index = #self.list
 		}
-		self.manager:add(line, nil, nil, #self.list - 1)
+		self.manager:add(line,#self.list)
 	end
 	local function textChanged(str)
 		if self.currentJob then

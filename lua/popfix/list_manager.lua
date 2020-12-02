@@ -23,7 +23,7 @@ function M:new(opts)
 	return obj
 end
 
-function M:select(lineNumber, callback, onlyRefresh)
+function M:select(lineNumber, callback)
 	if self.list.buffer == 0 or self.list.buffer == nil then
 		return
 	end
@@ -31,9 +31,6 @@ function M:select(lineNumber, callback, onlyRefresh)
 	0, -1)
 	api.nvim_buf_add_highlight(self.list.buffer, listNamespace,
 	"Visual", lineNumber - 1, 0, -1)
-	if onlyRefresh then
-		return
-	end
 	self.list:select(lineNumber)
 	local data
 	local preview = true
@@ -61,100 +58,14 @@ function M:select_next(callback)
 	if self.currentLineNumber == #self.sortedList then
 		return
 	end
-	if self.currentLineNumber == self.renderLimit then
-		self.currentLineNumber = self.currentLineNumber + 1
-		self.renderLimit = self.renderLimit + 1
-		local string =
-		self.originalList[self.sortedList[self.currentLineNumber].index]
-		vim.schedule(function()
-			self.list:appendLine(string)
-			self:select(self.currentLineNumber, callback)
-		end)
-	else
-		self.currentLineNumber = self.currentLineNumber + 1
-		vim.schedule(function()
-			self:select(self.currentLineNumber, callback)
-		end)
-	end
+	self.currentLineNumber = self.currentLineNumber + 1
+	self:select(self.currentLineNumber, callback)
 end
 
 function M:select_prev(callback)
 	if self.currentLineNumber == 1 then return end
 	self.currentLineNumber = self.currentLineNumber - 1
 	self:select(self.currentLineNumber, callback)
-end
-
-function M:add(line, starting, ending, highlightLine)
-	local add = false
-	local highlight = true
-	local select = false
-	if self.currentLineNumber == nil then
-		self.currentLineNumber = 1
-		select = true
-	end
-	if self.currentPromptText == '' then
-		highlight = false
-	end
-	if self.linesRendered < self.renderLimit then
-		add = true
-	end
-	if ((not starting) or (not ending)) then
-		if not add then return end
-		self.linesRendered = self.linesRendered + 1
-		local highlightTable
-		if highlight then
-			highlightTable = self.highlightingFunction(self.currentPromptText,
-			line, self.caseSensitive)
-		end
-		local currentLineNumber = self.currentLineNumber
-		vim.schedule(function()
-			self.list:appendLine(line)
-			if select then
-				self:select(currentLineNumber)
-			else
-				self:select(currentLineNumber, nil, true)
-			end
-			if highlight then
-				for _, col in pairs(highlightTable) do
-					api.nvim_buf_add_highlight(self.list.buffer, identifier,
-					"Identifier", highlightLine, col - 1, col)
-				end
-			end
-		end)
-		return
-	end
-	if starting >= self.renderLimit then
-		return
-	end
-	if add then
-		self.linesRendered = self.linesRendered + 1
-	end
-	local highlightTable =
-	self.highlightingFunction(self.currentPromptText, line, self.caseSensitive)
-	if self.currentLineNumber == nil then
-		self.currentLineNumber = 1
-		select = true
-	elseif self.currentLineNumber >= starting then
-		select = false
-	else
-		select = true
-	end
-	local currentLineNumber = self.currentLineNumber
-	vim.schedule(function()
-		if not add then
-			self.list:clearLast()
-		end
-		self.list:addLine(line, starting, ending)
-		if select then
-			self:select(currentLineNumber)
-		else
-			self:select(currentLineNumber, nil ,true)
-		end
-		for _, col in pairs(highlightTable) do
-			api.nvim_buf_add_highlight(self.list.buffer, identifier,
-			"Identifier", highlightLine, col - 1, col)
-		end
-	end)
 end
 
 function M:clear()
@@ -168,7 +79,36 @@ function M:clear()
 	end)
 end
 
-function M:close()
+-- index will be 1 based
+function M:add(line, index)
+	-- condition for selection
+	local select = false
+	if self.currentLineNumber == nil then
+		self.currentLineNumber = 1
+		select = true
+	elseif index <= self.currentLineNumber then
+		select = true
+	end
+	-- condition for highlight
+	local highlight = nil
+	if self.currentPromptText ~= '' then
+		highlight = self.highlightingFunction(self.currentPromptText, line,
+		self.caseSensitive)
+	end
+	-- now just render it
+	local currentLineNumber = self.currentLineNumber
+	vim.schedule(function()
+		self.list:addLine(line, index - 1, index - 1)
+		if highlight then
+			for _, col in pairs(highlight) do
+				api.nvim_buf_add_highlight(self.list.buffer, identifier,
+				"Identifier", index - 1, col - 1, col)
+			end
+		end
+		if select then
+			self:select(currentLineNumber)
+		end
+	end)
 end
 
 return M
