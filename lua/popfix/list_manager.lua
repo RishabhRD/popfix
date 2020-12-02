@@ -17,7 +17,8 @@ function M:new(opts)
 		renderLimit = opts.renderLimit,
 		linesRendered = 0,
 		highlightingFunction = opts.highlightingFunction,
-		caseSensitive = opts.caseSensitive
+		caseSensitive = opts.caseSensitive,
+		currentlyDisplayed = 0
 	}
 	setmetatable(obj, self)
 	return obj
@@ -58,6 +59,18 @@ function M:select_next(callback)
 	if self.currentLineNumber == #self.sortedList then
 		return
 	end
+	if self.currentLineNumber == self.currentlyDisplayed then
+		local line = self.originalList
+		[self.sortedList[self.currentLineNumber + 1].index]
+		self.list:addLine(line, self.currentlyDisplayed, self.currentlyDisplayed)
+		local highlight = self.highlightingFunction(self.currentPromptText,
+		line, false)
+		for _, col in pairs(highlight) do
+			api.nvim_buf_add_highlight(self.list.buffer, identifier,
+			"Identifier", self.currentlyDisplayed, col - 1, col)
+		end
+		self.currentlyDisplayed = self.currentlyDisplayed + 1
+	end
 	self.currentLineNumber = self.currentLineNumber + 1
 	self:select(self.currentLineNumber, callback)
 end
@@ -70,6 +83,7 @@ end
 
 function M:clear()
 	self.currentLineNumber = nil
+	self.currentlyDisplayed = 0
 	self.linesRendered = 0
 	self.action:select(nil, nil)
 	vim.schedule(function()
@@ -79,8 +93,28 @@ function M:clear()
 	end)
 end
 
--- index will be 1 based
+--- add the elements to for rendering. However, we are doing lazy rendering
+--- to not consume much processing capability in next gui schedule in an
+--- intense process. That's why list and sortedList are a pre-requesite of it.
+--- @param line string : the line which needs to be added
+--- @param index number : Index at which addition is gonna happen
+--- Note: Index in 1 based.
 function M:add(line, index)
+	-- condition for adding the elements
+	-- add == nil means just return
+	-- add == false means add but delete the last of list
+	-- add == true means truly add
+	local add = nil
+	if index > self.renderLimit then
+		add = nil
+	else
+		if self.currentlyDisplayed < self.renderLimit then
+			add = true
+		else
+			add = false
+		end
+	end
+	if add == nil then return end
 	-- condition for selection
 	local select = false
 	if self.currentLineNumber == nil then
@@ -96,8 +130,14 @@ function M:add(line, index)
 		self.caseSensitive)
 	end
 	-- now just render it
+	if add == true then
+		self.currentlyDisplayed = self.currentlyDisplayed + 1
+	end
 	local currentLineNumber = self.currentLineNumber
 	vim.schedule(function()
+		if add == false then
+			self.list:clearLast()
+		end
 		self.list:addLine(line, index - 1, index - 1)
 		if highlight then
 			for _, col in pairs(highlight) do

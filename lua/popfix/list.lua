@@ -92,20 +92,6 @@ function list:addLine(data, starting, ending)
 	end
 end
 
-function list:appendLine(data)
-	local numData = self.numData
-	local buf = self.buffer
-	if not buf then return end
-	if buf == 0 then return end
-	if vim.fn.bufexists(buf) then
-		api.nvim_buf_set_option(buf, 'modifiable', true)
-		api.nvim_buf_set_lines(buf, numData, -1, false, {data})
-		api.nvim_buf_set_option(buf, 'modifiable', false)
-	end
-	self.numData = self.numData + 1
-end
-
-
 function list:setData(data, starting, ending)
 	self:clear()
 	if not starting then starting = 0 end
@@ -158,7 +144,7 @@ function list:clearLast()
 	local numData = api.nvim_buf_line_count(self.buffer)
 	if vim.fn.bufexists(self.buffer) then
 		api.nvim_buf_set_option(self.buffer, 'modifiable', true)
-		api.nvim_buf_set_lines(self.buffer, numData - 1, numData, false, {})
+		api.nvim_buf_set_lines(self.buffer, numData - 2, numData - 1, false, {})
 		api.nvim_buf_set_option(self.buffer, 'modifiable', false)
 	end
 end
