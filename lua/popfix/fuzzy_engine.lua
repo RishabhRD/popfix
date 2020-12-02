@@ -298,21 +298,22 @@ function M:run_RepeatedExecutionEngine(opts)
 	opts.sorter = nil
 	self.base_cmd = opts.data.cmd
 	self.cwd = opts.data.cwd or vim.fn.getcwd()
+	self.numData = 0
 	local function addData(_, line)
-		self.list[#self.list + 1] = line
-		self.sortedList[#self.list] = {
+		self.numData = self.numData + 1
+		self.list[self.numData] = line
+		self.sortedList[self.numData] = {
 			score = 0,
 			index = #self.list
 		}
-		self.manager:add(line,#self.list)
+		self.manager:add(line,self.numData)
 	end
 	local function textChanged(str)
 		if self.currentJob then
 			self.currentJob:shutdown()
 			self.currentJob = nil
 		end
-		clear(self.sortedList)
-		clear(self.list)
+		self.numData = 0
 		if self.base_cmd == nil then return end
 		self.manager:clear()
 		self.currentPromptText = str

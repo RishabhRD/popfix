@@ -15,10 +15,11 @@ function M:new(opts)
 		preview = opts.preview,
 		action = opts.action,
 		renderLimit = opts.renderLimit,
-		linesRendered = 0,
 		highlightingFunction = opts.highlightingFunction,
 		caseSensitive = opts.caseSensitive,
-		currentlyDisplayed = 0
+		currentlyDisplayed = 0,
+		linesRendered = 0,
+		numData = 0
 	}
 	setmetatable(obj, self)
 	return obj
@@ -56,7 +57,7 @@ end
 
 -- lazy rendering while next selection
 function M:select_next(callback)
-	if self.currentLineNumber == #self.sortedList then
+	if self.currentLineNumber == self.numData then
 		return
 	end
 	if self.currentLineNumber == self.currentlyDisplayed then
@@ -85,6 +86,7 @@ function M:clear()
 	self.currentLineNumber = nil
 	self.currentlyDisplayed = 0
 	self.linesRendered = 0
+	self.numData = 0
 	self.action:select(nil, nil)
 	vim.schedule(function()
 		self.list:clear()
@@ -104,6 +106,7 @@ function M:add(line, index)
 	-- add == nil means just return
 	-- add == false means add but delete the last of list
 	-- add == true means truly add
+	self.numData = self.numData + 1
 	local add = nil
 	if index > self.renderLimit then
 		add = nil
