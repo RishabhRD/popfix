@@ -57,6 +57,8 @@ function M:run_SingleExecutionEngine(opts)
 	self.manager = opts.manager
 	self.currentPromptText = opts.currentPromptText
 	self.sorter = opts.sorter
+	self.numData = 0
+	self.sortedNumData = 0
 
 
 	-- Additional initilaization job
@@ -81,7 +83,8 @@ function M:run_SingleExecutionEngine(opts)
 
 	local function addData(_, line)
 		if not self.list then return end
-		self.list[#self.list + 1] = line
+		self.numData = self.numData + 1
+		self.list[self.numData] = line
 		-- if there is any existing timer then it will do your job.
 		-- Don't worry then.
 		if self.promptTimer then
@@ -89,12 +92,13 @@ function M:run_SingleExecutionEngine(opts)
 		end
 		-- If there is no text in prompt then just add the things in sortedList
 		if self.currentPromptText == '' then
-			self.sortedList[#self.sortedList + 1] = {
+			self.sortedNumData = self.sortedNumData + 1
+			self.sortedList[self.sortedNumData] = {
 				score = 0,
-				index = #self.list
+				index = self.numData
 			}
 			-- Put the line in last of UI list
-			self.manager:add(line, #self.sortedList)
+			self.manager:add(line, self.sortedNumData)
 		else
 			-- Traverse sorted list and get the location where output text
 			-- fits with respect to its score with current prompt
@@ -106,19 +110,21 @@ function M:run_SingleExecutionEngine(opts)
 				line, self.caseSensitive)
 				for k,v in ipairs(self.sortedList) do
 					if score > v.score then
+						self.sortedNumData = self.sortedNumData + 1
 						table.insert(self.sortedList, k, {
 							score = score,
-							index = #self.list
+							index = self.numData
 						})
 						self.manager:add(line, k)
 						return
 					end
 				end
+				self.sortedNumData = self.sortedNumData + 1
 				table.insert(self.sortedList, {
 					score = score,
-					index = #self.list
+					index = self.numData
 				})
-				self.manager:add(line, #self.sortedList)
+				self.manager:add(line, self.sortedNumData)
 			end
 		end
 	end
@@ -133,6 +139,7 @@ function M:run_SingleExecutionEngine(opts)
 				for k,v in ipairs(self.sortedList) do
 					if score > v.score then
 						found = true
+						self.sortedNumData = self.sortedNumData + 1
 						table.insert(self.sortedList, k, {
 							score = score,
 							index = cur
@@ -142,11 +149,12 @@ function M:run_SingleExecutionEngine(opts)
 					end
 				end
 				if not found then
+					self.sortedNumData = self.sortedNumData + 1
 					table.insert(self.sortedList, {
 						score = score,
 						index = cur
 					})
-					self.manager:add(line, #self.sortedList)
+					self.manager:add(line, self.sortedNumData)
 				end
 			end
 		end
@@ -160,7 +168,7 @@ function M:run_SingleExecutionEngine(opts)
 		self.promptTimer:close()
 		self.promptTimer = nil
 		local tmp = self.startingIndex
-		local len = #self.list
+		local len = self.numData
 		len = len - self.startingIndex + 1
 		if len > self.maxJob then
 			appendAggregateData(tmp, tmp + self.maxJob - 1)
@@ -168,12 +176,12 @@ function M:run_SingleExecutionEngine(opts)
 			self.promptTimer = uv.new_timer()
 			self.promptTimer:start(self.timeInterval, 0, fillPartialPromptData)
 		else
-			appendAggregateData(tmp, #self.list)
-			self.startingIndex = #self.list + 1
+			appendAggregateData(tmp, self.numData)
+			self.startingIndex = self.numData + 1
 		end
 	end
 	-- TODO: what if some callback done by timer is executing.
-	-- (Race condition needs to be solved)
+	-- (Race condition needs to be solved)... Really?
 	local function textChanged(prompt)
 		if self.currentPromptText == '' and prompt == '' then
 			return
@@ -188,15 +196,16 @@ function M:run_SingleExecutionEngine(opts)
 		self.startingIndex = 1
 		self.manager:clear()
 		clear(self.sortedList)
-		if #self.list > self.maxJob then
+		self.sortedNumData = 0
+		if self.numData > self.maxJob then
 			appendAggregateData(self.startingIndex, self.startingIndex +
 			self.maxJob - 1)
 			self.startingIndex = self.startingIndex + self.maxJob
 			self.promptTimer = uv.new_timer()
 			self.promptTimer:start(self.timeInterval, 0, fillPartialPromptData)
 		else
-			appendAggregateData(self.startingIndex, #self.list)
-			self.startingIndex = #self.list + 1
+			appendAggregateData(self.startingIndex, self.numData)
+			self.startingIndex = self.numData + 1
 		end
 	end
 	local function setData(data)
@@ -205,6 +214,8 @@ function M:run_SingleExecutionEngine(opts)
 			self.job = nil
 		end
 		self.manager:clear()
+		self.numData = 0
+		self.sortedNumData = 0
 		clear(self.list)
 		clear(self.sortedList)
 		if data.cmd then
@@ -224,6 +235,8 @@ function M:run_SingleExecutionEngine(opts)
 			self.job:start()
 		else
 			for k,v in ipairs(self.data) do
+				self.sortedNumData = self.sortedNumData + 1
+				self.numData = self.numData + 1
 				self.list[k] = v
 				self.sortedList[k] = {
 					score = 0,
@@ -246,6 +259,8 @@ function M:run_SingleExecutionEngine(opts)
 		self.job:start()
 	else
 		for k,v in ipairs(self.data) do
+			self.sortedNumData = self.sortedNumData + 1
+			self.numData = self.numData + 1
 			self.list[k] = v
 			self.sortedList[k] = {
 				score = 0,
@@ -276,6 +291,8 @@ function M:close_SingleExecutionEngine()
 			self.job = nil
 		end
 	end
+	self.numData = 0
+	self.sortedNumData = 0
 	clear(self.list)
 	clear(self.sortedList)
 	self.list = nil
@@ -304,7 +321,7 @@ function M:run_RepeatedExecutionEngine(opts)
 		self.list[self.numData] = line
 		self.sortedList[self.numData] = {
 			score = 0,
-			index = #self.list
+			index = self.numData
 		}
 		self.manager:add(line,self.numData)
 	end
