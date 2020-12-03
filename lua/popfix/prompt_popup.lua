@@ -2,6 +2,7 @@ local M = {}
 M.__index = M
 
 
+local util = require'popfix.util'
 local sorter = require'popfix.sorter'
 local api = vim.api
 local manager = require'popfix.list_manager'
@@ -220,6 +221,22 @@ function M:new(opts)
 		obj.sorter = sorter:new_fzy_native_sorter(false)
 	end
 	autocmd.addCommand(obj.prompt.buffer, nested_autocmds, obj)
+	-- free the resource on error
+	local error_handler = function(err, line)
+		if err then
+			vim.schedule(function()
+				obj:close(function()
+					util.printError(line)
+				end)
+			end)
+		elseif line then
+			vim.schedule(function()
+				obj:close(function()
+					util.printError(line)
+				end)
+			end)
+		end
+	end
 	obj.manager = manager:new({
 		list = obj.list,
 		action = obj.action,
@@ -239,6 +256,7 @@ function M:new(opts)
 		sorter = obj.sorter,
 		manager = obj.manager,
 		currentPromptText = obj.prompt:getCurrentPromptText(),
+		error_handler = error_handler,
 	})
 	obj._set_data = setData
 	obj.prompt:registerTextChanged(textChanged)

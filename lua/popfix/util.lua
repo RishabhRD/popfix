@@ -27,8 +27,15 @@ local function p(t)
 	print(vim.inspect(t))
 end
 
+local function printError(msg)
+    vim.cmd('echohl ErrorMsg')
+    vim.cmd(string.format([[echomsg '%s']],msg))
+    vim.cmd('echohl None')
+end
+
 return {
 	split = split,
 	getArgs = getArgs,
-	p = p
+	p = p,
+	printError = printError
 }

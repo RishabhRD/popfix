@@ -59,6 +59,7 @@ function M:run_SingleExecutionEngine(opts)
 	self.sorter = opts.sorter
 	self.numData = 0
 	self.sortedNumData = 0
+	self.error_handler = opts.error_handler
 
 
 	-- Additional initilaization job
@@ -231,6 +232,9 @@ function M:run_SingleExecutionEngine(opts)
 				on_exit = function()
 					self.job = nil
 				end,
+				on_stderr = function(err, line)
+					self.error_handler(err, line)
+				end
 			}
 			self.job:start()
 		else
@@ -255,6 +259,9 @@ function M:run_SingleExecutionEngine(opts)
 			on_exit = function()
 				self.job = nil
 			end,
+			on_stderr = function(err, line)
+				self.error_handler(err, line)
+			end
 		}
 		self.job:start()
 	else
@@ -275,7 +282,7 @@ end
 function M:new_SingleExecutionEngine()
 	return self:new({
 		run = self.run_SingleExecutionEngine,
-		close = self.close_SingleExecutionEngine
+		close = self.close_SingleExecutionEngine,
 	})
 end
 

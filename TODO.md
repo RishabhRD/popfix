@@ -33,6 +33,7 @@
 - Preview is not setting right data from prompt preview popup
 
 ### Currently working on
+close_on_error and error message display when job produces an error.
 
 
 ### Seems hard
