@@ -50,11 +50,11 @@ end
 local function popup_editor(self, opts)
 	local editorWidth = api.nvim_get_option('columns')
 	local editorHeight = api.nvim_get_option("lines")
-	opts.list.height = opts.height or math.ceil((editorHeight * 0.8 - 4)) - 1
+	opts.list.height = opts.height or math.ceil((editorHeight * 0.9 - 4)) - 1
 	opts.height = opts.list.height
 	opts.preview.height = opts.list.height + 1
 	if 2 * editorHeight > editorWidth then
-		opts.list.height = opts.height or math.ceil((editorHeight * 0.8 - 4) / 2)
+		opts.list.height = opts.height or math.ceil((editorHeight * 0.9 - 4) / 2)
 	end
 	if opts.height >= api.nvim_get_option('lines') - 4 then
 		print('no enough space to draw popup')
@@ -63,15 +63,15 @@ local function popup_editor(self, opts)
 	if opts.width then
 		opts.list.width = math.floor(opts.width / 2)
 	else
-		opts.list.width = math.ceil(editorWidth * 0.8 / 2)
-		opts.width = math.ceil(editorWidth * 0.8) + 1
+		opts.list.width = math.ceil(editorWidth * 0.85 / 2)
+		opts.width = math.ceil(editorWidth * 0.85) + 1
 	end
 	if opts.width >= api.nvim_get_option('columns') - 4 then
 		print('no enough space to draw popup')
 		return
 	end
 	opts.prompt.list_border = opts.list.border
-	opts.list.row = math.ceil((editorHeight - opts.list.height) / 2 - 1)
+	opts.list.row = math.ceil((editorHeight - opts.list.height) / 2 + 1)
 	opts.list.col = math.ceil((editorWidth - 2 * opts.list.width) / 2)
 	opts.prompt.width = opts.list.width
 	opts.prompt.row = opts.list.row - 1

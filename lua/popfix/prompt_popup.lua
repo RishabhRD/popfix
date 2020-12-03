@@ -108,7 +108,9 @@ local function popup_editor(self, opts)
 		print('no enough space to draw popup')
 		return
 	end
-	opts.list.width = opts.width or math.ceil(editorWidth * 0.8)
+	local percent = opts.list.height / editorHeight
+	local newWidth = percent * editorWidth
+	opts.list.width = opts.width or math.ceil(newWidth)
 	if opts.list.width >= api.nvim_get_option('columns') - 4 then
 		print('no enough space to draw popup')
 		return
