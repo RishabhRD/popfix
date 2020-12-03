@@ -35,21 +35,14 @@ function M:select(lineNumber, callback)
 	"Visual", lineNumber - 1, 0, -1)
 	self.list:select(lineNumber)
 	local data
-	local preview = true
-	local currentIndex = self.action:getCurrentIndex()
-	if currentIndex and currentIndex == self.sortedList[lineNumber].index then
-		preview = false
-	end
 	if self.sortedList[lineNumber] then
 		data = self.action:select(self.sortedList[lineNumber].index,
 		self.list:get(lineNumber - 1), callback)
 	end
-	if preview then
-		if data then
-			if self.preview then
-				if data ~= nil then
-					self.preview:writePreview(data)
-				end
+	if data then
+		if self.preview then
+			if data ~= nil then
+				self.preview:writePreview(data)
 			end
 		end
 	end

@@ -27,12 +27,12 @@
      (like execute job on each click)
 - Add a repeated execution handler(good for very large and intense process
 	because single execution fuzzy engine is not fully async)
-
-### Currently working on
-- check if preview is working fine. I guess there are some edge cases for
   prompt preview while typing I guess it is not behaving well.
   - It seems that >= in add function of  manager is wrong and this needs to be
     corrected.  Check that once when working in this problem.
+- Preview is not setting right data from prompt preview popup
+
+### Currently working on
 
 
 ### Seems hard
