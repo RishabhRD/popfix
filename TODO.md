@@ -9,6 +9,12 @@
 - memory investigation
 - maxJob dynamically change over time
 - export write preview method for resources
+- native fzy engine to be more robust when closing
+- We should have some coloring independence for user adaption.
+- native sorter is not that stable for the time being. It crashes while closing
+  between doing big task
+- Closing of every resource should be very careful work.
+- Some thing is happening while typing. Check type handler.
 
 
 ### To test
@@ -31,9 +37,10 @@
   - It seems that >= in add function of  manager is wrong and this needs to be
     corrected.  Check that once when working in this problem.
 - Preview is not setting right data from prompt preview popup
+- close_on_error and error message display when job produces an error.
+- buffer mode of preview
 
 ### Currently working on
-close_on_error and error message display when job produces an error.
 
 
 ### Seems hard

@@ -5,11 +5,6 @@ local preview = {}
 
 local previewNamespace = api.nvim_create_namespace('popfix.preview')
 
-local function fileExists(name)
-	local f=io.open(name,"r")
-	if f~=nil then io.close(f) return true else return false end
-end
-
 local function isCurrentJobRunning(self)
 	if self.currentTerminalJob == nil then return false end
 	return vim.fn.jobwait({self.currentTerminalJob}, 0)[1] == -1
@@ -57,11 +52,10 @@ function preview:new(opts)
 	local initial = {}
 	initial.currentTerminalJob = nil
 	initial.type = opts.type
-	if opts.type == 'buffer' then
-		initial.buffers = {}
-	end
 	initial.window = win_buf.win
 	initial.buffer = win_buf.buf
+	initial.coloring = opts.coloring
+	initial.numbering = opts.numbering
 	if opts.numbering == nil then opts.numbering = false end
 	if opts.coloring == nil or opts.coloring == false then
 		api.nvim_win_set_option(initial.window, 'winhl', 'Normal:PreviewNormal')
@@ -75,6 +69,8 @@ function preview:new(opts)
 end
 
 function preview:writePreview(data)
+	local currentBuffer = api.nvim_win_get_buf(self.window)
+	api.nvim_buf_clear_namespace(currentBuffer, previewNamespace, 0, -1)
 	if self.type == 'terminal' then
 		data.cmd = data.cmd or {}
 		local opts = {
@@ -95,67 +91,39 @@ function preview:writePreview(data)
 			"Visual", data.line - 1, 0, -1)
 		end
 	elseif self.type == 'buffer' then
-		local cur_win = api.nvim_get_current_win()
-		local jumpString = string.format('noautocmd lua vim.api.nvim_set_current_win(%s)', self.window)
-		vim.cmd(jumpString)
-		if self.buffers[data.filename] then
-			api.nvim_win_set_buf(self.window, self.buffers[data.filename].bufnr)
-			api.nvim_buf_add_highlight(self.buffers[data.filename].bufnr, previewNamespace,
+		if data.bufnr == nil then
+			data.bufnr = self.buffer
+		end
+		api.nvim_win_set_buf(self.window, data.bufnr)
+		if data.line then
+			api.nvim_buf_add_highlight(data.bufnr, previewNamespace,
 			"Visual", data.line - 1, 0, -1)
-			api.nvim_win_set_option(self.window, 'number', self.numbering)
-		else
-			if fileExists(data.filename) then
-				local buf
-				if vim.fn.bufloaded(data.filename) == 1 then
-					buf = vim.fn.bufadd(data.filename)
-					self.buffers[data.filename] = {
-						bufnr = buf,
-						loaded = true
-					}
-				else
-					buf = vim.fn.bufadd(data.filename)
-					self.buffers[data.filename] = {
-						bufnr = buf,
-						loaded = false
-					}
-				end
-				api.nvim_win_set_buf(self.window, buf)
-				api.nvim_buf_add_highlight(buf, previewNamespace,
-				"Visual", data.line - 1, 0, -1)
-				api.nvim_win_set_option(self.window, 'number', self.numbering)
-			else
-				api.nvim_win_set_buf(self.window, self.buffer)
-			end
 		end
-		if data.line ~= nil then
-			vim.cmd(string.format('norm %sGzt2k', data.line))
-		end
-		jumpString = string.format('noautocmd lua vim.api.nvim_set_current_win(%s)', cur_win)
-		vim.cmd(jumpString)
-		--TODO: fileself.type is not working
-		-- vim.cmd([[doautocmd fileself.typedetect BufRead ]] .. data.filename)
 	end
+	if self.numbering then
+		api.nvim_win_set_option(self.window, 'number', true)
+	end
+	if not self.coloring then
+		api.nvim_win_set_option(self.window, 'winhl', 'Normal:PreviewNormal')
+	end
+
 end
 
 
 function preview:close()
 	stopCurrentJob(self)
 	local buf = self.buffer
+	local win = self.window
 	-- TODO: I can't believe it but it is taking one more tick to close.
 	vim.schedule(function()
+		local currentBuffer = api.nvim_win_get_buf(self.window)
+		api.nvim_buf_clear_namespace(currentBuffer, previewNamespace, 0, -1)
+		api.nvim_win_set_buf(win,buf)
 		vim.cmd(string.format('bwipeout! %s', buf))
 	end)
 	self.buffer = nil
 	self.window = nil
 	self.type = nil
-	if self.buffers then
-		for _, buffer in pairs(self.buffers) do
-			if not buffer.loaded then
-				vim.cmd(string.format('bdelete! %s', buffer.bufnr))
-			end
-		end
-		self.buffers = nil
-	end
 end
 
 return preview
