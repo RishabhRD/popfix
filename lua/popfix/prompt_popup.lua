@@ -180,6 +180,7 @@ function M:new(opts)
 		print 'nil data'
 		return false
 	end
+	obj.close_on_error = opts.close_on_error
 	opts.list = opts.list or {}
 	opts.prompt.search_type = opts.prompt.search_type or 'plain'
 	opts.prompt.handlerInstance = obj
@@ -224,17 +225,21 @@ function M:new(opts)
 	-- free the resource on error
 	local error_handler = function(err, line)
 		if err then
-			vim.schedule(function()
-				obj:close(function()
-					util.printError(line)
+			if obj.close_on_error then
+				vim.schedule(function()
+					obj:close(function()
+						util.printError(line)
+					end)
 				end)
-			end)
+			end
 		elseif line then
-			vim.schedule(function()
-				obj:close(function()
-					util.printError(line)
+			if obj.close_on_error then
+				vim.schedule(function()
+					obj:close(function()
+						util.printError(line)
+					end)
 				end)
-			end)
+			end
 		end
 	end
 	obj.manager = manager:new({

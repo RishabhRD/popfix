@@ -122,6 +122,7 @@ function M:new(opts)
 	self.__index = self
 	local obj = {}
 	setmetatable(obj, self)
+	obj.close_on_error = opts.close_on_error
 	if opts.data == nil then
 		print "nil data"
 		return false
@@ -214,6 +215,25 @@ function M:set_data(data)
 				--TODO: is doing nil doesn't leak resources
 				self.job = nil
 			end,
+			on_stderr = function(err, line)
+				if err then
+					if self.close_on_error then
+						vim.schedule(function()
+							self:close(function()
+								util.printError(line)
+							end)
+						end)
+					end
+				elseif line then
+					if self.close_on_error then
+						vim.schedule(function()
+							self:close(function()
+								util.printError(line)
+							end)
+						end)
+					end
+				end
+			end
 		}
 		self.job:start()
 	else
