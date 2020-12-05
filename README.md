@@ -365,7 +365,7 @@ For different preview types return value should be:
 - **buffer**
 	```lua
 	{
-		filename = '/home/user/file', -- Filename of buffer
+		bufnr = 0, -- Current buffer is represented by 0
 		line = 4 -- Line to be highlighted [optional]
 	}
 	```

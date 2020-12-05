@@ -116,7 +116,7 @@ function preview:close()
 	local win = self.window
 	-- TODO: I can't believe it but it is taking one more tick to close.
 	vim.schedule(function()
-		local currentBuffer = api.nvim_win_get_buf(self.window)
+		local currentBuffer = api.nvim_win_get_buf(win)
 		api.nvim_buf_clear_namespace(currentBuffer, previewNamespace, 0, -1)
 		api.nvim_win_set_buf(win,buf)
 		vim.cmd(string.format('bwipeout! %s', buf))
