@@ -202,7 +202,7 @@ function M:new(opts)
 	if opts.sorter then
 		obj.sorter = opts.sorter
 	else
-		obj.sorter = sorter:new_fzy_native_sorter(false)
+		obj.sorter = sorter:new_fzy_sorter(false)
 	end
 	-- free the resource on error
 	local error_handler = function(err, line)

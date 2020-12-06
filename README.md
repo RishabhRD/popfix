@@ -448,13 +448,13 @@ Sorter provides the sorting algorithm, filter algorithm and highlighting
 algorithm.
 
 For using builtin sorters:
-- fzy-native (default)
+- fzy-native
 
 	```lua
 	require'popfix.sorter'.new_fzy_native_sorter(case_sensitive)
 	```
 
-- fzy
+- fzy (default)
 
 	```lua
 	require'popfix.sorter'.new_fzy_sorter(case_sensitive)
