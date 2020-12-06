@@ -565,6 +565,9 @@ replacement is needed). index represents the index of line in sorted list.
 
 ## Some plugins built upon popfix
 
+- https://github.com/RishabhRD/nvim-finder
+	A fuzzy finder written in pure lua and aims to be responsive even
+	for big intense jobs.
 - https://github.com/RishabhRD/nvim-lsputils
 	This plugin provides comfortable UI for LSP actions(code fix, references)
 	for neovim 0.5 built-in LSP client.
