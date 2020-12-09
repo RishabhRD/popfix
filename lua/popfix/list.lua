@@ -4,7 +4,16 @@ local M = {}
 M.__index = M
 
 local function setLines(buffer, first, last, data)
+	api.nvim_buf_set_option(buffer, 'modifiable', true)
 	api.nvim_buf_set_lines(buffer, first, last, false, data)
+	api.nvim_buf_set_option(buffer, 'modifiable', false)
+end
+
+local function isClosed(self)
+	if self.numData == nil then
+		return true
+	end
+	return false
 end
 
 local function createObject(self)
@@ -149,7 +158,7 @@ local function addNextElement(self, ele)
 end
 
 local function _add(self, ele)
-	if not self.numData then return end
+	if isClosed(self) then return end
 	local isRealElementEntered = checkRealElementEntered(self)
 	if not isRealElementEntered then
 		replaceFirstElement(self, ele)
@@ -180,7 +189,7 @@ function M:close()
 end
 
 local function _clear(self)
-	if self.numData == nil then return end
+	if isClosed(self) then return end
 	setLines(self.buffer, 0, -1, {})
 	self.numData = 1
 	setRealElementEntered(self, nil)
@@ -189,6 +198,22 @@ end
 function M:clear()
 	vim.schedule(function()
 		_clear(self)
+	end)
+end
+
+local function _removeLast(self)
+	if isClosed(self) then return end
+	if self.numData == 1 then
+		self:clear()
+	else
+		setLines(self.buffer, self.numData - 1, self.numData, {})
+		self.numData = self.numData - 1
+	end
+end
+
+function M:removeLast()
+	vim.schedule(function()
+		_removeLast(self)
 	end)
 end
 

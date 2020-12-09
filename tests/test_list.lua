@@ -50,6 +50,7 @@ function M:close()
 end
 
 function M:removeLast()
+	if self.numData == nil then return end
 	if self.numData == 1 then
 		self:clear()
 	else

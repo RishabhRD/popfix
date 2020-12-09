@@ -104,6 +104,15 @@ local function addingOneElementAfterFullyRemovingElements()
 	testList:close()
 end
 
+local function addElementAfterClosing()
+	local testList = require'test_list':new({})
+	testList:add('first')
+	testList:add('second')
+	testList:removeLast()
+	testList:close()
+	testList:removeLast()
+end
+
 describe('Popfix:', function()
 	it('new_list_size', newListSizeTest)
 	it('add first list element should result in size 1', addFirstListElement)
@@ -116,4 +125,5 @@ describe('Popfix:', function()
 	it('size of list after removing element', sizeOfListAfterRemovingElement)
 	it('size of list after fully removing element', sizeOfListAfterFullyRemovingElement)
 	it('adding one element after fully removing elements', addingOneElementAfterFullyRemovingElements)
+	it('removing last element from list after closing', addElementAfterClosing)
 end)
