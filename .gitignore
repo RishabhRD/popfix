@@ -1,1 +1,4 @@
 todo
+neovim
+neovim/*
+.fdignore

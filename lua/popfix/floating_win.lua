@@ -1,3 +1,4 @@
+local M = {}
 local api = vim.api
 local autocmd = require'popfix.autocmd'
 
@@ -10,14 +11,15 @@ local default_border_chars = {
 	BOTTOM_RIGHT = '┘',
 }
 
-local function addDefaultWindowOpts(opts)
+local function addDefaultWindowOpts(opts, focusable)
 	opts.style = "minimal"
+	focusable = focusable
 end
 
 local function createFloatingWindow(opts, focusable)
 	local buffer = api.nvim_create_buf(false, true)
 	addDefaultWindowOpts(opts, focusable)
-	local window = api.nvim_open_win(buf, false, opts)
+	local window = api.nvim_open_win(buffer, false, opts)
 	return window, buffer
 end
 
@@ -71,15 +73,15 @@ end
 
 local function fillBorderData(borderBuffer, width, height, title, chars)
 	local topLine = createBorderTopLine(chars.MID_HORIZONTAL, title, width)
-	local border_lines = { border_chars.TOP_LEFT.. topLine ..
-	border_chars.TOP_RIGHT}
-	local middle_line = border_chars.MID_VERTICAL.. string.rep(' ', width)
-	..border_chars.MID_VERTICAL
+	local border_lines = { chars.TOP_LEFT.. topLine ..
+	chars.TOP_RIGHT}
+	local middle_line = chars.MID_VERTICAL.. string.rep(' ', width)
+	..chars.MID_VERTICAL
 	for _=1, height do
 		table.insert(border_lines, middle_line)
 	end
-	table.insert(border_lines, border_chars.BOTTOM_LEFT..
-	string.rep(border_chars.MID_HORIZONTAL, width) ..border_chars.BOTTOM_RIGHT)
+	table.insert(border_lines, chars.BOTTOM_LEFT..
+	string.rep(chars.MID_HORIZONTAL, width) ..chars.BOTTOM_RIGHT)
 
 	api.nvim_buf_set_lines(borderBuffer, 0, -1, false, border_lines)
 end
@@ -97,11 +99,11 @@ end
 
 local function drawBorders(opts)
 	local borderOpts = createBorderOpts(opts)
-	local window, buffer = createFloatingWindow(borderOpts, true)
+	local window, buffer = createFloatingWindow(borderOpts, false)
 	setBorderHighlight(window)
 	redrawUI()
-	local borderCharacters = createBorderCharacters(opts.border_chars)
-	fillBorderData(borderBuffer, borderOpts.width, borderOpts.height,
+	local borderCharacters = getBorderCharacters(opts.border_chars)
+	fillBorderData(buffer, borderOpts.width, borderOpts.height,
 	borderOpts.title, borderCharacters)
 	return window, buffer
 end
@@ -119,8 +121,10 @@ function M.create_win(opts)
 	local windowOpts = createWindowOpts(opts)
 	local window, buffer = createFloatingWindow(windowOpts, true)
 	if opts.border then
-		local borderWindow, borderBuffer = drawBorders(opts)
+		local _, borderBuffer = drawBorders(opts)
 		addAutocmdBorderCloseOnMainBufferClose(buffer, borderBuffer)
 	end
 	return window, buffer
 end
+
+return M
