@@ -1,6 +1,3 @@
-all:
-	luacheck lua
-
 PJ_ROOT=$(PWD)
 
 BUSTED_ARGS = \

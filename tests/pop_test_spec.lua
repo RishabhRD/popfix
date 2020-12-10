@@ -113,6 +113,21 @@ local function addElementAfterClosing()
 	testList:removeLast()
 end
 
+local function addFirstListAtIndex()
+	local testList = require'test_list':new({})
+	testList:addAt(1, 'first')
+	eq(1, testList:getSize())
+	eq(1, #testList.internalArray)
+end
+
+local function addSecondListAtIndex()
+	local testList = require'test_list':new({})
+	testList:addAt(1, 'first')
+	testList:addAt(1, 'second')
+	eq(2, testList:getSize())
+	eq(2, #testList.internalArray)
+end
+
 describe('Popfix:', function()
 	it('new_list_size', newListSizeTest)
 	it('add first list element should result in size 1', addFirstListElement)
@@ -126,4 +141,6 @@ describe('Popfix:', function()
 	it('size of list after fully removing element', sizeOfListAfterFullyRemovingElement)
 	it('adding one element after fully removing elements', addingOneElementAfterFullyRemovingElements)
 	it('removing last element from list after closing', addElementAfterClosing)
+	it('first addition of element at index', addFirstListAtIndex)
+	it('second addition of element at index', addSecondListAtIndex)
 end)

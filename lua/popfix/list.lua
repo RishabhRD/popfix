@@ -3,6 +3,8 @@ local floatingWindow = require'popfix.floating_win'
 local M = {}
 M.__index = M
 
+local listNamespace = api.nvim_create_namespace('popfix.popup')
+
 local function setLines(buffer, first, last, data)
 	api.nvim_buf_set_option(buffer, 'modifiable', true)
 	api.nvim_buf_set_lines(buffer, first, last, false, data)
@@ -174,6 +176,9 @@ function M:add(ele)
 	end)
 end
 
+function M:setCursor(index)
+end
+
 local function _close(self)
 	vim.cmd('bwipeout! ', self.buffer)
 	self.buffer = nil
@@ -214,6 +219,50 @@ end
 function M:removeLast()
 	vim.schedule(function()
 		_removeLast(self)
+	end)
+end
+
+local function _addAt(self, index, ele)
+	if isClosed(self) then return end
+	local isRealElementEntered = checkRealElementEntered(self)
+	if isRealElementEntered then
+		setLines(self.buffer, index - 1, index -1, {ele})
+		self.numData = self.numData + 1
+	else
+		replaceFirstElement(ele)
+		setRealElementEntered(true)
+	end
+end
+
+function M:addAt(index, ele)
+	vim.schedule(function()
+		_addAt(self, index, ele)
+	end)
+end
+
+local function clearHighlight(buffer)
+	api.nvim_buf_clear_namespace(buffer, listNamespace, 0, -1)
+end
+
+local function moveCursor(window, index)
+	api.nvim_win_set_cursor(window, index - 1)
+end
+
+local function addHighlight(buffer, index)
+	api.nvim_buf_add_highlight(buffer, listNamespace, "Visual", index - 1, 0,
+	-1)
+end
+
+local function _setCursorAt(self, index)
+	if isClosed(self) then return end
+	clearHighlight(self.buffer)
+	moveCursor(self.window, index)
+	addHighlight(self.buffer, index)
+end
+
+function M:setCursorAt(index)
+	vim.schedule(function()
+		_setCursorAt(self, index)
 	end)
 end
 

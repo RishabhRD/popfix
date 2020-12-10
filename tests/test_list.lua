@@ -59,4 +59,15 @@ function M:removeLast()
 	end
 end
 
+function M:addAt(index, ele)
+	if not self.numData then return end
+	if self.emptyCleared then
+		table.insert(self.internalArray, index, ele)
+		self.numData = self.numData + 1
+	else
+		self.internalArray[1] = ele
+		self.emptyCleared = true
+	end
+end
+
 return M
