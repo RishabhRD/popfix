@@ -1,188 +1,266 @@
 local api = vim.api
-local floating_win = require'popfix.floating_win'
+local floatingWindow = require'popfix.floating_win'
+local M = {}
+M.__index = M
 
-local list = {}
+local listNamespace = api.nvim_create_namespace('popfix.popup')
 
-local function popup_split(self, height, title)
-	local oldWindow = api.nvim_get_current_win()
-	vim.cmd('bot new')
-	local win = api.nvim_get_current_win()
-	local buf = api.nvim_get_current_buf()
-	title = title or ''
-	api.nvim_buf_set_name(buf, 'PopList #'..buf..title)
-	api.nvim_win_set_height(win, height)
-	self.buffer = buf
-	self.window = win
-	api.nvim_set_current_win(oldWindow)
+local function setLines(buffer, first, last, data)
+	api.nvim_buf_set_option(buffer, 'modifiable', true)
+	api.nvim_buf_set_lines(buffer, first, last, false, data)
+	api.nvim_buf_set_option(buffer, 'modifiable', false)
 end
 
-local function popup(self, opts)
-	local local_opts = {
+local function isClosed(self)
+	if self.numData == nil then
+		return true
+	end
+	return false
+end
+
+local function createObject(self)
+	return setmetatable({}, self)
+end
+
+local function initializeNilOptsValues(opts)
+	opts.title = opts.title or ''
+	if opts.border == nil then
+		opts.border = false
+	end
+	if opts.numbering == nil then
+		opts.numbering = false
+	end
+end
+
+local function createFloatingWindowOpts(opts)
+	return {
 		relative = opts.relative,
 		width = opts.width,
 		height = opts.height,
 		row = opts.row,
 		col = opts.col,
-		title = opts.title,
+		title = opts.col,
 		border = opts.border,
 		border_chars = opts.border_chars
 	}
-	local buf_win = floating_win.create_win(local_opts)
-	local win = buf_win.win
-	local buf = buf_win.buf
-	api.nvim_win_set_height(win, opts.height)
-	self.buffer = buf
-	self.window = win
 end
 
-function list:new(opts)
-	opts.title = opts.title or ''
-	if opts.border == nil then opts.border = false end
-	self.__index = self
-	local initial = {}
-	popup(initial, opts)
-	if opts.numbering == nil then
-		opts.numbering = false
+local function createFloatingWindow(obj, opts)
+	local floatingOpts = createFloatingWindowOpts(opts)
+	obj.window, obj.buffer = floatingWindow.create_win(floatingOpts)
+end
+
+local function setWindowOpt(window, property, value)
+	api.nvim_win_set_option(window, property, value)
+end
+
+local function setBufferOpt(buffer, property, value)
+	api.nvim_buf_set_option(buffer, property, value)
+end
+
+local function setWindowOptions(window, opts)
+	setWindowOpt(window, 'relativenumber', false)
+	setWindowOpt(window, 'wrap', false)
+	setWindowOpt(window, 'cursorline', false)
+	setWindowOpt(window, 'modifiable', false)
+	setWindowOpt(window, 'bufhidden', 'hide')
+	setWindowOpt(window, 'bufhidden', 'hide')
+	if not opts.coloring then
+		setWindowOpt(window, 'winhl', 'Normal:ListNormal')
 	end
-	api.nvim_win_set_option(initial.window, 'number', opts.numbering)
-	api.nvim_win_set_option(initial.window, 'relativenumber', false)
-	if opts.coloring == nil or opts.coloring == false then
-		api.nvim_win_set_option(initial.window, 'winhl', 'Normal:ListNormal')
-	end
-	api.nvim_win_set_option(initial.window, 'wrap', false)
-	api.nvim_win_set_option(initial.window, 'cursorline', false)
-	api.nvim_buf_set_option(initial.buffer, 'modifiable', false)
-	api.nvim_buf_set_option(initial.buffer, 'bufhidden', 'hide')
-	local obj = setmetatable(initial, self)
-	obj.numData = 0
+	setWindowOpt(window, 'number', opts.numbering)
+end
+
+local function setBufferOptions(buffer)
+	setBufferOpt(buffer, 'modifiable', false)
+	setBufferOpt(buffer, 'bufhidden', 'hide')
+end
+
+local function getCurrentWindow()
+	return api.nvim_get_current_win()
+end
+
+local function getCurrentBuffer()
+	return api.nvim_get_current_buf()
+end
+
+local function setCurrentWindow(window)
+	api.nvim_set_current_win(window)
+end
+
+local function createNewSplit()
+	-- This function also jumps to new split
+	local oldWindow = getCurrentWindow()
+	vim.cmd('bot new')
+	local window = getCurrentWindow()
+	local buffer = getCurrentBuffer()
+	setCurrentWindow(oldWindow)
+	return window, buffer
+end
+
+local function getSplitBufferName(buffer, title)
+	return string.format('Popfix #%s %s', buffer, title)
+end
+
+local function setBufferName(buffer, name)
+	api.nvim_buf_set_name(buffer, name)
+end
+
+local function setWindowHeight(window, height)
+	api.nvim_win_set_height(window, height)
+end
+
+local function createSplitWindow(obj, opts)
+	obj.window, obj.buffer = createNewSplit()
+	local name = getSplitBufferName(obj.buffer, opts.title)
+	setBufferName(obj.buffer, name)
+	setWindowHeight(obj.window, opts.height)
+end
+
+function M:new(opts)
+	local obj = createObject(self)
+	initializeNilOptsValues(opts)
+	createFloatingWindow(obj, opts)
+	setWindowOptions(obj.window, opts)
+	setBufferOptions(obj.buffer)
 	return obj
 end
 
-function list:newSplit(opts)
-	self.__index = self
-	opts.title = opts.title or ''
-	local initial = {}
-	popup_split(initial, opts.height, opts.title)
-	if opts.numbering == nil then
-		opts.numbering = false
-	end
-	api.nvim_win_set_option(initial.window, 'number', opts.numbering)
-	api.nvim_win_set_option(initial.window, 'relativenumber', false)
-	if opts.coloring == nil or opts.coloring == false then
-		api.nvim_win_set_option(initial.window, 'winhl', 'Normal:ListNormal')
-	end
-	api.nvim_win_set_option(initial.window, 'wrap', false)
-	api.nvim_win_set_option(initial.window, 'cursorline', false)
-	api.nvim_buf_set_option(initial.buffer, 'modifiable', false)
-	api.nvim_buf_set_option(initial.buffer, 'bufhidden', 'hide')
-	local obj = setmetatable(initial, self)
-	obj.numData = 0
-	return obj
+function M:newSplit(opts)
+	local obj = createObject(self)
+	initializeNilOptsValues(opts)
+	createSplitWindow(obj.window, opts)
+	setWindowOptions(obj.window, opts)
+	setWindowOptions(obj.buffer)
 end
 
-function list:addLine(data, starting, ending)
-	self.numData = self.numData + 1
-	local buf = self.buffer
-	if not buf then return end
-	if buf == 0 then return end
-	if vim.fn.bufexists(buf) then
-		api.nvim_buf_set_option(buf, 'modifiable', true)
-		api.nvim_buf_set_lines(buf, starting, ending, false, {data})
-		api.nvim_buf_set_option(buf, 'modifiable', false)
-	end
+function M:getSize()
+	return api.nvim_buf_line_count(self.buffer)
 end
 
-function list:setData(data, starting, ending)
-	self:clear()
-	if not starting then starting = 0 end
-	if not ending then ending = -1 end
-	self.numData = #data
-	local buf = self.buffer
-	if not buf then return end
-	if buf == 0 then return end
-	if vim.fn.bufexists(buf) then
-		api.nvim_buf_set_option(buf, 'modifiable', true)
-		api.nvim_buf_set_lines(buf, starting, ending, false, data)
-		api.nvim_buf_set_option(buf, 'modifiable', false)
+local function checkRealElementEntered(self)
+	if self.realElementEntered then
+		return true
+	end
+	return false
+end
+
+local function replaceFirstElement(self, ele)
+	setLines(self.buffer, 0, 1, {ele})
+end
+
+local function setRealElementEntered(self, flag)
+	self.realElementEntered = flag
+end
+
+local function addNextElement(self, ele)
+	api.nvim_buf_set_lines(self.buffer, self.numData, self.numData, false,
+	{ele})
+	self.numData = self.numData	+ 1
+end
+
+local function _add(self, ele)
+	if isClosed(self) then return end
+	local isRealElementEntered = checkRealElementEntered(self)
+	if not isRealElementEntered then
+		replaceFirstElement(self, ele)
+		setRealElementEntered(self, true)
+	else
+		addNextElement(self, ele)
 	end
 end
 
-function list:addData(data)
-	local numData = self.numData
-	local buf = self.buffer
-	if not buf then return end
-	if buf == 0 then return end
-	if vim.fn.bufexists(buf) then
-		api.nvim_buf_set_option(buf, 'modifiable', true)
-		api.nvim_buf_set_lines(buf, numData, -1, false, data)
-		api.nvim_buf_set_option(buf, 'modifiable', false)
-	end
-	self.numData = self.numData + #data
-end
-
-function list:clear()
-	self.numData = 0
-	local buf = self.buffer
-	if not buf then return end
-	if buf == 0 then return end
-	if api.nvim_buf_is_loaded(buf) then
-		api.nvim_buf_set_option(buf, 'modifiable', true)
-		api.nvim_buf_set_lines(buf, 0, -1, false, {})
-		api.nvim_buf_set_option(buf, 'modifiable', false)
-	end
-end
-
-function list:close()
-	local buf = self.buffer
+function M:add(ele)
 	vim.schedule(function()
-		vim.cmd('bwipeout! '..buf)
+		_add(self, ele)
 	end)
+end
+
+local function _close(self)
+	vim.cmd('bwipeout! ', self.buffer)
 	self.buffer = nil
 	self.window = nil
+	self.numData = nil
+	self.realElementEntered = nil
 end
 
-function list:clearLast()
-	if self.buffer == nil or self.buffer == 0 then return end
-	local numData = api.nvim_buf_line_count(self.buffer)
-	if vim.fn.bufexists(self.buffer) then
-		api.nvim_buf_set_option(self.buffer, 'modifiable', true)
-		api.nvim_buf_set_lines(self.buffer, numData - 2, numData - 1, false, {})
-		api.nvim_buf_set_option(self.buffer, 'modifiable', false)
+function M:close()
+	vim.schedule(function()
+		_close(self)
+	end)
+end
+
+local function _clear(self)
+	if isClosed(self) then return end
+	setLines(self.buffer, 0, -1, {})
+	self.numData = 1
+	setRealElementEntered(self, nil)
+end
+
+function M:clear()
+	vim.schedule(function()
+		_clear(self)
+	end)
+end
+
+local function _removeLast(self)
+	if isClosed(self) then return end
+	if self.numData == 1 then
+		self:clear()
+	else
+		setLines(self.buffer, self.numData - 1, self.numData, {})
+		self.numData = self.numData - 1
 	end
 end
 
-function list:getCurrentLineNumber()
-	return api.nvim_win_get_cursor(self.window)[1]
+function M:removeLast()
+	vim.schedule(function()
+		_removeLast(self)
+	end)
 end
 
-function list:getCurrentLine()
-	local lineNumber = self:getCurrentLineNumber()
-	return api.nvim_buf_get_lines(self.buffer, lineNumber - 1, lineNumber, false)[1]
-end
-
-function list:select_next()
-	local lineNumber = self:getCurrentLineNumber()
-	pcall(api.nvim_win_set_cursor, self.window, {lineNumber +1, 0})
-end
-
-function list:select_prev()
-	local lineNumber = self:getCurrentLineNumber()
-	if lineNumber - 1 > 0 then
-		--TODO: show the cursor if hidden
-		api.nvim_win_set_cursor(self.window, {lineNumber - 1, 0})
+local function _addAt(self, index, ele)
+	if isClosed(self) then return end
+	local isRealElementEntered = checkRealElementEntered(self)
+	if isRealElementEntered then
+		setLines(self.buffer, index - 1, index -1, {ele})
+		self.numData = self.numData + 1
+	else
+		replaceFirstElement(ele)
+		setRealElementEntered(true)
 	end
 end
 
-function list:select(lineNumber)
-	pcall(api.nvim_win_set_cursor, self.window, {lineNumber, 0})
+function M:addAt(index, ele)
+	vim.schedule(function()
+		_addAt(self, index, ele)
+	end)
 end
 
-function list:getSize()
-	return self.numData
+local function clearHighlight(buffer)
+	api.nvim_buf_clear_namespace(buffer, listNamespace, 0, -1)
 end
 
-function list:get(index)
-	return api.nvim_buf_get_lines(self.buffer, index, index + 1, false)[1]
+local function moveCursor(window, index)
+	api.nvim_win_set_cursor(window, index - 1)
 end
 
-return list
+local function addHighlight(buffer, index)
+	api.nvim_buf_add_highlight(buffer, listNamespace, "Visual", index - 1, 0,
+	-1)
+end
+
+local function _setCursorAt(self, index)
+	if isClosed(self) then return end
+	clearHighlight(self.buffer)
+	moveCursor(self.window, index)
+	addHighlight(self.buffer, index)
+end
+
+function M:setCursorAt(index)
+	vim.schedule(function()
+		_setCursorAt(self, index)
+	end)
+end
+
+return M
