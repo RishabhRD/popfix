@@ -1,3 +1,4 @@
+local spy = spy
 local describe = describe
 local it  = it
 -- local helpers = require('test.functional.helpers')(after_each)
@@ -128,6 +129,37 @@ local function addSecondListAtIndex()
 	eq(2, #testList.internalArray)
 end
 
+local function checkPromptInit()
+	local testPrompt = require'test_text':new({})
+	eq('', testPrompt.currentPromptText)
+	eq('> ', testPrompt.prefix)
+	testPrompt = require'test_text':new({
+		init_text = 'hello',
+		prompt_text = 'hello',
+	})
+	eq('hello', testPrompt.currentPromptText)
+	eq('hello> ', testPrompt.prefix)
+end
+
+local function checkSetPromptText()
+	local testPrompt = require'test_text':new({})
+	testPrompt:setPromptText('hello')
+	eq('hello', testPrompt.currentPromptText)
+end
+
+local function checkRegisterPromptText()
+	local testPrompt = require'test_text':new({})
+	local t_table = {}
+	t_table.called = function(text)
+		return text
+	end
+	spy.on(t_table, "called")
+	testPrompt:registerTextChanged(t_table.called)
+	assert.spy(t_table.called).was.called_with('')
+	testPrompt:setPromptText('hello')
+	assert.spy(t_table.called).was.called_with('hello')
+end
+
 describe('Popfix:', function()
 	it('new_list_size', newListSizeTest)
 	it('add first list element should result in size 1', addFirstListElement)
@@ -143,4 +175,7 @@ describe('Popfix:', function()
 	it('removing last element from list after closing', addElementAfterClosing)
 	it('first addition of element at index', addFirstListAtIndex)
 	it('second addition of element at index', addSecondListAtIndex)
+	it('prompt text after init', checkPromptInit)
+	it('check setPromptText', checkSetPromptText)
+	it('checking register prompt text', checkRegisterPromptText)
 end)

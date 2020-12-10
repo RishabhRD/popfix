@@ -176,9 +176,6 @@ function M:add(ele)
 	end)
 end
 
-function M:setCursor(index)
-end
-
 local function _close(self)
 	vim.cmd('bwipeout! ', self.buffer)
 	self.buffer = nil

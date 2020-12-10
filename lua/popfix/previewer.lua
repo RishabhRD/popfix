@@ -58,6 +58,7 @@ function M:new(opts)
 	obj.window, obj.buffer = createFloatingWindow(opts)
 	colorBackground(obj)
 	setNumber(obj)
+	return obj
 end
 
 local function isClosed(self)
