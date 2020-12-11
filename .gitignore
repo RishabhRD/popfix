@@ -1,1 +1,4 @@
 todo
+neovim
+lua/popfix/*.so
+lua/popfix/fzy-native-src/*.so
