@@ -25,7 +25,7 @@ local arch = (arch_aliases[jit.arch:lower()] or jit.arch:lower())
 
 -- ffi.load() doesn't respect anything but the actual path OR a system library path
 local dirname = string.sub(debug.getinfo(1).source, 2, string.len('/fzy-native.lua') * -1)
-local library_path = dirname .. '/libfzy-' .. os .. '-' .. arch .. '.so'
+local library_path = dirname .. 'libfzy-' .. os .. '-' .. arch .. '.so'
 
 local native = ffi.load(library_path)
 
