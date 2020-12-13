@@ -1,0 +1,3 @@
+[submodule "external_modules/fzy_lua_native"]
+	path = external_modules/fzy_lua_native
+	url = https://github.com/romgrk/fzy-lua-native
