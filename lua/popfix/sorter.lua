@@ -1,4 +1,4 @@
-local fzy_native = require'popfix.fzy-native'
+-- local fzy_native = require'popfix.fzy-native'
 local fzy = require'popfix.fzy'
 local M = {}
 
@@ -35,14 +35,14 @@ function M:new_fzy_sorter(caseSensitive)
 	}, self)
 end
 
-function M:new_fzy_native_sorter(caseSensitive)
-	return setmetatable({
-		scoringFunction = fzy_native.score,
-		filterFunction = fzy_native.has_match,
-		highlightingFunction = fzy_native.positions,
-		caseSensitive = caseSensitive,
-		maxJobs = 90
-	}, self)
-end
+-- function M:new_fzy_native_sorter(caseSensitive)
+-- 	return setmetatable({
+-- 		scoringFunction = fzy_native.score,
+-- 		filterFunction = fzy_native.has_match,
+-- 		highlightingFunction = fzy_native.positions,
+-- 		caseSensitive = caseSensitive,
+-- 		maxJobs = 90
+-- 	}, self)
+-- end
 
 return M
