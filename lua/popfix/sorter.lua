@@ -37,15 +37,13 @@ end
 
 function M:new_fzy_native_sorter(caseSensitive)
 	local fzy_native_file =
-	vim.api.nvim_get_runtime_file("external_modules/fzy-lua-native/lua/native.lua",
+	vim.api.nvim_get_runtime_file("external_modules/fzy_lua_native/lua/native.lua",
 	false)[1]
 	if fzy_native_file == nil then
-		print([[fzy-lua-native sorter source is missing. You need to install
-		fzy-lua-native source. Please refer README.md. Falling back to default
-		sorter]])
+		print('fzy-lua-native sorter source is missing. You need to install fzy-lua-native source. Please refer README.md. Falling back to default sorter')
 		return nil
 	end
-	local fzy_native = loadfile(fzy_native_file)
+	local fzy_native = loadfile(fzy_native_file)()
 	return setmetatable({
 		scoringFunction = fzy_native.score,
 		filterFunction = fzy_native.has_match,
