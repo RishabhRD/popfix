@@ -25,17 +25,19 @@ Install with any plugin manager. For example with vim-plug
 
 	Plug 'RishabhRD/popfix'
 
-## Installation with native-fzy-sorter
+For manual installation:
+
+	cd $HOME/.config/nvim/plugged
+	git clone --recurse-submodules https://github.com/RishabhRD/popfix
+
+## Installing fzy-native sorter
 
 native-fzy-sorter is a very fast embedded C sorter. (Read sorter section)
-To automatically build that sorter for your OS:
-
-	Plug 'RishabhRD/popfix', { 'do' : 'make' }
-
-To manually build native-fzy-sorter for your OS:
-
-	cd <plugin-directory>
-	make
+To install fzy-native-sorter:
+```bash
+cd <plugin-directory>
+./install_fzy_native_sorter
+```
 
 ## UI possible with popfix
 
