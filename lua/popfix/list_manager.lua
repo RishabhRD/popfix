@@ -158,6 +158,7 @@ end
 
 function M:close()
 	clear(self.sortedList)
+	self.sortedList = nil
 end
 
 return M
