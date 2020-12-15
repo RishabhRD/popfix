@@ -37,7 +37,7 @@ function M:new(opts)
 end
 
 local function clear(t)
-	for k, _ in pairs(t) do
+	for k, _ in ipairs(t) do
 		t[k] = nil
 	end
 end
@@ -295,6 +295,8 @@ function M:close_SingleExecutionEngine()
 	self.sortedNumData = 0
 	clear(self.list)
 	clear(self.sortedList)
+	self.manager:close()
+	self.manager = nil
 	self.list = nil
 	self.sortedList = nil
 	collectgarbage()
@@ -357,6 +359,8 @@ function M:close_RepeatedExecutionEngine()
 		self.currentJob:shutdown()
 		self.currentJob = nil
 	end
+	self.manager:close()
+	self.manager = nil
 end
 
 function M:new_RepeatedExecutionEngine()
