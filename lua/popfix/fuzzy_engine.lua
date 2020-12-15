@@ -280,9 +280,9 @@ function M:new_SingleExecutionEngine()
 end
 
 function M:close_SingleExecutionEngine()
-	self.check:stop()
-	self.check:close()
-	self.check = nil
+	self.idle:stop()
+	self.idle:close()
+	self.idle = nil
 	if self.job then
 		if self.job then
 			self.job:shutdown()
@@ -441,12 +441,18 @@ function M:run_SingleExecutionEngineAgain(opts)
 		else
 			appendAggregateData(tmp, self.numData)
 			self.startingIndex = self.numData + 1
+			self.idle:stop()
 		end
 	end
 
 	local function textChanged(prompt)
 		if self.currentPromptText == '' and prompt == '' then
 			return
+		end
+		if self.idle then
+			if not self.idle:is_active() then
+				self.idle:start(addSortedDataToTable)
+			end
 		end
 		self.currentPromptText = prompt
 		self.manager.currentPromptText = prompt
@@ -459,6 +465,11 @@ function M:run_SingleExecutionEngineAgain(opts)
 	local function addData(_, line)
 		self.numData = self.numData	+ 1
 		self.list[self.numData] = line
+		if self.idle then
+			if not self.idle:is_active() then
+				self.idle:start(addSortedDataToTable)
+			end
+		end
 	end
 
 	local function createJob(data)
@@ -483,6 +494,9 @@ function M:run_SingleExecutionEngineAgain(opts)
 				self.numData = self.numData + 1
 				self.list[k] = v
 			end
+			if not self.idle:is_active() then
+				self.idle:start(addSortedDataToTable)
+			end
 		end
 	end
 
@@ -498,10 +512,10 @@ function M:run_SingleExecutionEngineAgain(opts)
 		clear(self.sortedList)
 		createJob(data)
 	end
+	self.idle = uv.new_idle()
+	self.idle:start(addSortedDataToTable)
 	createJob(opts.data)
 	opts = nil
-	self.check = uv.new_check()
-	self.check:start(addSortedDataToTable)
 	return textChanged, setData
 end
 
