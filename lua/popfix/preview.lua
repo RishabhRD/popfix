@@ -96,6 +96,7 @@ function preview:writePreview(data)
 		end
 		api.nvim_win_set_buf(self.window, data.bufnr)
 		if data.line then
+			if data.line == 0 then data.line = 1 end
 			api.nvim_buf_add_highlight(data.bufnr, previewNamespace,
 			"Visual", data.line - 1, 0, -1)
 		end

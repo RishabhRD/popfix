@@ -17,6 +17,7 @@ function M:new(opts)
 		renderLimit = opts.renderLimit,
 		highlightingFunction = opts.highlightingFunction,
 		caseSensitive = opts.caseSensitive,
+		sortedList = {},
 		currentlyDisplayed = 0,
 		linesRendered = 0,
 		numData = 0
@@ -37,7 +38,7 @@ function M:select(lineNumber, callback)
 	local data
 	if self.sortedList[lineNumber] then
 		data = self.action:select(self.sortedList[lineNumber].index,
-		self.list:get(lineNumber - 1), callback)
+		self.sortedList[lineNumber].line, callback)
 	end
 	if data then
 		if self.preview then
@@ -50,12 +51,12 @@ end
 
 -- lazy rendering while next selection
 function M:select_next(callback)
+	if self.numData == 0 then return end
 	if self.currentLineNumber == self.numData then
 		return
 	end
 	if self.currentLineNumber == self.currentlyDisplayed then
-		local line = self.originalList
-		[self.sortedList[self.currentLineNumber + 1].index]
+		local line = self.sortedList[self.currentLineNumber + 1].line
 		self.list:addLine(line, self.currentlyDisplayed, self.currentlyDisplayed)
 		local highlight = self.highlightingFunction(self.currentPromptText,
 		line, false)
@@ -70,12 +71,20 @@ function M:select_next(callback)
 end
 
 function M:select_prev(callback)
+	if self.numData == 0 then return end
 	if self.currentLineNumber == 1 then return end
 	self.currentLineNumber = self.currentLineNumber - 1
 	self:select(self.currentLineNumber, callback)
 end
 
+local function clear(t)
+	for k,_ in ipairs(t) do
+		t[k] = nil
+	end
+end
+
 function M:clear()
+	clear(self.sortedList)
 	self.currentLineNumber = nil
 	self.currentlyDisplayed = 0
 	self.linesRendered = 0
@@ -93,13 +102,15 @@ end
 --- intense process. That's why list and sortedList are a pre-requesite of it.
 --- @param line string : the line which needs to be added
 --- @param index number : Index at which addition is gonna happen
+--- @param originalIndex number : Index at which current line was added originally.
 --- Note: Index in 1 based.
-function M:add(line, index)
+function M:add(line, index, originalIndex)
 	-- condition for adding the elements
 	-- add == nil means just return
 	-- add == false means add but delete the last of list
 	-- add == true means truly add
 	self.numData = self.numData + 1
+	table.insert(self.sortedList, index, {index = originalIndex, line = line})
 	local add = nil
 	if index > self.renderLimit then
 		add = nil
@@ -145,6 +156,11 @@ function M:add(line, index)
 			self:select(currentLineNumber)
 		end
 	end)
+end
+
+function M:close()
+	clear(self.sortedList)
+	self.sortedList = nil
 end
 
 return M
