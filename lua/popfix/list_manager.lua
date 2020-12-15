@@ -38,7 +38,7 @@ function M:select(lineNumber, callback)
 	local data
 	if self.sortedList[lineNumber] then
 		data = self.action:select(self.sortedList[lineNumber].index,
-		self.list:get(lineNumber - 1), callback)
+		self.sortedList[lineNumber].line, callback)
 	end
 	if data then
 		if self.preview then
@@ -100,6 +100,7 @@ end
 --- intense process. That's why list and sortedList are a pre-requesite of it.
 --- @param line string : the line which needs to be added
 --- @param index number : Index at which addition is gonna happen
+--- @param originalIndex number : Index at which current line was added originally.
 --- Note: Index in 1 based.
 function M:add(line, index, originalIndex)
 	-- condition for adding the elements
@@ -153,6 +154,10 @@ function M:add(line, index, originalIndex)
 			self:select(currentLineNumber)
 		end
 	end)
+end
+
+function M:close()
+	clear(self.sortedList)
 end
 
 return M
