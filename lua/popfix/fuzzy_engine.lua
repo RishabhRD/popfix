@@ -441,7 +441,9 @@ function M:run_SingleExecutionEngineAgain(opts)
 		else
 			appendAggregateData(tmp, self.numData)
 			self.startingIndex = self.numData + 1
-			self.idle:stop()
+			if self.idle then
+				self.idle:stop()
+			end
 		end
 	end
 
@@ -494,8 +496,10 @@ function M:run_SingleExecutionEngineAgain(opts)
 				self.numData = self.numData + 1
 				self.list[k] = v
 			end
-			if not self.idle:is_active() then
-				self.idle:start(addSortedDataToTable)
+			if self.idle then
+				if not self.idle:is_active() then
+					self.idle:start(addSortedDataToTable)
+				end
 			end
 		end
 	end
