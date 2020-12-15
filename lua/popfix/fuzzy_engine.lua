@@ -10,13 +10,6 @@ M.__index = M
 --- using the sorter's function. It is the class that submits the data
 --- to manager to actually render it.
 ---
---- Internally FuzzyEngine should have a list and sortedList array.
---- list should contain the original data obtained from submitted job / data
---- sortedList should contain the array of {index, score} where index
---- represents the position of element in list and score represents the score
---- of that element wrt to prompt. This array is expected to be sorted wrt to
---- score. However, this behaviour is totally defined by FuzzyEngine and would
---- not impact working of other classes.
 --- @field run function Function that has interface:
 ---     (opts): function,function
 --- @field close function
@@ -99,7 +92,7 @@ function M:run_SingleExecutionEngine(opts)
 				index = self.numData
 			}
 			-- Put the line in last of UI list
-			self.manager:add(line, self.sortedNumData)
+			self.manager:add(line, self.sortedNumData, self.numData)
 		else
 			-- Traverse sorted list and get the location where output text
 			-- fits with respect to its score with current prompt
@@ -116,7 +109,7 @@ function M:run_SingleExecutionEngine(opts)
 							score = score,
 							index = self.numData
 						})
-						self.manager:add(line, k)
+						self.manager:add(line, k, self.numData)
 						return
 					end
 				end
@@ -125,7 +118,7 @@ function M:run_SingleExecutionEngine(opts)
 					score = score,
 					index = self.numData
 				})
-				self.manager:add(line, self.sortedNumData)
+				self.manager:add(line, self.sortedNumData, self.numData)
 			end
 		end
 	end
@@ -145,7 +138,7 @@ function M:run_SingleExecutionEngine(opts)
 							score = score,
 							index = cur
 						})
-						self.manager:add(line, k)
+						self.manager:add(line, k, cur)
 						break
 					end
 				end
@@ -155,7 +148,7 @@ function M:run_SingleExecutionEngine(opts)
 						score = score,
 						index = cur
 					})
-					self.manager:add(line, self.sortedNumData)
+					self.manager:add(line, self.sortedNumData, cur)
 				end
 			end
 		end
@@ -246,7 +239,7 @@ function M:run_SingleExecutionEngine(opts)
 					score = 0,
 					index = k
 				}
-				self.manager:add(v,k)
+				self.manager:add(v,k, k)
 			end
 		end
 	end
@@ -273,7 +266,7 @@ function M:run_SingleExecutionEngine(opts)
 				score = 0,
 				index = k
 			}
-			self.manager:add(v,k)
+			self.manager:add(v,k, k)
 		end
 	end
 	return textChanged, setData

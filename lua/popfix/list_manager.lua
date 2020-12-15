@@ -17,8 +17,7 @@ function M:new(opts)
 		renderLimit = opts.renderLimit,
 		highlightingFunction = opts.highlightingFunction,
 		caseSensitive = opts.caseSensitive,
-		dataList = {},
-		sortedDataList = {},
+		sortedList = {},
 		currentlyDisplayed = 0,
 		linesRendered = 0,
 		numData = 0
@@ -37,8 +36,8 @@ function M:select(lineNumber, callback)
 	"Visual", lineNumber - 1, 0, -1)
 	self.list:select(lineNumber)
 	local data
-	if self.sortedDataList[lineNumber] then
-		data = self.action:select(self.sortedDataList[lineNumber],
+	if self.sortedList[lineNumber] then
+		data = self.action:select(self.sortedList[lineNumber].index,
 		self.list:get(lineNumber - 1), callback)
 	end
 	if data then
@@ -56,8 +55,7 @@ function M:select_next(callback)
 		return
 	end
 	if self.currentLineNumber == self.currentlyDisplayed then
-		local line = self.dataList
-		[self.sortedDataList[self.currentLineNumber + 1]]
+		local line = self.sortedList[self.currentLineNumber + 1].line
 		self.list:addLine(line, self.currentlyDisplayed, self.currentlyDisplayed)
 		local highlight = self.highlightingFunction(self.currentPromptText,
 		line, false)
@@ -84,7 +82,7 @@ local function clear(t)
 end
 
 function M:clear()
-	clear(self.sortedDataList)
+	clear(self.sortedList)
 	self.currentLineNumber = nil
 	self.currentlyDisplayed = 0
 	self.linesRendered = 0
@@ -103,14 +101,13 @@ end
 --- @param line string : the line which needs to be added
 --- @param index number : Index at which addition is gonna happen
 --- Note: Index in 1 based.
-function M:add(line, index)
+function M:add(line, index, originalIndex)
 	-- condition for adding the elements
 	-- add == nil means just return
 	-- add == false means add but delete the last of list
 	-- add == true means truly add
 	self.numData = self.numData + 1
-	self.dataList[self.numData] = line
-	table.insert(self.sortedDataList, index, self.numData)
+	table.insert(self.sortedList, index, {index = originalIndex, line = line})
 	local add = nil
 	if index > self.renderLimit then
 		add = nil
