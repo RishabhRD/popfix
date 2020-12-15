@@ -529,28 +529,10 @@ Popfix provides 2 built-in fuzzy engines:
 	require'popfix.fuzzy_enigne'.new_RepeatedExecutionEngine()
 	```
 
-You can also create new fuzzy engines. Fuzzy engines have 2 tables:
-- list : Fuzzy engines are expected to fill this array with strings obtained
-  from submitted job.
-- sortedList : Fuzzy engines are expected to fill this array with a table with
-  synatx:
-	```lua
-	{
-		score = <score : int>,
-		index = <index of element in list : int>
-	}
-	```
-UI manager use these table to render UI efficiently. However, this is not
-necessary that fuzzy engine follow the expectation, i.e., until unless fuzzy
-engine is filling the table with proper syntax that means ``list`` with string
-array and ``sortedList`` with example table, UI manager would work properly
-till the index part of sortedList table entry is valid in list.
-You can fill data smartly to create different behaviour you may want to have.
-
-To create a new fuzzy engine:
+You can also create new fuzzy engines. For creating a new fuzzy engine:
 
 ```lua
-require'popfix.fuzzy_engine'.new{
+require'popfix.fuzzy_engine':new{
 	run = function(opts)
 	end,
 	close = function()
@@ -567,9 +549,11 @@ that has 4 fields
 
 manager is the utility that takes cares of actual rendering.
 It has 2 methods:
-- add(line, first, last, index) : add the line to UI list at first index,
-ending on last index (replacing first to last, i.e, first = last if no
-replacement is needed). index represents the index of line in sorted list.
+- add(line, index, indexForUsers) : add function adds the line to manager
+queue for rendering. index represents the line number at which line should
+be displayed in list. indexForUsers represents the index value with which
+select callbacks, or close callback would be called for the line.
+
 
 - clear() : clear the list's UI.
 	
