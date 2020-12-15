@@ -107,6 +107,7 @@ function preview:writePreview(data)
 	if not self.coloring then
 		api.nvim_win_set_option(self.window, 'winhl', 'Normal:PreviewNormal')
 	end
+	api.nvim_win_set_option(self.window, 'wrap', false)
 
 end
 

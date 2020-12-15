@@ -34,7 +34,7 @@ function M:select(lineNumber, callback)
 	0, -1)
 	api.nvim_buf_add_highlight(self.list.buffer, listNamespace,
 	"Visual", lineNumber - 1, 0, -1)
-	self.list:select(lineNumber)
+	pcall(self.list.select, self.list, lineNumber)
 	local data
 	if self.sortedList[lineNumber] then
 		data = self.action:select(self.sortedList[lineNumber].index,
@@ -57,7 +57,8 @@ function M:select_next(callback)
 	end
 	if self.currentLineNumber == self.currentlyDisplayed then
 		local line = self.sortedList[self.currentLineNumber + 1].line
-		self.list:addLine(line, self.currentlyDisplayed, self.currentlyDisplayed)
+		pcall(self.list.addLine, self.list, line, self.currentlyDisplayed,
+		self.currentlyDisplayed)
 		local highlight = self.highlightingFunction(self.currentPromptText,
 		line, false)
 		for _, col in pairs(highlight) do
@@ -91,7 +92,7 @@ function M:clear()
 	self.numData = 0
 	self.action:select(nil, nil)
 	vim.schedule(function()
-		self.list:clear()
+		pcall(self.list.clear, self.list)
 		api.nvim_buf_clear_namespace(self.list.buffer, identifier,
 		0, -1)
 	end)
@@ -145,7 +146,7 @@ function M:add(line, index, originalIndex)
 		if add == false then
 			pcall(self.list.clearLast, self.list)
 		end
-		self.list:addLine(line, index - 1, index - 1)
+		pcall(self.list.addLine, self.list, line, index - 1, index - 1)
 		if highlight then
 			for _, col in pairs(highlight) do
 				api.nvim_buf_add_highlight(self.list.buffer, identifier,
