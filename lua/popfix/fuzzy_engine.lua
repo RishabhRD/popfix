@@ -33,8 +33,6 @@ function M:new(opts)
 	return setmetatable({
 		run = opts.run,
 		close = opts.close,
-		list = {},
-		sortedList = {}
 	}, self)
 end
 
@@ -46,6 +44,8 @@ end
 
 function M:run_SingleExecutionEngine(opts)
 	-- initilaization
+	self.sortedList = {}
+	self.list = {}
 	self.data = opts.data
 	self.manager = opts.manager
 	self.currentPromptText = opts.currentPromptText
@@ -317,13 +317,8 @@ function M:run_RepeatedExecutionEngine(opts)
 	self.cwd = opts.data.cwd or vim.fn.getcwd()
 	self.numData = 0
 	local function addData(_, line)
-		self.numData = self.numData + 1
-		self.list[self.numData] = line
-		self.sortedList[self.numData] = {
-			score = 0,
-			index = self.numData
-		}
-		self.manager:add(line,self.numData)
+		self.numData = self.numData	+ 1
+		self.manager:add(line,self.numData, 0)
 	end
 	local function textChanged(str)
 		if self.currentJob then
@@ -362,16 +357,6 @@ function M:close_RepeatedExecutionEngine()
 		self.currentJob:shutdown()
 		self.currentJob = nil
 	end
-	clear(self.list)
-	clear(self.sortedList)
-	self.list = nil
-	self.sortedList = nil
-	-- TODO: I don't know why, but this is freeing the memory
-	-- I have also seen this in a potential fuzzy finder implementation
-	-- telescope.nvim. After exploring their source I realised they are also
-	-- doing the same hack.
-	collectgarbage()
-	collectgarbage()
 end
 
 function M:new_RepeatedExecutionEngine()
