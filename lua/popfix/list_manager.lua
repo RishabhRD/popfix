@@ -17,6 +17,8 @@ function M:new(opts)
 		renderLimit = opts.renderLimit,
 		highlightingFunction = opts.highlightingFunction,
 		caseSensitive = opts.caseSensitive,
+		dataList = {},
+		sortedDataList = {},
 		currentlyDisplayed = 0,
 		linesRendered = 0,
 		numData = 0
@@ -35,8 +37,8 @@ function M:select(lineNumber, callback)
 	"Visual", lineNumber - 1, 0, -1)
 	self.list:select(lineNumber)
 	local data
-	if self.sortedList[lineNumber] then
-		data = self.action:select(self.sortedList[lineNumber].index,
+	if self.sortedDataList[lineNumber] then
+		data = self.action:select(self.sortedDataList[lineNumber],
 		self.list:get(lineNumber - 1), callback)
 	end
 	if data then
@@ -54,8 +56,8 @@ function M:select_next(callback)
 		return
 	end
 	if self.currentLineNumber == self.currentlyDisplayed then
-		local line = self.originalList
-		[self.sortedList[self.currentLineNumber + 1].index]
+		local line = self.dataList
+		[self.sortedDataList[self.currentLineNumber + 1]]
 		self.list:addLine(line, self.currentlyDisplayed, self.currentlyDisplayed)
 		local highlight = self.highlightingFunction(self.currentPromptText,
 		line, false)
@@ -75,7 +77,14 @@ function M:select_prev(callback)
 	self:select(self.currentLineNumber, callback)
 end
 
+local function clear(t)
+	for k,_ in ipairs(t) do
+		t[k] = nil
+	end
+end
+
 function M:clear()
+	clear(self.sortedDataList)
 	self.currentLineNumber = nil
 	self.currentlyDisplayed = 0
 	self.linesRendered = 0
@@ -100,6 +109,8 @@ function M:add(line, index)
 	-- add == false means add but delete the last of list
 	-- add == true means truly add
 	self.numData = self.numData + 1
+	self.dataList[self.numData] = line
+	table.insert(self.sortedDataList, index, self.numData)
 	local add = nil
 	if index > self.renderLimit then
 		add = nil

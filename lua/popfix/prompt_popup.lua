@@ -254,8 +254,6 @@ function M:new(opts)
 	else
 		obj.fuzzyEngine = FuzzyEngine:new_SingleExecutionEngine()
 	end
-	obj.manager.sortedList = obj.fuzzyEngine.sortedList
-	obj.manager.originalList = obj.fuzzyEngine.list
 	local textChanged, setData = obj.fuzzyEngine:run({
 		data = opts.data,
 		sorter = obj.sorter,
