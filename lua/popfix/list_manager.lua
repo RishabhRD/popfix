@@ -51,6 +51,7 @@ end
 
 -- lazy rendering while next selection
 function M:select_next(callback)
+	if self.numData == 0 then return end
 	if self.currentLineNumber == self.numData then
 		return
 	end
@@ -70,6 +71,7 @@ function M:select_next(callback)
 end
 
 function M:select_prev(callback)
+	if self.numData == 0 then return end
 	if self.currentLineNumber == 1 then return end
 	self.currentLineNumber = self.currentLineNumber - 1
 	self:select(self.currentLineNumber, callback)
