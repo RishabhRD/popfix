@@ -145,9 +145,12 @@ function list:clearLast()
 	if self.buffer == nil or self.buffer == 0 then return end
 	local numData = api.nvim_buf_line_count(self.buffer)
 	if vim.fn.bufexists(self.buffer) then
-		api.nvim_buf_set_option(self.buffer, 'modifiable', true)
-		api.nvim_buf_set_lines(self.buffer, numData - 2, numData - 1, false, {})
-		api.nvim_buf_set_option(self.buffer, 'modifiable', false)
+		local buffer = self.buffer
+		vim.schedule(function()
+			api.nvim_buf_set_option(buffer, 'modifiable', true)
+			api.nvim_buf_set_lines(buffer, numData - 2, numData - 1, false, {})
+			api.nvim_buf_set_option(buffer, 'modifiable', false)
+		end)
 	end
 end
 

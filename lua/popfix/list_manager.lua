@@ -143,7 +143,7 @@ function M:add(line, index, originalIndex)
 	local currentLineNumber = self.currentLineNumber
 	vim.schedule(function()
 		if add == false then
-			self.list:clearLast()
+			pcall(self.list.clearLast, self.list)
 		end
 		self.list:addLine(line, index - 1, index - 1)
 		if highlight then
