@@ -66,6 +66,10 @@ function preview:new(opts)
 	api.nvim_win_set_option(initial.window, 'number', opts.numbering)
 	initial.numbering = opts.numbering
 	api.nvim_win_set_option(initial.window, 'relativenumber', false)
+	if opts.type == 'terminal' then
+		initial.oldBuffers = {}
+		initial.oldBuffersLen = 0
+	end
 	return setmetatable(initial, self)
 end
 
@@ -80,9 +84,12 @@ function preview:writePreview(data)
 		local cur_win = api.nvim_get_current_win()
 		local jumpString = string.format('noautocmd lua vim.api.nvim_set_current_win(%s)', self.window)
 		vim.cmd(jumpString)
-		vim.cmd('set nomod')
 		stopCurrentJob(self)
+		local newBuffer = api.nvim_create_buf(false, true)
+		api.nvim_win_set_buf(self.window, newBuffer)
 		self.currentTerminalJob = vim.fn.termopen(data.cmd, opts)
+		self.oldBuffersLen = self.oldBuffersLen + 1
+		self.oldBuffers[self.oldBuffersLen] = newBuffer
 		jumpString = string.format('noautocmd lua vim.api.nvim_set_current_win(%s)', cur_win)
 		vim.cmd(jumpString)
 	elseif self.type == 'text' then
@@ -117,12 +124,20 @@ function preview:close()
 	local buf = self.buffer
 	local win = self.window
 	-- TODO: I can't believe it but it is taking one more tick to close.
+	local oldBuffers = self.oldBuffers
 	vim.schedule(function()
 		local currentBuffer = api.nvim_win_get_buf(win)
 		api.nvim_buf_clear_namespace(currentBuffer, previewNamespace, 0, -1)
 		api.nvim_win_set_buf(win,buf)
 		vim.cmd(string.format('bwipeout! %s', buf))
+		if oldBuffers then
+			for k,buffer in ipairs(oldBuffers) do
+				vim.cmd(string.format('bwipeout! %s', buffer))
+				oldBuffers[k] = nil
+			end
+		end
 	end)
+	self.oldBuffers = nil
 	self.buffer = nil
 	self.window = nil
 	self.type = nil
