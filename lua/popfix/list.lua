@@ -25,7 +25,8 @@ local function popup(self, opts)
 		col = opts.col,
 		title = opts.title,
 		border = opts.border,
-		border_chars = opts.border_chars
+		border_chars = opts.border_chars,
+		border_highlight = opts.border_highlight
 	}
 	local buf_win = floating_win.create_win(local_opts)
 	local win = buf_win.win
@@ -40,15 +41,18 @@ function list:new(opts)
 	if opts.border == nil then opts.border = false end
 	self.__index = self
 	local initial = {}
+	opts.selection_highlight = opts.selection_highlight or 'Visual'
+	opts.matching_highlight = opts.matching_highlight or 'Identifier'
+	initial.selection_highlight = opts.selection_highlight
+	initial.matching_highlight = opts.matching_highlight
 	popup(initial, opts)
 	if opts.numbering == nil then
 		opts.numbering = false
 	end
 	api.nvim_win_set_option(initial.window, 'number', opts.numbering)
 	api.nvim_win_set_option(initial.window, 'relativenumber', false)
-	if opts.coloring == nil or opts.coloring == false then
-		api.nvim_win_set_option(initial.window, 'winhl', 'Normal:ListNormal')
-	end
+	opts.highlight = opts.highlight or ''
+	api.nvim_win_set_option(initial.window, 'winhl', 'Normal:'..opts.highlight)
 	api.nvim_win_set_option(initial.window, 'wrap', false)
 	api.nvim_win_set_option(initial.window, 'cursorline', false)
 	api.nvim_buf_set_option(initial.buffer, 'modifiable', false)
@@ -68,9 +72,8 @@ function list:newSplit(opts)
 	end
 	api.nvim_win_set_option(initial.window, 'number', opts.numbering)
 	api.nvim_win_set_option(initial.window, 'relativenumber', false)
-	if opts.coloring == nil or opts.coloring == false then
-		api.nvim_win_set_option(initial.window, 'winhl', 'Normal:ListNormal')
-	end
+	opts.highlight = opts.highlight or 'Normal'
+	api.nvim_win_set_option(initial.window, 'winhl', 'Normal:'..opts.highlight)
 	api.nvim_win_set_option(initial.window, 'wrap', false)
 	api.nvim_win_set_option(initial.window, 'cursorline', false)
 	api.nvim_buf_set_option(initial.buffer, 'modifiable', false)

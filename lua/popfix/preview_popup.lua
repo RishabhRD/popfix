@@ -47,8 +47,8 @@ local function selectionHandler(self, callback)
 	local line = self.list:getCurrentLineNumber()
 	if oldIndex ~= line then
 		api.nvim_buf_clear_namespace(self.list.buffer, listNamespace, 0, -1)
-		api.nvim_buf_add_highlight(self.list.buffer, listNamespace, "Visual", line - 1,
-		0, -1)
+		api.nvim_buf_add_highlight(self.list.buffer, listNamespace,
+		self.list.selection_highlight, line - 1, 0, -1)
 		local data = self.action:select(line, self.list:getCurrentLine(), callback)
 		if data ~= nil then
 			self.preview:writePreview(data)

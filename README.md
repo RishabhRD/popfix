@@ -200,24 +200,28 @@ local opts = {
 	list = {
 		border = true,
 		numbering = true,
-		coloring = true,
 		title = 'MyTitle',
-		border_chars = border_chars
+		border_chars = border_chars,
+		highlight = 'Normal',
+		selection_highlight = 'Visual',
+		matching_highlight = 'Identifier',
 	},
 	preview = {
 		type = 'terminal'
 		border = true,
 		numbering = true,
-		coloring = true,
 		title = 'MyTitle',
-		border_chars = border_chars
+		border_chars = border_chars,
+		highlight = 'Normal',
+		preview_highlight = 'Visual',
 	},
 	prompt = {
 		border = true,
 		numbering = true,
-		coloring = true,
 		title = 'MyTitle',
-		border_chars = border_chars
+		border_chars = border_chars,
+		highlight = 'Normal',
+		prompt_highlight = 'Normal'
 	},
 	sorter = require'popfix.sorter'.new_fzy_native_sorter(true),
 	fuzzyEngine = require'popfix.fuzzy_engine'.new_SingleExecutionEngine()
@@ -249,21 +253,32 @@ list, preview and prompt have some common attributes (all of them are optional):
 - **border** (boolean): If border should be there around corresponding window.
 - **border_chars** (table): border chars to be used for borders. See example
 	for border_chars syntax.
-- **coloring** (boolean): a different color for background window than normal.
 - **title** (string): title of window.
 - **numbering** (boolean): whether vim line number should be displayed.
+- **highlight** (string): HighlightGroup that would decide background and
+foreground of window
 
-preview also provides an additional attribute (this is mendatory):
-- **type** (string): Defines the type of preview window to render.
+list also provides some additional attributes:
+- **selection_highlight** (string) : HighlightGroup that decides the appearance
+of selected list item.
+- **matching_highlight** (string) : HighlightGroup that decides the appearance
+of matching characters wrt to current prompt text.
+
+preview also provides some additional attributes:
+- **type** (string) (not optional): Defines the type of preview window to render.
 	Supported types:
 	- terminal: Preview window would be a terminal window.
 	- text: Preview window would display some text.
 	- buffer: Preview window is an existing neovim buffer.
+- **preview_highlight** (string) : HighlightGroup that decides the appearance
+of highlighted line of preview window. (Not applicable in terminal type)
 
 prompt also provides some additional attributes (these are optional):
 - **prompt_text** (string): Prompt command text
 - **init_text** (string): Initial text that is written in prompt when window
 	is opened.
+- **prompt_highlight** (string) : HighlightGroup that decides the appearance
+of prompt command (Eg: 'Command> ').
 
 #### height [optional] [int]
 
