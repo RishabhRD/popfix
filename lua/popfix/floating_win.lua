@@ -101,12 +101,12 @@ function M.create_win(opts)
   if opts.border then
     local border_win_buf_pair = create_win(opts.row - 1, opts.col - 1,
     opts.width + 2, opts.height + 2, opts.relative, false)
-    api.nvim_win_set_option(border_win_buf_pair.win, 'winhl', 'Normal:Normal'
-    )
+	opts.border_highlight = opts.border_highlight or 'Normal'
     vim.cmd('redraw')
     api.nvim_buf_set_option(border_win_buf_pair.buf, 'bufhidden', 'hide')
     border_buf = border_win_buf_pair.buf
     fill_border_data(border_buf, opts.width , opts.height, opts.title , opts.border_chars)
+	api.nvim_win_set_option(border_win_buf_pair.win, 'winhl', 'Normal:'..opts.border_highlight)
   end
 
   if opts.border then

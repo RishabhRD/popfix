@@ -33,7 +33,7 @@ function M:select(lineNumber, callback)
 	api.nvim_buf_clear_namespace(self.list.buffer, listNamespace,
 	0, -1)
 	api.nvim_buf_add_highlight(self.list.buffer, listNamespace,
-	"Visual", lineNumber - 1, 0, -1)
+	self.list.selection_highlight, lineNumber - 1, 0, -1)
 	pcall(self.list.select, self.list, lineNumber)
 	local data
 	if self.sortedList[lineNumber] then
@@ -63,7 +63,7 @@ function M:select_next(callback)
 		line, false)
 		for _, col in pairs(highlight) do
 			api.nvim_buf_add_highlight(self.list.buffer, identifier,
-			"Identifier", self.currentlyDisplayed, col - 1, col)
+			self.list.matching_highlight, self.currentlyDisplayed, col - 1, col)
 		end
 		self.currentlyDisplayed = self.currentlyDisplayed + 1
 	end
@@ -150,7 +150,7 @@ function M:add(line, index, originalIndex)
 		if highlight then
 			for _, col in pairs(highlight) do
 				api.nvim_buf_add_highlight(self.list.buffer, identifier,
-				"Identifier", index - 1, col - 1, col)
+				self.list.matching_highlight, index - 1, col - 1, col)
 			end
 		end
 		if select then

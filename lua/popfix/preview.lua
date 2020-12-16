@@ -48,18 +48,19 @@ function preview:new(opts)
 			opts.row = opts.row + 1
 		end
 	end
+	opts.preview_highlight = opts.preview_highlight or 'Visual'
 	local win_buf = floating_win.create_win(opts)
 	local initial = {}
+	initial.preview_highlight = opts.preview_highlight
 	initial.currentTerminalJob = nil
 	initial.type = opts.type
 	initial.window = win_buf.win
 	initial.buffer = win_buf.buf
-	initial.coloring = opts.coloring
-	initial.numbering = opts.numbering
 	if opts.numbering == nil then opts.numbering = false end
-	if opts.coloring == nil or opts.coloring == false then
-		api.nvim_win_set_option(initial.window, 'winhl', 'Normal:PreviewNormal')
-	end
+	opts.highlight = opts.highlight or 'Normal'
+	initial.highlight = opts.highlight
+	initial.numbering = opts.numbering
+	api.nvim_win_set_option(initial.window, 'winhl', 'Normal:'..opts.highlight)
 	api.nvim_buf_set_option(initial.buffer, 'bufhidden', 'hide')
 	api.nvim_win_set_option(initial.window, 'wrap', false)
 	api.nvim_win_set_option(initial.window, 'number', opts.numbering)
@@ -88,7 +89,7 @@ function preview:writePreview(data)
 		api.nvim_buf_set_lines(self.buffer, 0, -1, false, data.data or {''})
 		if data.line ~= nil then
 			api.nvim_buf_add_highlight(self.buffer, previewNamespace,
-			"Visual", data.line - 1, 0, -1)
+			self.preview_highlight, data.line - 1, 0, -1)
 		end
 	elseif self.type == 'buffer' then
 		if data.bufnr == nil then
@@ -98,15 +99,14 @@ function preview:writePreview(data)
 		if data.line then
 			if data.line == 0 then data.line = 1 end
 			api.nvim_buf_add_highlight(data.bufnr, previewNamespace,
-			"Visual", data.line - 1, 0, -1)
+			self.preview_highlight, data.line - 1, 0, -1)
 		end
 	end
 	if self.numbering then
 		api.nvim_win_set_option(self.window, 'number', true)
 	end
-	if not self.coloring then
-		api.nvim_win_set_option(self.window, 'winhl', 'Normal:PreviewNormal')
-	end
+	self.highlight = self.highlight or 'Normal'
+	api.nvim_win_set_option(self.window, 'winhl', 'Normal:'..self.highlight)
 	api.nvim_win_set_option(self.window, 'wrap', false)
 
 end

@@ -5,6 +5,8 @@ local api = vim.api
 
 local prompt = {}
 
+local promptHighlightNamespace = api.nvim_create_namespace('popfix.prompt_highlight')
+
 function prompt:getCurrentPromptText()
     local current_prompt = vim.api.nvim_buf_get_lines(self.buffer, 0, 1, false)[1]
     return string.sub(current_prompt, #self.prefix + 1)
@@ -24,15 +26,17 @@ function prompt:new(opts)
     local win_buf = floating_win.create_win(opts)
     obj.buffer = win_buf.buf
     obj.window = win_buf.win
-    if opts.coloring == nil or opts.coloring == false then
-	api.nvim_win_set_option(obj.window, 'winhl', 'Normal:PromptNormal')
-    end
+	opts.highlight = opts.highlight or 'Normal'
+	api.nvim_win_set_option(obj.window, 'winhl', 'Normal:'..opts.highlight)
     api.nvim_buf_set_option(obj.buffer, 'bufhidden', 'hide')
     api.nvim_win_set_option(obj.window, 'wrap', false)
     api.nvim_win_set_option(obj.window, 'number', false)
     api.nvim_win_set_option(obj.window, 'relativenumber', false)
     api.nvim_buf_set_option(obj.buffer, 'buftype', 'prompt')
     vim.fn.prompt_setprompt(obj.buffer, obj.prefix)
+	opts.prompt_highlight = opts.prompt_highlight or 'Normal'
+	api.nvim_buf_add_highlight(obj.buffer, promptHighlightNamespace,
+	opts.prompt_highlight, 0, 0, -1)
     if opts.init_text then
 	obj:setPromptText(opts.init_text)
 	obj.insertStarted = true
