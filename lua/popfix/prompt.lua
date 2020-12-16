@@ -36,7 +36,7 @@ function prompt:new(opts)
     vim.fn.prompt_setprompt(obj.buffer, obj.prefix)
 	opts.prompt_highlight = opts.prompt_highlight or 'Normal'
 	api.nvim_buf_add_highlight(obj.buffer, promptHighlightNamespace,
-	opts.prompt_highlight, 0, 0, -1)
+	opts.prompt_highlight, 0, 0, #obj.prefix)
     if opts.init_text then
 	obj:setPromptText(opts.init_text)
 	obj.insertStarted = true
