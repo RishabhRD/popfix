@@ -42,7 +42,7 @@ function list:new(opts)
 	self.__index = self
 	local initial = {}
 	opts.selection_highlight = opts.selection_highlight or 'Visual'
-	opts.matching_highlight = opts.matching_highlight or 'Title'
+	opts.matching_highlight = opts.matching_highlight or 'Identifier'
 	initial.selection_highlight = opts.selection_highlight
 	initial.matching_highlight = opts.matching_highlight
 	popup(initial, opts)
