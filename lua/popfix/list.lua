@@ -66,6 +66,10 @@ function list:newSplit(opts)
 	self.__index = self
 	opts.title = opts.title or ''
 	local initial = {}
+	opts.selection_highlight = opts.selection_highlight or 'Visual'
+	opts.matching_highlight = opts.matching_highlight or 'Identifier'
+	initial.selection_highlight = opts.selection_highlight
+	initial.matching_highlight = opts.matching_highlight
 	popup_split(initial, opts.height, opts.title)
 	if opts.numbering == nil then
 		opts.numbering = false
