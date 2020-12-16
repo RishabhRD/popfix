@@ -35,8 +35,9 @@ function prompt:new(opts)
     api.nvim_buf_set_option(obj.buffer, 'buftype', 'prompt')
     vim.fn.prompt_setprompt(obj.buffer, obj.prefix)
 	opts.prompt_highlight = opts.prompt_highlight or 'Normal'
+	obj.prompt_highlight = opts.prompt_highlight
 	api.nvim_buf_add_highlight(obj.buffer, promptHighlightNamespace,
-	opts.prompt_highlight, 0, 0, #obj.prefix)
+	obj.prompt_highlight, 0, 0, #obj.prefix)
     if opts.init_text then
 	obj:setPromptText(opts.init_text)
 	obj.insertStarted = true
@@ -69,6 +70,8 @@ function prompt:registerTextChanged(func)
 	local function on_lines(_, _, _, first, last)
 	    local promptText = vim.trim(vim.api.nvim_buf_get_lines(self.buffer,
 	    first, last, false)[1]:sub(#self.prefix))
+		api.nvim_buf_add_highlight(self.buffer, promptHighlightNamespace,
+		self.prompt_highlight, 0, 0, #self.prefix)
 	    self.textChanged(promptText)
 	end
 	vim.api.nvim_buf_attach(self.buffer, false, {
