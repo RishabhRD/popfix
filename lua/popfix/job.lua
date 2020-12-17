@@ -95,9 +95,9 @@ function Job:new(o)
 
   -- enable_handlers: Do you want to do ANYTHING with the stdout/stderr of the proc
   if o.enable_handlers ~= nil then
-	  obj.enable_handlers = obj.enable_handlers
+      obj.enable_handlers = obj.enable_handlers
   else
-	  obj.enable_handlers = true
+      obj.enable_handlers = true
   end
 
   -- enable_recording: Do you want to record stdout/stderr into a table.
@@ -105,15 +105,15 @@ function Job:new(o)
   --                    we try and make sure they are associated correctly.
   local enable_recording
   if o.enable_recording ~= nil then
-	  enable_recording = enable_recording
+      enable_recording = enable_recording
   else
-	  enable_recording = o.enable_handlers
+      enable_recording = o.enable_handlers
   end
   if enable_recording == nil then
-	  obj.enable_recording = true
-	  else
-		  obj.enable_recording = obj.enable_recording
-	  end
+      obj.enable_recording = true
+      else
+	  obj.enable_recording = obj.enable_recording
+      end
 
   if not obj.enable_handlers and obj.enable_recording then
     error("Cannot record items but disable handlers")
@@ -184,7 +184,7 @@ end
 --- Shutdown a job.
 function Job:shutdown(code, signal)
   if not uv.is_active(self._shutdown_check) then
-	  --TODO: this waiting sucks
+      --TODO: this waiting sucks
     vim.wait(1000, function()
       return self:_pipes_are_closed(self) and self.is_shutdown
     end, 1, true)
