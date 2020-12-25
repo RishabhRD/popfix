@@ -119,6 +119,19 @@ function M:run_RepeatedExecutionEngine(opts)
 	self.cwd = data.cwd or vim.fn.getcwd()
 	textChanged(self.currentPromptText)
     end
+    self.manager.currentPromptText = self.currentPromptText
+    local command = string.format(self.base_cmd, self.currentPromptText)
+    local cmd, args = util.getArgs(command)
+    self.currentJob = Job:new{
+	command = cmd,
+	args = args,
+	cwd = self.cwd,
+	on_stdout = addData,
+	on_exit = function()
+	    self.currentJob = nil
+	end
+    }
+    self.currentJob:start()
     return textChanged, setData
 end
 
