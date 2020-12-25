@@ -13,7 +13,7 @@ M.__index = M
 --- @field filterFunction function(needle, heystack, case_sensitive)
 --- @field highlightingFunction function(needle, heystack, case_sensitive)
 --- @field caseSensitive boolean
---- @field maxJobs integer maximum number of jobs possible in a millisecond
+--- @field maxJob integer maximum number of jobs possible in a millisecond
 --- with optimal conditions.
 function M:new(opts)
     return setmetatable({
@@ -21,7 +21,7 @@ function M:new(opts)
 	filterFunction = opts.filter_function,
 	highlightingFunction = opts.highlighting_function,
 	caseSensitive = opts.case_sensitive,
-	maxJobs = opts.max_jobs
+	maxJob = opts.max_jobs
     }, self)
 end
 
@@ -31,7 +31,7 @@ function M:new_fzy_sorter(caseSensitive)
 	filterFunction = fzy.has_match,
 	highlightingFunction = fzy.positions,
 	caseSensitive = caseSensitive,
-	maxJobs = 30
+	maxJob = 30
     }, self)
 end
 
@@ -49,7 +49,7 @@ function M:new_fzy_native_sorter(caseSensitive)
 	filterFunction = fzy_native.has_match,
 	highlightingFunction = fzy_native.positions,
 	caseSensitive = caseSensitive,
-	maxJobs = 90
+	maxJob = 90
     }, self)
 end
 
