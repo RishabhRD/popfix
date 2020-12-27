@@ -1,4 +1,5 @@
 local M = {}
+M.__index = M
 local api = vim.api
 local prompt = require'popfix.prompt'
 local action = require'popfix.action'
@@ -48,8 +49,7 @@ local function popup_cursor(self, opts)
     return true
 end
 
-function M.new(self, opts)
-    self.__index = self
+function M:new(opts)
     local obj = {}
     setmetatable(obj, self)
     obj.originalWindow = api.nvim_get_current_win()
@@ -62,7 +62,6 @@ function M.new(self, opts)
 	    return false
 	end
     end
-    obj.closed = false
     obj.action = action:new(opts.callbacks)
     local nested_autocmds
     if nested_autocmds then
@@ -83,7 +82,7 @@ function M.new(self, opts)
     end
     autocmd.addCommand(obj.prompt.buffer, nested_autocmds, obj)
     api.nvim_set_current_win(obj.prompt.window)
-    return true
+    return obj
 end
 
 function M:set_prompt_text(text)
