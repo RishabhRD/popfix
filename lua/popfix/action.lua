@@ -61,4 +61,12 @@ function action:close(index, line, callback)
     free(self)
 end
 
+function action:complete_job()
+    if self.callbacks  and self.callbacks.on_job_complete then
+	vim.schedule(function()
+	    self.callbacks.on_job_complete()
+	end)
+    end
+end
+
 return action

@@ -351,12 +351,14 @@ For example:
 
 API provides 2 callbacks on which plugins can react:
 
-- select [optional]
-- close  [optional]
+- select [optional] \(Called when selection is changed in list\)
+- close  [optional] \(Called when popup is closed\)
+- on_job_complete [optional] \(Called when command provided completes its execution\)
 
 See example for callbacks syntax.
 
-The values for these callbacks are a function with syntax:
+The values for these callbacks are a function with syntax (excpet
+on_job_complete):
 
 ```lua
 function(index, line)

@@ -242,7 +242,8 @@ function M:new(opts)
 	sorter = obj.sorter,
 	manager = obj.manager,
 	currentPromptText = obj.prompt:getCurrentPromptText(),
-	error_handler = error_handler
+	error_handler = error_handler,
+	on_job_complete = opts.callbacks.on_job_complete
     })
     obj._set_data = setData
     obj.prompt:registerTextChanged(textChanged)

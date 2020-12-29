@@ -86,6 +86,7 @@ function M:run_RepeatedExecutionEngine(opts)
     self.base_cmd = opts.data.cmd
     self.cwd = opts.data.cwd or vim.fn.getcwd()
     self.numData = 0
+    self.on_job_complete = opts.on_job_complete
     local function addData(_, line)
 	self.numData = self.numData + 1
 	self.manager:add(line,self.numData, 0)
@@ -108,6 +109,11 @@ function M:run_RepeatedExecutionEngine(opts)
 	    cwd = self.cwd,
 	    on_stdout = addData,
 	    on_exit = function()
+		if self.on_job_complete then
+		    vim.schedule(function()
+			self.on_job_complete()
+		    end)
+		end
 		self.currentJob = nil
 	    end
 	}
@@ -128,6 +134,11 @@ function M:run_RepeatedExecutionEngine(opts)
 	cwd = self.cwd,
 	on_stdout = addData,
 	on_exit = function()
+	    if self.on_job_complete then
+		vim.schedule(function()
+		    self.on_job_complete()
+		end)
+	    end
 	    self.currentJob = nil
 	end
     }
@@ -162,6 +173,7 @@ function M:run_SingleExecutionEngine(opts)
     self.sortedNumData = 0
     self.error_handler = opts.error_handler
     self.startingIndex = 1
+    self.on_job_complete = opts.on_job_complete
 
 
     -- Additional initilaization job
@@ -267,6 +279,11 @@ function M:run_SingleExecutionEngine(opts)
 		cwd = cwd,
 		on_stdout = addData,
 		on_exit = function()
+		    if self.on_job_complete then
+			vim.schedule(function()
+			    self.on_job_complete()
+			end)
+		    end
 		    self.job = nil
 		end,
 		on_stderr = function(err, line)

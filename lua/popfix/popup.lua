@@ -213,6 +213,7 @@ function M:set_data(data)
 	    end),
 	    on_exit = function()
 		--TODO: is doing nil doesn't leak resources
+		self.action:complete_job()
 		self.job = nil
 	    end,
 	    on_stderr = function(err, line)

@@ -260,6 +260,7 @@ function M:new(opts)
 	manager = obj.manager,
 	currentPromptText = obj.prompt:getCurrentPromptText(),
 	error_handler = error_handler,
+	on_job_complete = opts.callbacks.on_job_complete
     })
     obj._set_data = setData
     obj.prompt:registerTextChanged(textChanged)
