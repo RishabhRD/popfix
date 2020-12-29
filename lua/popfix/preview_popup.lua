@@ -186,7 +186,7 @@ function M:new(opts)
     end
     api.nvim_set_current_win(obj.list.window)
     obj.closed = false
-    return true
+    return obj
 end
 
 function M:select_next()
