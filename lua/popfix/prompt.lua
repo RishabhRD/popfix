@@ -68,8 +68,8 @@ function prompt:registerTextChanged(func)
     self.textChanged = func
     if not self.attached then
     local function on_lines(_, _, _, first, last)
-	local promptText = vim.trim(vim.api.nvim_buf_get_lines(self.buffer,
-	first, last, false)[1]:sub(#self.prefix))
+	local promptText = vim.api.nvim_buf_get_lines(self.buffer,
+	first, last, false)[1]:sub(#self.prefix + 1)
 	api.nvim_buf_add_highlight(self.buffer, promptHighlightNamespace,
 	self.prompt_highlight, 0, 0, #self.prefix)
 	self.textChanged(promptText)
@@ -84,7 +84,8 @@ end
 
 function prompt:setPromptText(line)
     local setLine = self.prefix..line
-    api.nvim_buf_set_lines(self.buffer, 0, -1, false, {setLine})
+    local lineCount = api.nvim_buf_line_count(self.buffer)
+    api.nvim_buf_set_lines(self.buffer, lineCount - 1, -1, false, {setLine})
     vim.cmd('startinsert')
     api.nvim_win_set_cursor(self.window, {1, #setLine})
 end
