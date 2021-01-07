@@ -285,4 +285,9 @@ function M:set_prompt_text(text)
     end)
 end
 
+
+function M:get_prompt_text()
+    return self.prompt:getCurrentPromptText()
+end
+
 return M
