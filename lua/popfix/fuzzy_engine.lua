@@ -64,9 +64,6 @@ function M:close_SingleExecutionEngine()
     clear(self.list)
     clear(self.sortedList)
     self.manager:close()
-    self.manager = nil
-    self.list = nil
-    self.sortedList = nil
     collectgarbage()
     collectgarbage()
 end
