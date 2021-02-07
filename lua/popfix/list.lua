@@ -94,7 +94,11 @@ function list:addLine(data, starting, ending)
     if buf == 0 then return end
     if api.nvim_buf_is_loaded(buf) then
 	api.nvim_buf_set_option(buf, 'modifiable', true)
-	api.nvim_buf_set_lines(buf, starting, ending, false, {data})
+        if self.numData == 1  then
+          api.nvim_buf_set_lines(buf, 0, 1, false, {data})
+        else
+          api.nvim_buf_set_lines(buf, starting, ending, false, {data})
+        end
 	api.nvim_buf_set_option(buf, 'modifiable', false)
     end
 end
@@ -121,7 +125,11 @@ function list:addData(data)
     if buf == 0 then return end
     if api.nvim_buf_is_loaded(buf) then
 	api.nvim_buf_set_option(buf, 'modifiable', true)
-	api.nvim_buf_set_lines(buf, numData, -1, false, data)
+        if numData == 0 then
+          api.nvim_buf_set_lines(buf, 0, 1, false, data)
+        else
+          api.nvim_buf_set_lines(buf, numData, -1, false, data)
+        end
 	api.nvim_buf_set_option(buf, 'modifiable', false)
     end
     self.numData = self.numData + #data
