@@ -53,6 +53,9 @@ function prompt:new(opts)
 end
 
 function prompt:close()
+  if vim.fn.pumvisible() ~= 0 then
+    vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<c-y>", true, true, true), 'n', true)
+  end
     local buf = self.buffer
     vim.schedule(function()
     vim.cmd(string.format('bwipeout! %s', buf))

@@ -64,9 +64,6 @@ function M:close_SingleExecutionEngine()
     clear(self.list)
     clear(self.sortedList)
     self.manager:close()
-    self.manager = nil
-    self.list = nil
-    self.sortedList = nil
     collectgarbage()
     collectgarbage()
 end
@@ -236,9 +233,9 @@ function M:run_SingleExecutionEngine(opts)
 	else
 	    appendAggregateData(tmp, self.numData)
 	    self.startingIndex = self.numData + 1
-	    if self.idle then
-		self.idle:stop()
-	    end
+	    -- if self.idle then
+		-- self.idle:stop()
+	    -- end
 	end
     end
 
@@ -246,11 +243,11 @@ function M:run_SingleExecutionEngine(opts)
 	if self.currentPromptText == '' and prompt == '' then
 	    return
 	end
-	if self.idle then
-	    if not self.idle:is_active() then
-		self.idle:start(addSortedDataToTable)
-	    end
-	end
+	-- if self.idle then
+	--     if not self.idle:is_active() then
+	-- 	self.idle:start(addSortedDataToTable)
+	--     end
+	-- end
 	self.currentPromptText = prompt
 	self.manager.currentPromptText = prompt
 	self.startingIndex = 1
@@ -262,11 +259,11 @@ function M:run_SingleExecutionEngine(opts)
     local function addData(_, line)
 	self.numData = self.numData + 1
 	self.list[self.numData] = line
-	if self.idle then
-	    if not self.idle:is_active() then
-		self.idle:start(addSortedDataToTable)
-	    end
-	end
+	-- if self.idle then
+	--     if not self.idle:is_active() then
+	-- 	self.idle:start(addSortedDataToTable)
+	--     end
+	-- end
     end
 
     local function createJob(data)
@@ -296,11 +293,11 @@ function M:run_SingleExecutionEngine(opts)
 		self.numData = self.numData + 1
 		self.list[k] = v
 	    end
-	    if self.idle then
-		if not self.idle:is_active() then
-		    self.idle:start(addSortedDataToTable)
-		end
-	    end
+	    -- if self.idle then
+		-- if not self.idle:is_active() then
+		    -- self.idle:start(addSortedDataToTable)
+		-- end
+	    -- end
 	end
     end
 
