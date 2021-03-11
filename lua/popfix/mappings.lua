@@ -4,7 +4,7 @@ local param_map = {}
 local key_id = 0
 
 local map = function(buf,type,key,value,opts)
-    vim.fn.nvim_buf_set_keymap(buf,type,key,value,opts or {silent = true});
+    vim.api.nvim_buf_set_keymap(buf,type,key,value,opts or {silent = true});
 end
 
 local function get_next_id()
