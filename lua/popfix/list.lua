@@ -189,6 +189,23 @@ function list:clearElement(index)
     self.numData  = self.numData - 1
 end
 
+function list:renameElement(index,data)
+    index = index - 1
+    if self.buffer == nil or self.buffer == 0 then return end
+    if index < 0 or index > self.numData then return end
+    local ending = -1
+    if index + 1 ~= self.numData then 
+        ending = index+1
+    end
+    local start = index
+    if api.nvim_buf_is_loaded(self.buffer) then
+        local buffer = self.buffer
+        api.nvim_buf_set_option(buffer, 'modifiable', true)
+        api.nvim_buf_set_lines(buffer, start, ending, true, {data})
+        api.nvim_buf_set_option(buffer, 'modifiable', false)
+    end
+end
+
 function list:getCurrentLineNumber()
     return api.nvim_win_get_cursor(self.window)[1]
 end
