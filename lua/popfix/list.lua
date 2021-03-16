@@ -163,11 +163,30 @@ function list:clearLast()
     local ending = numData - 1
     if start < ending then return end
     if api.nvim_buf_is_loaded(self.buffer) then
-	local buffer = self.buffer
-	api.nvim_buf_set_option(buffer, 'modifiable', true)
-	api.nvim_buf_set_lines(buffer, start, ending, false, {})
-	api.nvim_buf_set_option(buffer, 'modifiable', false)
+        local buffer = self.buffer
+        api.nvim_buf_set_option(buffer, 'modifiable', true)
+        api.nvim_buf_set_lines(buffer, start, ending, false, {})
+        api.nvim_buf_set_option(buffer, 'modifiable', false)
     end
+end
+
+function list:clearElement(index)
+    --starts with 1 to use with getCurrentLineNumber from client side
+    index = index-1
+    if self.buffer == nil or self.buffer == 0 then return end
+    if index < 0 or index > self.numData then return end
+    local ending = -1
+    if index + 1 ~= self.numData then 
+        ending = index+1
+    end
+    local start = index
+    if api.nvim_buf_is_loaded(self.buffer) then
+        local buffer = self.buffer
+        api.nvim_buf_set_option(buffer, 'modifiable', true)
+        api.nvim_buf_set_lines(buffer, start, ending, true, {})
+        api.nvim_buf_set_option(buffer, 'modifiable', false)
+    end
+    self.numData  = self.numData - 1
 end
 
 function list:getCurrentLineNumber()
