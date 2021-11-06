@@ -105,7 +105,7 @@ function M.create_win(opts)
     vim.cmd('redraw')
     api.nvim_buf_set_option(border_win_buf_pair.buf, 'bufhidden', 'hide')
     border_buf = border_win_buf_pair.buf
-    fill_border_data(border_buf, opts.width , opts.height, opts.title , opts.border_chars)
+    fill_border_data(border_buf, opts.width , opts.height, opts.title , opts.border)
     api.nvim_win_set_option(border_win_buf_pair.win, 'winhl', 'Normal:'..opts.border_highlight)
   end
 
