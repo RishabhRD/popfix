@@ -3,8 +3,14 @@ local function_store = {}
 local param_map = {}
 local key_id = 0
 
-local map = function(buf,type,key,value,opts)
-    vim.api.nvim_buf_set_keymap(buf,type,key,value,opts or {silent = true});
+local map = function(buf, type, key, value, opts)
+    vim.api.nvim_buf_set_keymap(
+        buf,
+        type,
+        key,
+        value,
+        opts or { silent = true }
+    )
 end
 
 local function get_next_id()
@@ -12,10 +18,10 @@ local function get_next_id()
     return key_id
 end
 
-local assign_function = function(buf,func)
+local assign_function = function(buf, func)
     local key = get_next_id()
     if function_store[buf] == nil then
-	function_store[buf] = {}
+        function_store[buf] = {}
     end
     function_store[buf][key] = func
     return key
@@ -24,32 +30,31 @@ end
 -- utility functionf to map keys and convert lua function to string internally
 local bufferKeyMap = function(buf, mode, key_bind, key_func, opts, param)
     opts = opts or {
-	silent = true
+        silent = true,
     }
     if type(key_func) == "string" then
-	map(buf,mode,key_bind,key_func,opts)
+        map(buf, mode, key_bind, key_func, opts)
     else
-	local func_id = assign_function(buf, key_func)
-	param_map[buf][func_id] = param
-	local prefix = ""
-	local map_string
-	if opts.expr then
-	    map_string = string.format(
-		[[luaeval("require('popfix.mappings').execute_keymap(%s, %s)")]],
-		buf,
-		func_id
-		)
-	else
+        local func_id = assign_function(buf, key_func)
+        param_map[buf][func_id] = param
+        local prefix = ""
+        local map_string
+        if opts.expr then
+            map_string = string.format(
+                [[luaeval("require('popfix.mappings').execute_keymap(%s, %s)")]],
+                buf,
+                func_id
+            )
+        else
+            map_string = string.format(
+                "%s<cmd>lua require('popfix.mappings').execute_keymap(%s, %s)<CR>",
+                prefix,
+                buf,
+                func_id
+            )
+        end
 
-	    map_string = string.format(
-		"%s<cmd>lua require('popfix.mappings').execute_keymap(%s, %s)<CR>",
-		prefix,
-		buf,
-		func_id
-		)
-	end
-
-	map(buf,mode,key_bind,map_string,opts)
+        map(buf, mode, key_bind, map_string, opts)
     end
 end
 
@@ -69,26 +74,28 @@ end
 --	    'string' : lua functions
 --	}
 -- }
-function mappings.add_keymap(buf,mapping_table, param)
+function mappings.add_keymap(buf, mapping_table, param)
     if not param_map[buf] then
-	param_map[buf] = {}
+        param_map[buf] = {}
     end
     local normalMappings = mapping_table.n
     if normalMappings ~= nil then
-	for key,value in pairs(normalMappings) do
-	    bufferKeyMap(buf,'n',key,value, nil, param)
-	end
+        for key, value in pairs(normalMappings) do
+            bufferKeyMap(buf, "n", key, value, nil, param)
+        end
     end
     local insertMappings = mapping_table.i
     if insertMappings ~= nil then
-	for key, value in pairs(insertMappings) do
-	    bufferKeyMap(buf,'i',key,value, nil, param)
-	end
+        for key, value in pairs(insertMappings) do
+            bufferKeyMap(buf, "i", key, value, nil, param)
+        end
     end
 end
 
 mappings.execute_keymap = function(buf, key)
-    if function_store[buf] == nil then return end
+    if function_store[buf] == nil then
+        return
+    end
     local func = function_store[buf][key]
     func(param_map[buf][key])
 end

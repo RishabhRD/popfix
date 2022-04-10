@@ -8,10 +8,10 @@ local function get_next_id()
     return key_id
 end
 
-local function assign_function(buf,func)
+local function assign_function(buf, func)
     local key = get_next_id()
     if callback[buf] == nil then
-	callback[buf] = {}
+        callback[buf] = {}
     end
     callback[buf][key] = func
     return key
@@ -20,20 +20,39 @@ end
 -- utility function for converting lua functions to appropriate string
 -- and then add autocmd
 local function buffer_autocmd(buf, property, action, param, nested, once)
-    local nested_string = ''
-    if nested then nested_string = "++nested" end
-    local once_string = ''
-    if once then once_string = "++once" end
+    local nested_string = ""
+    if nested then
+        nested_string = "++nested"
+    end
+    local once_string = ""
+    if once then
+        once_string = "++once"
+    end
     if type(action) == "string" then
-	local command = string.format("autocmd %s <buffer=%s> %s %s %s", property, buf, nested_string, once_string, action)
-	vim.cmd(command)
+        local command = string.format(
+            "autocmd %s <buffer=%s> %s %s %s",
+            property,
+            buf,
+            nested_string,
+            once_string,
+            action
+        )
+        vim.cmd(command)
     else
-	local func = assign_function(buf,action)
-	if param then
-	    param_map[buf][func] = param
-	end
-	local command = string.format("autocmd %s <buffer=%s> %s %s lua require('popfix.autocmd').execute(%s,%s)", property, buf, nested_string, once_string, buf, func)
-	vim.cmd(command)
+        local func = assign_function(buf, action)
+        if param then
+            param_map[buf][func] = param
+        end
+        local command = string.format(
+            "autocmd %s <buffer=%s> %s %s lua require('popfix.autocmd').execute(%s,%s)",
+            property,
+            buf,
+            nested_string,
+            once_string,
+            buf,
+            func
+        )
+        vim.cmd(command)
     end
 end
 
@@ -49,23 +68,25 @@ end
 -- }
 function autocmd.addCommand(buf, mapping_table, param)
     if not param_map[buf] then
-	param_map[buf] = {}
+        param_map[buf] = {}
     end
     local nested = mapping_table.nested
     local once = mapping_table.once
-    if mapping_table['nested'] then
-	mapping_table['nested'] = nil
+    if mapping_table["nested"] then
+        mapping_table["nested"] = nil
     end
-    if mapping_table['once'] then
-	mapping_table['once'] = nil
+    if mapping_table["once"] then
+        mapping_table["once"] = nil
     end
-    for property,action in pairs(mapping_table) do
-	buffer_autocmd(buf, property, action, param, nested, once)
+    for property, action in pairs(mapping_table) do
+        buffer_autocmd(buf, property, action, param, nested, once)
     end
 end
 
-function autocmd.execute(buf,key)
-    if callback[buf] == nil then return end
+function autocmd.execute(buf, key)
+    if callback[buf] == nil then
+        return
+    end
     local func = callback[buf][key]
     func(param_map[buf][key])
 end
@@ -77,15 +98,17 @@ end
 
 function autocmd.remove(buf, str, opts)
     --TODO: free the memory at this stage
-    local nested = ''
-    local once = ''
+    local nested = ""
+    local once = ""
     if opts.nested then
-	nested = '++nested'
+        nested = "++nested"
     end
     if opts.once then
-	once = '++once'
+        once = "++once"
     end
-    vim.cmd(string.format('autocmd! %s <buffer=%s> %s %s', str, buf, nested, once))
+    vim.cmd(
+        string.format("autocmd! %s <buffer=%s> %s %s", str, buf, nested, once)
+    )
 end
 
 return autocmd

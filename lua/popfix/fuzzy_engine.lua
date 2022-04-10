@@ -1,9 +1,8 @@
-local util = require'popfix.util'
+local util = require("popfix.util")
 local M = {}
-local Job = require'popfix.job'
+local Job = require("popfix.job")
 local uv = vim.loop
 M.__index = M
-
 
 --- @class FuzzyEngine
 --- FuzzyEngine actually sorts the data obtained from job/data submitted to it
@@ -31,21 +30,21 @@ M.__index = M
 function M:new(opts)
     opts = opts or {}
     return setmetatable({
-	run = opts.run,
-	close = opts.close,
+        run = opts.run,
+        close = opts.close,
     }, self)
 end
 
 local function clear(t)
     for k, _ in ipairs(t) do
-	t[k] = nil
+        t[k] = nil
     end
 end
 
 function M:new_SingleExecutionEngine()
     return self:new({
-	run = self.run_SingleExecutionEngine,
-	close = self.close_SingleExecutionEngine,
+        run = self.run_SingleExecutionEngine,
+        close = self.close_SingleExecutionEngine,
     })
 end
 
@@ -54,10 +53,10 @@ function M:close_SingleExecutionEngine()
     self.idle:close()
     self.idle = nil
     if self.job then
-	if self.job then
-	    self.job:shutdown()
-	    self.job = nil
-	end
+        if self.job then
+            self.job:shutdown()
+            self.job = nil
+        end
     end
     self.numData = 0
     self.sortedNumData = 0
@@ -85,68 +84,72 @@ function M:run_RepeatedExecutionEngine(opts)
     self.numData = 0
     self.on_job_complete = opts.on_job_complete
     local function addData(_, line)
-	self.numData = self.numData + 1
-	self.manager:add(line,self.numData, 0)
+        self.numData = self.numData + 1
+        self.manager:add(line, self.numData, 0)
     end
     local function textChanged(str)
-	if self.currentJob then
-	    self.currentJob:shutdown()
-	    self.currentJob = nil
-	end
-	self.numData = 0
-	if self.base_cmd == nil then return end
-	self.manager:clear()
-	self.currentPromptText = str
-	self.manager.currentPromptText = str
-	local command = string.format(self.base_cmd, str)
-	local cmd, args = util.getArgs(command)
-	self.currentJob = Job:new{
-	    command = cmd,
-	    args = args,
-	    cwd = self.cwd,
-	    on_stdout = addData,
-	    on_exit = function()
-		if self.on_job_complete then
-		    vim.schedule(function()
-			self.on_job_complete()
-		    end)
-		end
-		self.currentJob = nil
-	    end
-	}
-	self.currentJob:start()
+        if self.currentJob then
+            self.currentJob:shutdown()
+            self.currentJob = nil
+        end
+        self.numData = 0
+        if self.base_cmd == nil then
+            return
+        end
+        self.manager:clear()
+        self.currentPromptText = str
+        self.manager.currentPromptText = str
+        local command = string.format(self.base_cmd, str)
+        local cmd, args = util.getArgs(command)
+        self.currentJob = Job:new({
+            command = cmd,
+            args = args,
+            cwd = self.cwd,
+            on_stdout = addData,
+            on_exit = function()
+                if self.on_job_complete then
+                    vim.schedule(function()
+                        self.on_job_complete()
+                    end)
+                end
+                self.currentJob = nil
+            end,
+        })
+        self.currentJob:start()
     end
     local function setData(data)
-	self.base_cmd = data.cmd
-	if not self.base_cmd then return end
-	self.cwd = data.cwd or vim.fn.getcwd()
-	textChanged(self.currentPromptText)
+        self.base_cmd = data.cmd
+        if not self.base_cmd then
+            return
+        end
+        self.cwd = data.cwd or vim.fn.getcwd()
+        textChanged(self.currentPromptText)
     end
     self.manager.currentPromptText = self.currentPromptText
     local command = string.format(self.base_cmd, self.currentPromptText)
     local cmd, args = util.getArgs(command)
-    self.currentJob = Job:new{
-	command = cmd,
-	args = args,
-	cwd = self.cwd,
-	on_stdout = addData,
-	on_exit = function()
-	    if self.on_job_complete then
-		vim.schedule(function()
-		    self.on_job_complete()
-		end)
-	    end
-	    self.currentJob = nil
-	end
-    }
+    self.currentJob = Job:new({
+        command = cmd,
+        args = args,
+        cwd = self.cwd,
+        on_stdout = addData,
+        on_exit = function()
+            if self.on_job_complete then
+                vim.schedule(function()
+                    self.on_job_complete()
+                end)
+            end
+            self.currentJob = nil
+        end,
+    })
     self.currentJob:start()
     return textChanged, setData
 end
 
 function M:close_RepeatedExecutionEngine()
     if self.currentJob then
-	self.currentJob:shutdown()
-	self.currentJob = nil
+        self.currentJob:shutdown()
+        self.currentJob = nil
     end
     self.manager:close()
     self.manager = nil
@@ -154,8 +157,8 @@ end
 
 function M:new_RepeatedExecutionEngine()
     return self:new({
-	run = self.run_RepeatedExecutionEngine,
-	close = self.close_RepeatedExecutionEngine,
+        run = self.run_RepeatedExecutionEngine,
+        close = self.close_RepeatedExecutionEngine,
     })
 end
 
@@ -172,146 +175,157 @@ function M:run_SingleExecutionEngine(opts)
     self.startingIndex = 1
     self.on_job_complete = opts.on_job_complete
 
-
     -- Additional initilaization job
     self.scoringFunction = self.sorter.scoringFunction
     self.filterFunction = self.sorter.filterFunction
     self.maxJob = self.sorter.maxJob
     if self.maxJob == nil then
-	self.maxJob = 50
+        self.maxJob = 50
     end
     self.sorter = nil
     -- Our requirements
     self.manager.currentPromptText = self.currentPromptText
 
     local function appendAggregateData(itrStart, itrEnd)
-	for cur = itrStart, itrEnd do
-	    local line = self.list[cur]
-	    if self.currentPromptText == '' then
-		self.sortedNumData = self.sortedNumData + 1
-		self.sortedList[self.sortedNumData] = cur
-		self.manager:add(line, self.sortedNumData, cur)
-	    else
-		if self.filterFunction(self.currentPromptText, line,
-		    self.caseSensitive) then
-		    local score = self.scoringFunction(self.currentPromptText,
-		    line, self.caseSensitive)
-		    local found = false
-		    for k,v in ipairs(self.sortedList) do
-			if score > v.score then
-			    found = true
-			    self.sortedNumData = self.sortedNumData + 1
-			    table.insert(self.sortedList, k, {
-				score = score,
-				index = cur
-			    })
-			    self.manager:add(line, k, cur)
-			    break
-			end
-		    end
-		    if not found then
-			self.sortedNumData = self.sortedNumData + 1
-			table.insert(self.sortedList, {
-			    score = score,
-			    index = cur
-			})
-			self.manager:add(line, self.sortedNumData, cur)
-		    end
-		end
-	    end
-	end
+        for cur = itrStart, itrEnd do
+            local line = self.list[cur]
+            if self.currentPromptText == "" then
+                self.sortedNumData = self.sortedNumData + 1
+                self.sortedList[self.sortedNumData] = cur
+                self.manager:add(line, self.sortedNumData, cur)
+            else
+                if
+                    self.filterFunction(
+                        self.currentPromptText,
+                        line,
+                        self.caseSensitive
+                    )
+                then
+                    local score = self.scoringFunction(
+                        self.currentPromptText,
+                        line,
+                        self.caseSensitive
+                    )
+                    local found = false
+                    for k, v in ipairs(self.sortedList) do
+                        if score > v.score then
+                            found = true
+                            self.sortedNumData = self.sortedNumData + 1
+                            table.insert(self.sortedList, k, {
+                                score = score,
+                                index = cur,
+                            })
+                            self.manager:add(line, k, cur)
+                            break
+                        end
+                    end
+                    if not found then
+                        self.sortedNumData = self.sortedNumData + 1
+                        table.insert(self.sortedList, {
+                            score = score,
+                            index = cur,
+                        })
+                        self.manager:add(line, self.sortedNumData, cur)
+                    end
+                end
+            end
+        end
     end
 
     local function addSortedDataToTable()
-	if self.numData == 0 then return end
-	local tmp = self.startingIndex
-	local len = self.numData - (self.startingIndex - 1)
-	if len <= 0 then return end
-	if len > self.maxJob then
-	    appendAggregateData(tmp, tmp + self.maxJob - 1)
-	    self.startingIndex = self.startingIndex + self.maxJob
-	else
-	    appendAggregateData(tmp, self.numData)
-	    self.startingIndex = self.numData + 1
-	    -- if self.idle then
-		-- self.idle:stop()
-	    -- end
-	end
+        if self.numData == 0 then
+            return
+        end
+        local tmp = self.startingIndex
+        local len = self.numData - (self.startingIndex - 1)
+        if len <= 0 then
+            return
+        end
+        if len > self.maxJob then
+            appendAggregateData(tmp, tmp + self.maxJob - 1)
+            self.startingIndex = self.startingIndex + self.maxJob
+        else
+            appendAggregateData(tmp, self.numData)
+            self.startingIndex = self.numData + 1
+            -- if self.idle then
+            -- self.idle:stop()
+            -- end
+        end
     end
 
     local function textChanged(prompt)
-	if self.currentPromptText == '' and prompt == '' then
-	    return
-	end
-	-- if self.idle then
-	--     if not self.idle:is_active() then
-	-- 	self.idle:start(addSortedDataToTable)
-	--     end
-	-- end
-	self.currentPromptText = prompt
-	self.manager.currentPromptText = prompt
-	self.startingIndex = 1
-	self.manager:clear()
-	clear(self.sortedList)
-	self.sortedNumData = 0
+        if self.currentPromptText == "" and prompt == "" then
+            return
+        end
+        -- if self.idle then
+        --     if not self.idle:is_active() then
+        -- 	self.idle:start(addSortedDataToTable)
+        --     end
+        -- end
+        self.currentPromptText = prompt
+        self.manager.currentPromptText = prompt
+        self.startingIndex = 1
+        self.manager:clear()
+        clear(self.sortedList)
+        self.sortedNumData = 0
     end
 
     local function addData(_, line)
-	self.numData = self.numData + 1
-	self.list[self.numData] = line
-	-- if self.idle then
-	--     if not self.idle:is_active() then
-	-- 	self.idle:start(addSortedDataToTable)
-	--     end
-	-- end
+        self.numData = self.numData + 1
+        self.list[self.numData] = line
+        -- if self.idle then
+        --     if not self.idle:is_active() then
+        -- 	self.idle:start(addSortedDataToTable)
+        --     end
+        -- end
     end
 
     local function createJob(data)
-	if data.cmd then
-	    local cmd, args = util.getArgs(data.cmd)
-	    local cwd = data.cwd or vim.fn.getcwd()
-	    self.job = Job:new{
-		command = cmd,
-		args = args,
-		cwd = cwd,
-		on_stdout = addData,
-		on_exit = function()
-		    if self.on_job_complete then
-			vim.schedule(function()
-			    self.on_job_complete()
-			end)
-		    end
-		    self.job = nil
-		end,
-		on_stderr = function(err, line)
-		    self.error_handler(err, line)
-		end
-	    }
-	    self.job:start()
-	else
-	    for k,v in ipairs(data) do
-		self.numData = self.numData + 1
-		self.list[k] = v
-	    end
-	    -- if self.idle then
-		-- if not self.idle:is_active() then
-		    -- self.idle:start(addSortedDataToTable)
-		-- end
-	    -- end
-	end
+        if data.cmd then
+            local cmd, args = util.getArgs(data.cmd)
+            local cwd = data.cwd or vim.fn.getcwd()
+            self.job = Job:new({
+                command = cmd,
+                args = args,
+                cwd = cwd,
+                on_stdout = addData,
+                on_exit = function()
+                    if self.on_job_complete then
+                        vim.schedule(function()
+                            self.on_job_complete()
+                        end)
+                    end
+                    self.job = nil
+                end,
+                on_stderr = function(err, line)
+                    self.error_handler(err, line)
+                end,
+            })
+            self.job:start()
+        else
+            for k, v in ipairs(data) do
+                self.numData = self.numData + 1
+                self.list[k] = v
+            end
+            -- if self.idle then
+            -- if not self.idle:is_active() then
+            -- self.idle:start(addSortedDataToTable)
+            -- end
+            -- end
+        end
     end
 
     local function setData(data)
-	if self.job then
-	    self.job:shutdown()
-	    self.job = nil
-	end
-	self.manager:clear()
-	self.numData = 0
-	self.sortedNumData = 0
-	clear(self.list)
-	clear(self.sortedList)
-	createJob(data)
+        if self.job then
+            self.job:shutdown()
+            self.job = nil
+        end
+        self.manager:clear()
+        self.numData = 0
+        self.sortedNumData = 0
+        clear(self.list)
+        clear(self.sortedList)
+        createJob(data)
     end
     self.idle = uv.new_idle()
     self.idle:start(addSortedDataToTable)
@@ -319,6 +333,5 @@ function M:run_SingleExecutionEngine(opts)
     opts = nil
     return textChanged, setData
 end
-
 
 return M
