@@ -16,9 +16,11 @@ function prompt:new(opts)
     self.__index = self
     local obj = {}
     setmetatable(obj, self)
+
     if opts.border == nil then
-    opts.border = false
+      opts.border = false
     end
+
     opts.title = opts.title or ''
     opts.height = 1
     opts.prompt_text = opts.prompt_text or ''
@@ -38,17 +40,20 @@ function prompt:new(opts)
     obj.prompt_highlight = opts.prompt_highlight
     api.nvim_buf_add_highlight(obj.buffer, promptHighlightNamespace,
     obj.prompt_highlight, 0, 0, #obj.prefix)
+
     if opts.init_text then
-    obj:setPromptText(opts.init_text)
-    obj.insertStarted = true
+      obj:setPromptText(opts.init_text)
     end
+
     local function startInsert()
-    if not obj.insertStarted then
-	vim.cmd('startinsert')
-	obj.insertStarted = true
+      if not obj.insertStarted then
+        vim.cmd('startinsert')
+        obj.insertStarted = true
+      end
     end
-    end
+
     autocmd.addCommand(obj.buffer, {['BufEnter,WinEnter'] = startInsert})
+
     return obj
 end
 
