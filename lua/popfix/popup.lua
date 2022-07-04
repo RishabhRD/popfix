@@ -35,7 +35,7 @@ end
 
 local function selectionHandler(self, callback)
     local listSize = self.list:getSize()
-    -- handle the situation where no element is there in list
+    -- Handle the situation where no element is there in list
     -- and the callback is triggered.
     if listSize == 0 then
         return
@@ -68,12 +68,15 @@ local function popup_cursor(self, opts)
         print("Not enough space to draw popup")
         return false
     end
+
     --TODO: better width strategy
     opts.list.width = opts.list.width or 40
+
     if opts.list.width >= api.nvim_get_option("columns") - 4 then
-        print("no enough space to draw popup")
-        return
+        print("Not enough space to draw popup")
+        return false
     end
+
     if listHeight >= heightDiff then
         opts.list.row = 0 - listHeight
     else
@@ -93,14 +96,18 @@ end
 
 local function popup_split(self, opts)
     opts.list.height = opts.list.height or 12
+
     if opts.list.height >= api.nvim_get_option("lines") - 4 then
-        print("no enough space to draw popup")
-        return
+        print("Not enough space to draw popup")
+        return false
     end
+
     self.list = list:newSplit(opts.list)
+
     if not self.list then
         return false
     end
+
     return true
 end
 
@@ -131,20 +138,26 @@ function M:new(opts)
     local obj = {}
     setmetatable(obj, self)
     obj.close_on_error = opts.close_on_error
+
     if opts.data == nil then
         print("nil data")
         return false
     end
+
     if opts.mode == nil then
         opts.mode = "split"
     end
+
     if opts.list == nil then
         opts.list = {}
     end
+
     obj.originalWindow = api.nvim_get_current_win()
+
     --TODO: better width strategy
     opts.list.width = opts.width or 40
     opts.list.height = opts.height
+
     if opts.mode == "cursor" then
         if not popup_cursor(obj, opts) then
             obj.originalWindow = nil
@@ -161,8 +174,11 @@ function M:new(opts)
             return false
         end
     end
+
     obj.action = action:new(opts.callbacks)
+
     local nested_autocmds
+
     if opts.close_on_bufleave then
         nested_autocmds = {
             ["BufUnload,BufLeave"] = obj.close,
@@ -176,17 +192,23 @@ function M:new(opts)
             ["once"] = true,
         }
     end
+
     local non_nested_autocmds = {
         ["CursorMoved"] = selectionHandler,
     }
+
     autocmd.addCommand(obj.list.buffer, nested_autocmds, obj)
     autocmd.addCommand(obj.list.buffer, non_nested_autocmds, obj)
+
     obj:set_data(opts.data)
+
     if opts.keymaps then
         mappings.add_keymap(obj.list.buffer, opts.keymaps, obj)
     end
+
     api.nvim_set_current_win(obj.list.window)
     obj.closed = false
+
     return obj
 end
 
@@ -199,10 +221,10 @@ function M:select_prev()
 end
 
 function M:set_data(data)
-    -- reset about any selection
+    -- Reset about any selection
     self.action.selection.index = nil
     self.action.selection.line = nil
-    -- cancel any job running
+    -- Cancel any job running
     if self.job then
         self.job:shutdown()
         self.job = nil
